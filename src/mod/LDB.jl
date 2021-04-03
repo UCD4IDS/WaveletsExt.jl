@@ -1,4 +1,4 @@
-module LocalDiscriminantBasis
+module LDB
 export 
     # energy map
     EnergyMap,

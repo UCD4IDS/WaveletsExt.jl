@@ -19,14 +19,6 @@ using
     ..SWT,
     ..Utils
 
-# THRESHOLD
-# extension to Wavelets.threshold to allow multiple dimension array input
-function Wavelets.threshold(x::AbstractArray{T}, TH::Wavelets.Threshold.THType, 
-        t::Real) where T<:Number
-    y = Array{T}(undef, size(x))
-    return Wavelets.Threshold.threshold!(copyto!(y,x), TH, t)
-end
-
 # DENOISING
 struct RelErrorShrink <: DNFT   # Relative Error Shrink
     th::Wavelets.Threshold.THType
@@ -141,9 +133,11 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         σ = isa(estnoise, Function) ? estnoise(x, true, nothing) : estnoise
         # thresholding
         if smooth == :regular
-            x̃ = threshold(x, dnt.th, σ*dnt.t)
+            x̃ = copy(x)
+            threshold!(x̃, dnt.th, σ*dnt.t)
         else    # :undersmooth
-            x̃ = [x[:,1] threshold(x[:,2:end], dnt.th, σ*dnt.t)]
+            temp = x[:,2:end]
+            x̃ = [x[:,1] threshold!(temp, dnt.th, σ*dnt.t)]
         end
         # reconstruction
         y = isdwt(x̃, wt)
@@ -156,13 +150,13 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         if smooth == :regular
             leaves = findall(getleaf(tree))
             x̃ = copy(x)
-            x̃[:, leaves] = threshold(x[:,leaves], dnt.th, σ*dnt.t)
+            x̃[:, leaves] = threshold!(x[:,leaves], dnt.th, σ*dnt.t)             
         else    # :undersmooth
             x̃ = copy(x)
             leaves = findall(getleaf(tree))
             _, coarsestnode = coarsestscalingrange(x, tree, true)
             rng = setdiff(leaves, coarsestnode)
-            x̃[:,rng] = threshold(x[:,rng], dnt.th, σ*dnt.t)
+            x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
         end
         # reconstruction
         y = iswpt(x̃, wt, tree)

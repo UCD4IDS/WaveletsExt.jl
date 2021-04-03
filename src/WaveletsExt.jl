@@ -8,15 +8,17 @@ include("mod/SIWPD.jl")
 include("mod/BestBasis.jl")
 include("mod/SWT.jl")
 include("mod/Denoising.jl")
-include("mod/LocalDiscriminantBasis.jl")
+include("mod/LDB.jl")
+include("mod/Visualizations.jl")
 
 using Reexport
 @reexport using .WPD,
                 .BestBasis,
                 .Denoising,
                 .Utils,
-                .LocalDiscriminantBasis,
+                .LDB,
                 .SWT,
-                .SIWPD
+                .SIWPD,
+                .Visualizations
 
 end

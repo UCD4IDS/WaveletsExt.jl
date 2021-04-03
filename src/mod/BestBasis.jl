@@ -24,17 +24,12 @@ export
     # best basis tree
     bestbasis_tree,
     # best basis expansion coefficients
-    bestbasiscoef,
-    # visualizations
-    plot_tfbdry,
-    wiggle,
-    wiggle!
+    bestbasiscoef
 
 using 
     Wavelets, 
     LinearAlgebra,
     Statistics, 
-    Plots, 
     AverageShiftedHistograms,
     Parameters
 
@@ -42,8 +37,6 @@ using
     ..Utils,
     ..WPD,
     ..SIWPD
-
-include("Visualizations.jl")
 
 
 ## COST COMPUTATION

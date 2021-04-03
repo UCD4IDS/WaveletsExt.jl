@@ -228,17 +228,17 @@ function swpd(x::AbstractVector{T}, wt::OrthoFilter,
 end
 
 # stationary wavelet packet transform (SWPT)
-function swpt(x::AbstractVector{T}, wt::OrthoFilter, 
+function swpt(x::AbstractVector{T}, wt::DiscreteWavelet,                        
         L::Integer=maxtransformlevels(x)) where T<:Number
 
     tree = maktree(length(x), L, :full)
     return swpt(x, wt, tree)
 end
 
-function swpt(x::AbstractVector{T}, wt::OrthoFilter,
+function swpt(x::AbstractVector{T}, filter::OrthoFilter,
         tree::BitVector=maketree(x,:full)) where T<:Number
 
-    g, h = WT.makeqmfpair(wt)
+    g, h = WT.makeqmfpair(filter)
     return swpt(x, h, g, tree, 1)
 end
 
@@ -368,19 +368,19 @@ function isdwt(v1::AbstractArray{T,1}, w1::AbstractArray{T,1}, j::Integer,
 end
 
 # ε-basis inverse stationary wavelet packet transform (ISWPT)
-function iswpt(xw::AbstractArray{T,2}, wt::OrthoFilter, ε::BitVector,
+function iswpt(xw::AbstractArray{T,2}, wt::DiscreteWavelet, ε::BitVector,       
         L::Integer=maxtransformlevels(size(xw,1))) where T<:Number
 
     @assert length(ε) == L
     return iswpt(xw, wt, ε, maketree(size(xw,1), L, :full))
 end
 
-function iswpt(xw::AbstractArray{T,2}, wt::OrthoFilter, ε::BitVector,
+function iswpt(xw::AbstractArray{T,2}, filter::OrthoFilter, ε::Vector{<:Bool},           
         tree::BitVector=maketree(xw[:,1], :full)) where T<:Number
 
     @assert isvalidtree(xw[:,1], tree)
     @assert ceil(Integer, log2(length(tree))) == length(ε)
-    g, h = WT.makeqmfpair(wt)
+    g, h = WT.makeqmfpair(filter)
     ss = collect(0:(length(ε)-1))
     cumsum!(ss, ε .<< ss)
     return iswpt(xw, g, h, tree, 1, ss, 1)
@@ -418,17 +418,17 @@ function iswpt(xw::AbstractArray{T,3}, wt::OrthoFilter,
     return x
 end
 
-function iswpt(xw::AbstractArray{T,2}, wt::OrthoFilter, 
+function iswpt(xw::AbstractArray{T,2}, wt::DiscreteWavelet,                     
         L::Integer=maxtransformlevels(size(xw,1))) where T<:Number
 
     return iswpt(xw, wt, maketree(size(xw,1), L, :full))
 end
 
-function iswpt(xw::AbstractArray{T,2}, wt::OrthoFilter, 
+function iswpt(xw::AbstractArray{T,2}, filter::OrthoFilter, 
         tree::BitVector=maketree(xw[:,1], :full)) where T<:Number
     
     @assert isvalidtree(xw[:,1], tree)
-    g, h = WT.makeqmfpair(wt)
+    g, h = WT.makeqmfpair(filter)
     v₀ = iswpt(xw, g, h, tree, 1, 0, 0, 1)
     v₁ = iswpt(xw, g, h, tree, 1, 0, 1, 1)
     return (v₀ + v₁) / 2
