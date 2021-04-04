@@ -5,16 +5,18 @@ export
     wiggle!
 
 using
-    Plots
+    Plots,
+    Statistics
 using
     ..Utils
 
 """
-    selectednodes_matrix(x) 
+    treenodes_matrix(x) 
 
-Given a binary tree, output the matrix representation of the binary tree.
+Given a `BitVector` of nodes in a binary tree, output the matrix representation 
+of the nodes.
 """
-function selectednodes_matrix(x::BitVector)  
+function treenodes_matrix(x::BitVector)  
     n = (length(x) + 1) >> 1
     L = floor(Integer, log2(n))
 
@@ -47,7 +49,7 @@ function plot_tfbdry(tree::BitVector; start::Integer=0,
 
     ncol = (length(leaf) + 1) >> 1
     nrow = Int(log2(ncol)) + 1
-    mat = selectednodes_matrix(leaf)
+    mat = treenodes_matrix(leaf)
 
     p = heatmap(start:(ncol+start-1), 0:(nrow-1), mat, 
         color = [:black, nodecolor], legend = false, 
@@ -84,9 +86,9 @@ Plot a set of shaded wiggles.
 
 # Arguments
 - 'wav::AbstractArray{<:Number, 2}': matrix of waveform columns.
-- 'taxis::Vector{<:Number}=1:size(wav,1)': time axis vector
-- 'zaxis::Vector{<:Number}=1:size(wav,2)': space axis vector
-- 'sc::AbstractFloat=1': scale factor/magnification.
+- 'taxis::AbstractVector=1:size(wav,1)': time axis vector
+- 'zaxis::AbstractVector=1:size(wav,2)': space axis vector
+- 'sc::Real=1': scale factor/magnification.
 - 'EdgeColor::Symbol=:black': Sets edge of wiggles color.
 - 'FaceColor::Symbol=:black': Sets shading color of wiggles.
 - 'Overlap::Bool=true': How signals are scaled.
@@ -104,11 +106,11 @@ The previous MATLAB version contributors are:
     Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)
 Revised by Naoki Saito, Feb. 05, 2018
 """
-function wiggle(wav::AbstractArray{T,2}; taxis::Vector{S}=1:size(wav,1), 
-        zaxis::Vector{S}=1:size(wav,2), sc::AbstractFloat=1, 
+function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1), 
+        zaxis::AbstractVector=1:size(wav,2), sc::Real=1, 
         EdgeColor::Symbol=:black, FaceColor::Symbol=:black, 
         Overlap::Bool=true, Orient::Symbol=:across, ZDir::Symbol=:normal) where
-        {T<:Number, S<:Number}
+        T<:Number
     
     # Set axes
     (n,m) = size(wav)
@@ -206,9 +208,9 @@ Plot a set of shaded wiggles on the current displayed graphics
 
 # Arguments
 - 'wav::AbstractArray{<:Number,2}': matrix of waveform columns.
-- 'taxis::Vector{<:Number}=1:size(wav,1)': time axis vector
-- 'zaxis::Vector{<:Number}=1:size(wav,2)': space axis vector
-- 'sc::AbstractFloat=1': scale factor/magnification.
+- 'taxis::AbstractVector=1:size(wav,1)': time axis vector
+- 'zaxis::AbstractVector=1:size(wav,2)': space axis vector
+- 'sc::Real=1': scale factor/magnification.
 - 'EdgeColor::Symbol=:black': Sets edge of wiggles color.
 - 'FaceColor::Symbol=:black': Sets shading color of wiggles.
 - 'Overlap::Bool=true': How signals are scaled.
@@ -226,11 +228,11 @@ The previous MATLAB version contributors are:
     Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)
 Revised by Naoki Saito, Feb. 05, 2018
 """
-function wiggle!(wav::AbstractArray{T,2}; taxis::Vector{S}=1:size(wav,1), 
-        zaxis::Vector{S}=1:size(wav,2), sc::AbstractFloat=1, 
+function wiggle!(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1), 
+        zaxis::AbstractVector=1:size(wav,2), sc::Real=1, 
         EdgeColor::Symbol=:black, FaceColor::Symbol=:black, 
         Overlap::Bool=true, Orient::Symbol=:across, ZDir::Symbol=:normal) where
-        {T<:Number, S<:Number}
+        T<:Number
 
     # Set axes
     (n,m) = size(wav)

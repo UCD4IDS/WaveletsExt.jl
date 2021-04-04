@@ -15,24 +15,8 @@ using
     wpd(x, wt, hqf, gqf[, L=maxtransformlevels(x)])
 
 Returns the wavelet packet decomposition WPD) for L levels for input signal(s) 
-x. For more than 1 input signal x, input should be given in the form of a column
-based matrix, ie. x = [x₁ x₂ ... xₙ]
+x.
 """
-function wpd(x::AbstractArray{<:Number, 2}, wt::DiscreteWavelet,
-        L::Integer=maxtransformlevels(size(x,1)))
-
-    (n, N) = size(x)
-    @assert isdyadic(size(x,1))
-    @assert 0 <= L <= maxtransformlevels(n)
-    
-    result = Array{Float64, 3}(undef, (n, L+1, N))
-    for k in 1:N
-        resultₖ = @view result[:,:,k]
-        wpd!(resultₖ, x[:,k], wt, L)
-    end
-    return result
-end
-
 function wpd(x::AbstractVector{<:Number}, wt::OrthoFilter, 
         L::Integer=maxtransformlevels(x))
 

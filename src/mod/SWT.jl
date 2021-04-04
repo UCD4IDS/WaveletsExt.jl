@@ -46,7 +46,7 @@ Returns the `n × (L+1)` matrix (where `n` is the length of `x`) with the detail
 coefficients for level j in column (L-j+2). The scaling coefficients are in the
 1st column.
 
-**See also:** `swpd`
+**See also:** `swpd`, `swpt`, `isdwt`
 """
 function sdwt end
 
@@ -62,15 +62,17 @@ Default value is set to `maxtransformlevels(x)`.
 
 Returns the `n × (2⁽ᴸ⁺¹⁾-1)` matrix (where `n` is the length of `x`) with each 
 column representing the nodes in the binary tree.
+
+**See also:** `swpt`, `sdwt`, `iswpt`
 """
 function swpd end
 
 """
     swpt(x, wt[, L=maxtransformlevels(x)])
 
-    swpt(x, wt[, tree=maketree(x,:full)])
+    swpt(x, wt, tree)
 
-    swpt(x, h, g[, tree=maketree(x,:full)])
+    swpt(x, h, g, tree)
 
     swpt(x, h, g, tree, i)
 
@@ -84,6 +86,8 @@ Default value is set to `maxtransformlevels(x)`.
 Returns the expansion coefficients of the SWPT of the size `N × k`. Each column 
 represents a leaf node from `tree`. Number of returned columns can vary between 
 1 ≤ k ≤ N depending on the input `tree`.
+
+**See also:** `sdwt`, `swpd`
 """
 function swpt end
 
@@ -112,21 +116,29 @@ function isdwt_step! end
     isdwt(xw, wt[, ε])
 
 Performs the inverse stationary discrete wavelet transform (ISDWT) on the `sdwt`
-transform coefficients with respect to the BitVector `ε` which represents the 
-shifts to be used. If `ε` is not provided, the average-basis ISDWT will be 
+transform coefficients with respect to the Boolean Vector `ε` which represents 
+the shifts to be used. If `ε` is not provided, the average-basis ISDWT will be 
 computed instead.
+
+**See also:** `iswpt`, `sdwt`
 """
 function isdwt end
 
 """
-    iswpt(xw, wt[, ε, L])
+    iswpt(xw, wt, ε[, L=maxtransformlevels(size(xw,1))])
 
-    iswpt(xw, wt[, ε, tree])
+    iswpt(xw, wt, ε, tree)
+
+    iswpt(xw, wt[, L=maxtransformlevels(size(xw,1))])
+
+    iswpt(xw, wt, tree)
 
 Performs the inverse stationary wavelet packet transform (ISWPT) on the `swpd`
-transform coefficients with respect to a given BitVector that represents a
+transform coefficients with respect to a given Boolean Vector that represents a
 binary `tree` and the BitVector `ε` which represents the shifts to be used. If
 `ε` is not provided, the average-basis ISWPT will be computed instead. 
+
+**See also:** `isdwt`, `swpd`
 """
 function iswpt end
 
@@ -190,17 +202,6 @@ function sdwt(x::AbstractVector{T}, wt::OrthoFilter,
 end
 
 # stationary wavelet packet decomposition (SWPD)
-function swpd(x::AbstractArray{T,2}, wt::OrthoFilter,
-        L::Integer=maxtransformlevels(size(x,1))) where T<:Number
-
-    (n, N) = size(x)
-    xw = Array{T,3}(undef, (n, 1<<(L+1)-1, N))
-    for i in 1:N
-        xw[:,:,i] = swpd(x[:,i], wt, L)
-    end
-    return xw
-end
-
 function swpd(x::AbstractVector{T}, wt::OrthoFilter, 
         L::Integer=maxtransformlevels(x)) where T<:Number
 
@@ -231,19 +232,18 @@ end
 function swpt(x::AbstractVector{T}, wt::DiscreteWavelet,                        
         L::Integer=maxtransformlevels(x)) where T<:Number
 
-    tree = maktree(length(x), L, :full)
-    return swpt(x, wt, tree)
+    return swpt(x, wt, maketree(length(x), L, :full))
 end
 
 function swpt(x::AbstractVector{T}, filter::OrthoFilter,
-        tree::BitVector=maketree(x,:full)) where T<:Number
+        tree::BitVector) where T<:Number
 
     g, h = WT.makeqmfpair(filter)
     return swpt(x, h, g, tree, 1)
 end
 
 function swpt(x::AbstractVector{T}, h::Array{S,1}, g::Array{S,1},
-        tree::BitVector=maketree(x,:full)) where {T<:Number, S<:Number}
+        tree::BitVector) where {T<:Number, S<:Number}
 
     return swpt(x, h, g, tree, 1)
 end
@@ -272,7 +272,7 @@ function swpt(x::AbstractVector{T}, h::Array{S,1}, g::Array{S,1},
     return [v w]
 end
 
-# decomposition step of inverse stationary discrete wavelet transform (ISDWT)
+# reconstruction step of inverse stationary discrete wavelet transform (ISDWT)
 function isdwt_step(v1::AbstractVector{T}, w1::AbstractVector{T}, j::Integer,
         s0::Integer, s1::Integer, g::Array{S,1}, h::Array{S,1}) where 
         {T<:Number, S<:Number}
@@ -317,7 +317,7 @@ end
 
 # ε-basis inverse stationary discrete wavelet transform (ISDWT)
 function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter,
-        ε::BitVector) where T<:Number
+        ε::AbstractVector{Bool}) where T<:Number
 
     N, K = size(xw)
     L = K - 1
@@ -368,15 +368,17 @@ function isdwt(v1::AbstractArray{T,1}, w1::AbstractArray{T,1}, j::Integer,
 end
 
 # ε-basis inverse stationary wavelet packet transform (ISWPT)
-function iswpt(xw::AbstractArray{T,2}, wt::DiscreteWavelet, ε::BitVector,       
+function iswpt(xw::AbstractArray{T,2}, wt::DiscreteWavelet, 
+        ε::AbstractVector{Bool}, 
         L::Integer=maxtransformlevels(size(xw,1))) where T<:Number
 
     @assert length(ε) == L
     return iswpt(xw, wt, ε, maketree(size(xw,1), L, :full))
 end
 
-function iswpt(xw::AbstractArray{T,2}, filter::OrthoFilter, ε::Vector{<:Bool},           
-        tree::BitVector=maketree(xw[:,1], :full)) where T<:Number
+function iswpt(xw::AbstractArray{T,2}, filter::OrthoFilter, 
+        ε::AbstractVector{Bool},           
+        tree::BitVector) where T<:Number
 
     @assert isvalidtree(xw[:,1], tree)
     @assert ceil(Integer, log2(length(tree))) == length(ε)
@@ -407,17 +409,6 @@ function iswpt(xw::AbstractArray{T,2}, g::Array{S,1}, h::Array{S,1},
 end
 
 # average-basis inverse stationary wavelet packet transform (ISWPT)
-function iswpt(xw::AbstractArray{T,3}, wt::OrthoFilter,
-        tree::BitVector=maketree(xw[:,1,1], :full)) where T<:Number
-
-    n, n₀, N = size(xw)
-    x = Array{T,2}(undef, (n, N))
-    for i in 1:N
-        x[:,i] = iswpt(xw[:,:,i], wt, tree)
-    end
-    return x
-end
-
 function iswpt(xw::AbstractArray{T,2}, wt::DiscreteWavelet,                     
         L::Integer=maxtransformlevels(size(xw,1))) where T<:Number
 
@@ -425,7 +416,7 @@ function iswpt(xw::AbstractArray{T,2}, wt::DiscreteWavelet,
 end
 
 function iswpt(xw::AbstractArray{T,2}, filter::OrthoFilter, 
-        tree::BitVector=maketree(xw[:,1], :full)) where T<:Number
+        tree::BitVector) where T<:Number
     
     @assert isvalidtree(xw[:,1], tree)
     g, h = WT.makeqmfpair(filter)
