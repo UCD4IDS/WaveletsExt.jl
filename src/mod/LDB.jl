@@ -279,7 +279,7 @@ function ldb(X::AbstractArray{S,2}, y::AbstractVector{T}, wt::DiscreteWavelet;
         rng = j:(j+Nc-1)
         j += Nc
         # wavelet packet decomposition and energy map
-        X_wpt[:,:,rng] = wpd(X[:,idx], wt)
+        X_wpt[:,:,rng] = cat([wpd(X[:,k], wt) for k in idx]..., dims=3)
         ỹ[rng] .= c
         Γ[:,:,i] = energy_map(X_wpt[:,:,rng], energy)
     end

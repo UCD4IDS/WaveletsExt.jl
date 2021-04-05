@@ -1,5 +1,6 @@
 using 
     Test,
+    Distributions,
     Random,
     Plots,
     Statistics,
