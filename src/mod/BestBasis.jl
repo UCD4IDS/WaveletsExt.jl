@@ -204,6 +204,7 @@ end
 function tree_costs(X::AbstractArray{T,2}, method::BB) where T<:AbstractFloat
     nrm = norm(X[:,1])
     L = size(X, 2)                      # count of levels if wpd, nodes if swpd
+    n = size(X,1)
 
     if method.stationary                # swpd
         costs = Vector{T}(undef, L)
@@ -226,17 +227,20 @@ function tree_costs(X::AbstractArray{T,2}, method::BB) where T<:AbstractFloat
     return costs
 end
 
-function tree_costs(y::AbstractArray{T,2}, tree::AbstractVector{BitVector}, method::SIBB) where T<:Number
-    nn = length(tree)                           # total number of nodes
-    ns = size(y,1)                              # length of signal
-    @assert size(y,2) == nn                     # number of nodes in y == number of nodes in tree
+function tree_costs(y::AbstractArray{T,2}, tree::AbstractVector{BitVector}, 
+        method::SIBB) where T<:Number
+
+    nn = length(tree)                           
+    ns = size(y,1)                              
+    @assert size(y,2) == nn                     
     tree_costs = Vector{Vector{Union{T,Nothing}}}(undef, nn)
-    nrm = norm(y[:,1])                          # norm of signal 
+    nrm = norm(y[:,1])                          
 
     for i in eachindex(tree)
         level = floor(Int, log2(i))
         len = nodelength(ns, level)
-        costs = Vector{Union{Float64,Nothing}}(nothing, length(tree[i]))   # number of nodes corresponding to Ω(i,j)
+        # number of nodes corresponding to Ω(i,j)
+        costs = Vector{Union{AbstractFloat,Nothing}}(nothing, length(tree[i]))
         for j in eachindex(tree[i])
             if tree[i][j]
                 shift = j-1                     # current shift
@@ -263,7 +267,7 @@ function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer) where
     @assert length(costs) == 2*n - 1
     bt = trues(n-1)
     for i in reverse(eachindex(bt))
-        childcost = costs[i<<1] + costs[(i<<1)+1]
+        childcost = costs[left(i)] + costs[right(i)]
         if childcost < costs[i]     # child cost < parent cost
             costs[i] = childcost
         else
@@ -273,79 +277,86 @@ function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer) where
     return bt
 end
 
-# TODO: ensure necessary usage of siwpd
-# TODO: find a way to check that only 1 node selected from each Ω(i,j) before output
-function bestbasis_treeselection(costs::AbstractVector{Tc}, tree::AbstractVector{Tt}) where {Tc<:AbstractVector{<:Union{Number,Nothing}}, Tt<:BitVector}
+function bestbasis_treeselection(costs::AbstractVector{Tc}, 
+        tree::AbstractVector{Tt}) where 
+        {Tc<:AbstractVector{<:Union{Number,Nothing}}, Tt<:BitVector}
+
     @assert length(costs) == length(tree)
-    besttree = deepcopy(tree)
-    bestcost = deepcopy(costs)
+    bt = deepcopy(tree)
+    bc = deepcopy(costs)
     nn = length(tree)
-    for i in reverse(eachindex(besttree))
-        if i<<1 > nn                        # current node is at bottom level
+    for i in reverse(eachindex(bt))
+        if left(i) > nn                        # current node is at bottom level
             continue
         end
         level = floor(Int, log2(i))
-        for j in eachindex(besttree[i])     # iterate through all available shifts
-            if !besttree[i][j]              # node of current shift does not exist
+        for j in eachindex(bt[i])       # iterate through all available shifts
+            if !bt[i][j]                # node of current shift does not exist
                 continue
             end
-            @assert besttree[i<<1][j] == besttree[i<<1+1][j] == besttree[i<<1][j+1<<level] == besttree[i<<1+1][j+1<<level] == true || continue
-            childcost = bestcost[i<<1][j] + bestcost[i<<1+1][j]                     # child cost of current shift of current node
-            schildcost = bestcost[i<<1][j+1<<level] + bestcost[i<<1+1][j+1<<level]  # child cost of circshift of current node
-            mincost = min(childcost, schildcost, bestcost[i][j])                    # min cost amount parent, child, and shifted child
-            if mincost == bestcost[i][j]                                            # min cost is parent, delete subtrees of both sets of children
-                delete_subtree!(besttree, i<<1, j)
-                delete_subtree!(besttree, i<<1+1, j)
-                delete_subtree!(besttree, i<<1, j+1<<level)
-                delete_subtree!(besttree, i<<1+1, j+1<<level)
-            elseif mincost == childcost                                             # min cost is current shifted child, delete subtrees of additional shifted child
-                bestcost[i][j] = mincost
-                delete_subtree!(besttree, i<<1, j+1<<level)
-                delete_subtree!(besttree, i<<1+1, j+1<<level)
-            else                                                                    # min cost is additional shifted child, delete subtrees of current shifted child
-                bestcost[i][j] = mincost
-                delete_subtree!(besttree, i<<1, j)
-                delete_subtree!(besttree, i<<1+1, j)
+            @assert bt[left(i)][j] == bt[right(i)][j] == 
+                bt[left(i)][j+1<<level] == 
+                bt[right(i)][j+1<<level] == true || continue
+            # child cost of current shift of current node
+            cc = bc[left(i)][j] + bc[right(i)][j]      
+            # child cost of circshift of current node               
+            scc = bc[left(i)][j+1<<level] + bc[right(i)][j+1<<level]  
+            mincost = min(cc, scc, bc[i][j])
+            # mincost=parent, delete subtrees of both cc & scc                    
+            if mincost == bc[i][j]          
+                delete_subtree!(bt, left(i), j)
+                delete_subtree!(bt, right(i), j)
+                delete_subtree!(bt, left(i), j+1<<level)
+                delete_subtree!(bt, right(i), j+1<<level)
+            # mincost=cc, delete subtrees of scc
+            elseif mincost == cc                                             
+                bc[i][j] = mincost
+                delete_subtree!(bt, left(i), j+1<<level)
+                delete_subtree!(bt, right(i), j+1<<level)
+            # mincost=scc, delete subtrees of cc
+            else                                                                    
+                bc[i][j] = mincost
+                delete_subtree!(bt, left(i), j)
+                delete_subtree!(bt, right(i), j)
             end
         end
     end
-    @assert all(map(node -> sum(node), besttree) .<= 1)                             # only 1 (shifted) version of a node is selected
-    return besttree, bestcost
+    # ensure only 1 node selected from each Ω(i,j)
+    @assert all(map(node -> sum(node), bt) .<= 1)  
+    return bt
 end
 
 # deletes subtree due to inferior cost
 function delete_subtree!(bt::BitVector, i::Integer)
     @assert 1 <= i <= length(bt)
     bt[i] = false
-    if (i<<1) < length(bt)
-        if bt[i<<1]
-            delete_subtree!(bt, i<<1)
+    if (left(i)) < length(bt)
+        if bt[left(i)]
+            delete_subtree!(bt, left(i))
         end
-        if bt[(i<<1)+1]
-            delete_subtree!(bt, (i<<1)+1)
+        if bt[right(i)]
+            delete_subtree!(bt, right(i))
         end
     end
     return nothing
 end
 
-# TODO: ensure necessary usage of siwpd
-# TODO: remove cost from tree too! (Ask Prof. Saito if cost is of importance)
 function delete_subtree!(bt::AbstractVector{BitVector}, i::Integer, j::Integer)
     @assert 1 <= i <= length(bt)
     level = floor(Int, log2(i))
     bt[i][j] = false
-    if (i<<1) < length(bt)          # current node can contain subtrees
-        if bt[i<<1][j]              # left child of current shift
-            delete_subtree!(bt, i<<1, j)
+    if (left(i)) < length(bt)          # current node can contain subtrees
+        if bt[left(i)][j]              # left child of current shift
+            delete_subtree!(bt, left(i), j)
         end
-        if bt[i<<1+1][j]            # right child of current shift
-            delete_subtree!(bt, i<<1+1, j)
+        if bt[right(i)][j]            # right child of current shift
+            delete_subtree!(bt, right(i), j)
         end
-        if bt[i<<1][j+1<<level]     # left child of added shift
-            delete_subtree!(bt, i<<1, j+1<<level)
+        if bt[left(i)][j+1<<level]     # left child of added shift
+            delete_subtree!(bt, left(i), j+1<<level)
         end
-        if bt[i<<1+1][j+1<<level]   # right child of added shift
-            delete_subtree!(bt, i<<1+1, j+1<<level)
+        if bt[right(i)][j+1<<level]   # right child of added shift
+            delete_subtree!(bt, right(i), j+1<<level)
         end
     end
     return nothing
@@ -356,12 +367,13 @@ end
 """
     bestbasistree(X[, method])
 
-Extension to the best basis tree function from Wavelets.jl. Returns different 
-types of best basis trees based on the methods specified. Available methods are
-the joint best basis (`JBB()`), least statistically dependent basis (`LSDB()`),
-and individual regular best basis (`BB()`).
+Extension to the best basis tree function from Wavelets.jl. Given a set of 
+decomposed signals, returns different types of best basis trees based on the 
+methods specified. Available methods are the joint best basis (`JBB()`), least 
+statistically dependent basis (`LSDB()`), and individual regular best basis 
+(`BB()`).
 """
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3}, 
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                # TODO: LSDB for stationary transform
         method::LSDB) where T<:AbstractFloat
     costs = tree_costs(X, method)
     besttree = bestbasis_treeselection(costs, size(X,1))
@@ -375,7 +387,7 @@ function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},
     return besttree
 end
 
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3}, 
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                # TODO: BB for stationary transform
         method::BB) where T<:AbstractFloat
     
     n = size(X, 1)
@@ -397,19 +409,19 @@ function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,2},
     return besttree
 end
 
-# TODO: check if siwpd is needed
-# TODO: find a way to compute bestbasis_tree without input d
-function bestbasis_tree(y::AbstractArray{T,2}, d::Integer, method::SIBB) where T<:Number
+function Wavelets.Threshold.bestbasistree(y::AbstractArray{T,2}, d::Integer, 
+        method::SIBB) where T<:Number                                           # TODO: find a way to compute bestbasis_tree without input d
+        
     nn = size(y,2) 
     L = maxtransformlevels((nn+1)÷2)
     ns = size(y,1)
-    tree = siwpd_tree(ns, L, d)
+    tree = makesiwpdtree(ns, L, d)
     costs = tree_costs(y, tree, method)
-    besttree, bestcost = bestbasis_treeselection(costs, tree)
-    return besttree, bestcost
+    besttree = bestbasis_treeselection(costs, tree)
+    return besttree
 end
 
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3}, 
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3}; 
         method::BestBasisType=JBB()) where T<:AbstractFloat
     return bestbasistree(X, method)
 end

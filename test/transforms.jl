@@ -31,5 +31,23 @@ end
 end
 
 @testset "SIWPD" begin
-    
+    # siwpd 
+    x = randn(4)
+    wt = wavelet(WT.haar)
+    y = siwpd(x, wt, 2, 1)
+    y0 = y[1,4:7]
+    y1 = y[2,4:7]
+    y2 = y[3,4:7]
+    y3 = y[4,4:7]
+    @test y0 == wpt(x, wt)
+    @test !all([isdefined(y1, i) for i in 1:4])
+    @test y2 == wpt(circshift(x,2), wt)
+    @test !all([isdefined(y3, i) for i in 1:4])
+    # make tree
+    tree = [
+        trues(1), 
+        repeat([trues(2)],2)..., 
+        repeat([BitVector([1,0,1,0])],4)...
+    ]
+    @test makesiwpdtree(4, 2, 1) == tree
 end
