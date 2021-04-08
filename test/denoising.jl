@@ -18,7 +18,7 @@ end
     x = x0 + 0.5*randn(n)
     wt = wavelet(WT.haar)
     err = relativenorm(x, x0)
-    dnt = VisuShrink(HardTH(), 5)
+    dnt = VisuShrink(HardTH(), 2)
     y = denoise(x, :sig, wt, dnt=dnt)
     @test relativenorm(y, x0) <= err
     y = denoise(dwt(x, wt, 4), :dwt, wt, L=4, dnt=dnt)
