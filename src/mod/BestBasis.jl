@@ -187,7 +187,7 @@ function tree_costs(X::AbstractArray{T,3}, method::JBB) where T<:AbstractFloat
             j = floor(Integer, log2(i))
             costs[i] = coefcost(σ[:, i], method.cost) / (1<<j)
         end
-    else if method.stationary && method.autocorrelation
+    elseif method.stationary && method.autocorrelation
         costs = Vector{T}(undef, L)
         for i in eachindex(costs)
             costs[i] = coefcost(X[:, i], method.cost, nrm)
@@ -213,13 +213,13 @@ function tree_costs(X::AbstractArray{T,2}, method::BB) where T<:AbstractFloat
     L = size(X, 2)                      # count of levels if wpd, nodes if swpd
     n = size(X,1)
 
-    if method.stationary                # swpd
+    if method.stationary && !method.autocorrelation          # swpd
         costs = Vector{T}(undef, L)
         for i in eachindex(costs)
             j = floor(Integer, log2(i))
             costs[i] = coefcost(X[:, i], method.cost, nrm) / (1<<j)
         end
-    else if method.stationary && method.autocorrelation      # acwpd
+    elseif method.autocorrelation      # acwpd
         costs = Vector{T}(undef, L)
         for i in eachindex(costs)
             costs[i] = coefcost(X[:, i], method.cost, nrm)
@@ -282,6 +282,21 @@ function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer) where
         childcost = costs[left(i)] + costs[right(i)]
         if childcost < costs[i]     # child cost < parent cost
             costs[i] = childcost
+        else
+            delete_subtree!(bt, i)
+        end
+    end
+    return bt
+end
+
+# Bestbasis tree selection for autocorrelation wavelets 
+function ac_bestbasis_treeselection(costs::AbstractVector{T}, n::Integer) where T <: AbstractFloat # TODO: merge ac methods with swpd methods
+    @assert length(costs) == 2*n - 1
+    bt = trues(n-1)
+    for i in reverse(eachindex(bt))
+        avg_childcost = (costs[left(i)] + costs[right(i)])/2
+        if avg_childcost < costs[i]
+            costs[i] = avg_childcost
         else
             delete_subtree!(bt, i)
         end
@@ -417,7 +432,11 @@ function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,2},
         method::BB) where T<:AbstractFloat
 
     costs = tree_costs(X, method)
-    besttree = bestbasis_treeselection(costs, size(X,1))
+    if method.autocorrelation                                                   # acwpt method
+        besttree = ac_bestbasis_treeselection(costs, size(X,1))
+    else
+        besttree = bestbasis_treeselection(costs, size(X,1))                    # normal method
+    end
     return besttree
 end
 
