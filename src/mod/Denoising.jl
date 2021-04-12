@@ -380,7 +380,7 @@ function surethreshold(coef::AbstractArray{T}, stationary::Bool,
 end
 
 """
-    relerrorthreshold(coef, stationary[, tree, elbows=2, plotting=false])
+    relerrorthreshold(coef, stationary[, tree, elbows=2; makeplot=false])
 
 Takes in a set of expansion coefficients, 'plot' the threshold vs relative error 
 curve and select the best threshold value based on the elbow method.
@@ -411,7 +411,7 @@ noise = relerrorthreshold(y, true, tree)
 **See also:** `noisest`, `RelErrorShrink`
 """
 function relerrorthreshold(coef::AbstractArray{T}, stationary::Bool,
-        tree::Union{BitVector,Nothing}=nothing, elbows::Integer=2,
+        tree::Union{BitVector,Nothing}=nothing, elbows::Integer=2;
         makeplot::Bool=false) where T<:Number
 
     @assert elbows >= 1
@@ -447,9 +447,10 @@ function relerrorthreshold(coef::AbstractArray{T}, stationary::Bool,
     # plot relative error curve
     if makeplot
         p = relerrorplot(x*xmax, y*ymax, ix, A, v)
-        display(p)
+        return x[ix[end]]*xmax, p
+    else
+        return x[ix[end]]*xmax
     end
-    return x[ix[end]]*xmax
 end
 
 """

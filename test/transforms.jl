@@ -17,7 +17,8 @@ end
 
 @testset "SWT" begin
     x = randn(8)
-    wt = wavelet(WT.haar)
+    wt = wavelet(WT.db4)
+    g, h = WT.makeqmfpair(wt)
     tree = maketree(x, :dwt)
     ε = [true, true, false]
     @test isdwt(sdwt(x, wt, 3), wt) ≈ x
@@ -25,6 +26,8 @@ end
     @test swpt(x, wt) == swpd(x, wt)[:,8:15]
     @test swpt(x, wt, 3) == swpd(x, wt)[:,8:15]
     @test swpt(x, wt, tree) == sdwt(x, wt)
+    @test swpt(x, wt, tree) == swpt(x, h, g, tree)
+    @test iswpt(swpd(x, wt), wt) ≈ x
     @test iswpt(swpd(x, wt), wt, tree) ≈ x
     @test iswpt(swpd(x, wt), wt, ε, tree) ≈ x
     @test iswpt(swpd(x, wt), wt, ε) ≈ x

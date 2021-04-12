@@ -51,9 +51,7 @@ function getleaf(tree::BitVector)
     result = falses(2*length(tree) + 1)
     result[1] = 1
     for i in 1:length(tree)
-        if i<<1 > length(result)
-            break
-        elseif tree[i] == 0
+        if tree[i] == 0
             continue
         else
             result[i] = 0

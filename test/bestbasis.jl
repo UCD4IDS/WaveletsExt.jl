@@ -4,6 +4,7 @@ xw = cat([wpd(x[:,i], wt) for i in axes(x,2)]..., dims=3)
 xsw = cat([swpd(x[:,i], wt) for i in axes(x,2)]..., dims=3)
 
 # bb
+@test isvalidtree(x[:,1], bestbasistree(xw[:,:,1], BB()))
 @test isvalidtree(x[:,1], bestbasistree(xw, method=BB())[:,1])
 @test isvalidtree(x[:,1], 
     bestbasistree(xw, BB(LogEnergyEntropyCost(), false))[:,1])                          
