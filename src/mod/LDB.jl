@@ -249,6 +249,33 @@ end
 """
     ldb(X, y, wt[; dm=AsymmetricRelativeEntropy(), energy=TimeFrequency(),
         dp=BasisDiscriminantMeasure(), topk=size(X,1), m=size(X,1)])
+
+The Local Discriminant Basis (LDB) feature selection algorithm developed by 
+Saito and Coifman. This function takes in the input signals and their 
+respective class labels, an orthogonal wavelet filter, and returns a set of 
+expansion coefficients of reduced features and dimensions.
+
+# Arguments:
+- `X::AbstractArray{<:Number,2}`: the input set of signals. each column 
+    represents a signal.
+- `y::AbstractVector{T}`: the corresponding labels
+- `wt::DiscreteWavelet`: a discrete wavelet for transform purposes
+- `dm::DiscriminantMeasure`: the discriminant measure for the LDB algorithm. 
+    Supported measures are the `AsymmetricRelativeEntropy()`, `LpEntropy()`
+    `SymmetricRelativeEntropy()`, and `HellingerDistance()`. Default is set to 
+    be `AsymmetricRelativeEntropy()`.
+- `energy::EnergyMap`: the type of energy map used. Supported maps are 
+    `TimeFrequency()` and `ProbabilityDensity()`. Default is set to be 
+    `TimeFrequency()`.
+- `dp::DiscriminantPower()`: the measure of discriminant power among expansion
+    coefficients. Supported measures are `BasisDiscriminantMeasure()`,
+    `FishersClassSeparability()`, and `RobustFishersClassSeparability()`. 
+    Default is set to be `BasisDiscriminantMeasure()`.
+- `topk::Integer`: the top-k coefficients used in each node to determine the 
+    discriminant measure. Default is set to all coefficients.
+- `m::Integer`: the dimension of output after undergoing feature selection and
+    transformation. Default is set to all coefficients of most discriminant 
+    subtree, ie. the length of each signals.
 """
 function ldb(X::AbstractArray{S,2}, y::AbstractVector{T}, wt::DiscreteWavelet; 
     dm::DiscriminantMeasure=AsymmetricRelativeEntropy(), 
