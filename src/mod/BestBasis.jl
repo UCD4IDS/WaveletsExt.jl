@@ -136,10 +136,12 @@ struct LSDB <: BestBasisType end        # Least Statistically Dependent Basis
 @with_kw struct JBB <: BestBasisType    # Joint Best Basis
     cost::JBBCost = LoglpCost(2)
     stationary::Bool = false
+    autocorrelation::Bool = false
 end                                     
 @with_kw struct BB <: BestBasisType    # Individual Best Basis
     cost::BBCost = ShannonEntropyCost()
     stationary::Bool = false
+    autocorrelation::Bool = false
 end                                     
 @with_kw struct SIBB <: BestBasisType   # Shift invariant best basis
     cost::BBCost = ShannonEntropyCost()
@@ -185,6 +187,11 @@ function tree_costs(X::AbstractArray{T,3}, method::JBB) where T<:AbstractFloat
             j = floor(Integer, log2(i))
             costs[i] = coefcost(σ[:, i], method.cost) / (1<<j)
         end
+    else if method.stationary && method.autocorrelation
+        costs = Vector{T}(undef, L)
+        for i in eachindex(costs)
+            costs[i] = coefcost(X[:, i], method.cost, nrm)
+        end
     else
         costs = Vector{T}(undef, 2^L - 1)
         i = 1   # iterates over the nodes for the costs variable
@@ -212,6 +219,11 @@ function tree_costs(X::AbstractArray{T,2}, method::BB) where T<:AbstractFloat
             j = floor(Integer, log2(i))
             costs[i] = coefcost(X[:, i], method.cost, nrm) / (1<<j)
         end
+    else if method.stationary && method.autocorrelation      # acwpd
+        costs = Vector{T}(undef, L)
+        for i in eachindex(costs)
+            costs[i] = coefcost(X[:, i], method.cost, nrm)
+        end  
     else
         costs = Vector{T}(undef, 2^L - 1)
         i = 1
