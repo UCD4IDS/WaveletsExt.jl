@@ -9,6 +9,7 @@ export
     relerrorplot
     
 using 
+    AutocorrelationShell,
     Wavelets, 
     LinearAlgebra, 
     Statistics, 
@@ -81,14 +82,20 @@ input type `inputtype`.
 - `inputtype::Symbol`: input type of `x`. Current accepted types of inputs are
     - `:sig`: original signals; `x` should be a 2-D array with each column 
         representing a signal.
-    - `:dwt`: `dwt`-transformed signal coefficients; `x` should be a 2-D array 
+    - `:dwt`: `dwt`-transformed signal coefficients; `x` should be a 1-D array 
         with each column representing the coefficients of a signal.
-    - `:wpt`: `wpt`-transformed signal coefficients; `x` should be a 2-D array 
+    - `:wpt`: `wpt`-transformed signal coefficients; `x` should be a 1-D array 
         with each column representing the coefficients of a signal.
-    - `:sdwt`: `sdwt`-transformed signal coefficients; `x` should be a 3-D array
-        with each 2-D slice representing the coefficients of a signal.
-    - `:swpd`: `swpd`-transformed signal coefficients; `x` should be a 3-D array
-        with each 2-D slice representing the coefficients of a signal.
+    - `:sdwt`: `sdwt`-transformed signal coefficients; `x` should be a 2-D array
+        with each column representing the coefficients of a node.
+    - `:swpd`: `swpd`-transformed signal coefficients; `x` should be a 2-D array
+        with each column representing the coefficients of a node.
+    - `:acwt`: `acwt`-transformed signal coefficients from 
+        AutocorrelationShell.jl; `x` should be a 2-D array with each column 
+        representing the coefficients of a node.
+    - `:acwpt`: `acwpt`-transformed signal coefficients from
+        AutocorrelationShell.jl; `x` should be a 2-D array with each column 
+        representing the coefficients of a node.
 - `wt::Union{DiscreteWavelet, Nothing}`: the discrete wavelet to be used for
     decomposition (for input type `:sig`) and reconstruction. `nothing` can 
     be supplied if no reconstruction is necessary.
@@ -119,7 +126,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         smooth::Symbol=:regular) where {T<:Number, S<:DNFT}
 
     @assert smooth ∈ [:undersmooth, :regular]
-    @assert inputtype ∈ [:sig, :dwt, :wpt, :sdwt, :swpd]
+    @assert inputtype ∈ [:sig, :dwt, :wpt, :sdwt, :swpd, :acwt, :acwpt]
 
     # wavelet transform if inputtype == :sig
     if inputtype == :sig
@@ -170,7 +177,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         # reconstruction
         y = wt === nothing ? x̃ : isdwt(x̃, wt)
 
-    else                                    # stationary wpd
+    elseif inputtype == :swpd               # stationary wpd
         @assert ndims(x) > 1
         # noise estimation
         σ = isa(estnoise, Function) ? estnoise(x, true, tree) : estnoise
@@ -188,6 +195,39 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         end
         # reconstruction
         y = wt === nothing ? x̃ : iswpt(x̃, wt, tree)
+    elseif inputtype == :acwt               # autocorrelation dwt
+        @assert ndims(x) > 1
+        # noise estimation
+        σ = isa(estnoise, Function) ? estnoise(x, true, nothing) : estnoise
+        # thresholding
+        if smooth == :regular
+            x̃ = copy(x)
+            threshold!(x̃, dnt.th, σ*dnt.t)
+        else    # :undersmooth
+            temp = x[:,2:end]
+            x̃ = [x[:,1] threshold!(temp, dnt.th, σ*dnt.t)]
+        end
+        # reconstruction
+        y = iacwt(x̃)
+
+    else                                    # autocorrelation wpt
+        @assert ndims(x) > 1
+        # noise estimation
+        σ = isa(estnoise, Function) ? estnoise(x, true, tree) : estnoise
+        # thresholding
+        if smooth == :regular
+            leaves = findall(getleaf(tree))
+            x̃ = copy(x)
+            x̃[:, leaves] = threshold!(x[:,leaves], dnt.th, σ*dnt.t)             
+        else    # :undersmooth
+            x̃ = copy(x)
+            leaves = findall(getleaf(tree))
+            _, coarsestnode = coarsestscalingrange(x, tree, true)
+            rng = setdiff(leaves, coarsestnode)
+            x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
+        end
+        # reconstruction
+        y = iacwpt(x̃, tree)
     end
     return y
 end
@@ -212,6 +252,12 @@ Denoise multiple signals of input type `inputtype`.
         with each 2-D slice representing the coefficients of a signal.
     - `:swpd`: `swpd`-transformed signal coefficients; `x` should be a 3-D array
         with each 2-D slice representing the coefficients of a signal.
+    - `:acwt`: `acwt`-transformed signal coefficients from
+        AutocorrelationShell.jl; `x` should be a 3-D array with each 2-D slice 
+        representing the coefficients of a signal.
+    - `:acwpt`: `acwpt`-transformed signal coefficients from
+        AutocorrelationShell.jl; `x` should be a 3-D array with each 2-D slice 
+        representing the coefficients of a signal.
 - `wt::Union{DiscreteWavelet, Nothing}`: the discrete wavelet to be used for
     decomposition (for input type `:sig`) and reconstruction. `nothing` can 
     be supplied if no reconstruction is necessary.
@@ -248,7 +294,7 @@ function denoiseall(x::AbstractArray{T1},
         bestTH::Union{Function,Nothing}=nothing,
         smooth::Symbol=:regular) where {T1<:Number, T2<:Number, S<:DNFT}
 
-    @assert inputtype ∈ [:sig, :dwt, :wpt, :sdwt, :swpd]
+    @assert inputtype ∈ [:sig, :dwt, :wpt, :sdwt, :swpd, :acwt, :acwpt]
     @assert smooth ∈ [:regular, :undersmooth]
     @assert ndims(x) > 1
     n = size(x, 1)              # signal length

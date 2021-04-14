@@ -137,7 +137,7 @@ struct LSDB <: BestBasisType end        # Least Statistically Dependent Basis
     cost::JBBCost = LoglpCost(2)
     stationary::Bool = false
 end                                     
-@with_kw struct BB <: BestBasisType    # Individual Best Basis
+@with_kw struct BB <: BestBasisType     # Individual Best Basis
     cost::BBCost = ShannonEntropyCost()
     stationary::Bool = false
 end                                     
