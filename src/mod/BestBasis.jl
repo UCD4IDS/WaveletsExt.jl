@@ -130,7 +130,7 @@ function coefcost(x::AbstractArray{T,2}, et::DifferentialEntropyCost) where
 end
 
 
-## BEST BASIS TYPES
+## BEST BASIS TYPES                                                             # TODO: change all stationary parameters to downsampled
 abstract type BestBasisType end
 struct LSDB <: BestBasisType end        # Least Statistically Dependent Basis
 @with_kw struct JBB <: BestBasisType    # Joint Best Basis
@@ -387,7 +387,7 @@ function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},
     return besttree
 end
 
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                # TODO: BB for stationary transform
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                
         method::BB) where T<:AbstractFloat
     
     n = size(X, 1)
