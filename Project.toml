@@ -1,10 +1,9 @@
 name = "WaveletsExt"
 uuid = "8f464e1e-25db-479f-b0a5-b7680379e03f"
-authors = ["Zeng Fung Liew <lzfliew@ucdavis.edu>"]
+authors = ["Zeng Fung Liew <lzfliew@ucdavis.edu>", "Shozen Dan <shodan@ucdavis.edu>"]
 version = "0.1.0"
 
 [deps]
-AutocorrelationShell = "69d4c476-349e-11e9-22d5-d17d72ccee3f"
 AverageShiftedHistograms = "77b51b56-6f8f-5c3a-9cb4-d71f9594ea6e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
