@@ -228,7 +228,7 @@ function acwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter,
     return W4d
 end
 
-## Packet Transform ##
+## ACW Packet Transform ##
 function acwpt_step(W::AbstractArray{T,2}, i::Integer, d::Integer, Qmf::Vector{T}, Pmf::Vector{T}) where T <: Number
   n,m = size(W)
   if i<<1+1 <= m
@@ -282,12 +282,10 @@ function iacwpt(xw::AbstractArray{<:Number,2}, tree::BitVector, i::Integer=1)
 
   @assert i <= size(xw, 2)
   n₀ = length(tree)
-  if i > n₀
-    return xw[:,i]               # bottom level leaf node
-  elseif tree[i] == false
-    return xw[:,i]               # leaf node
+  if i > n₀ | tree[i] == false      # leaf node 
+    return xw[:,i]
   end
-  
+
   v₀ = iacwpt(xw,tree,left(i))
   v₁ = iacwpt(xw,tree,right(i))
 
