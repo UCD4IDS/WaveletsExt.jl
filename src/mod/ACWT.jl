@@ -282,7 +282,7 @@ function iacwpt(xw::AbstractArray{<:Number,2}, tree::BitVector, i::Integer=1)
 
   @assert i <= size(xw, 2)
   n₀ = length(tree)
-  if i > n₀ | tree[i] == false      # leaf node 
+  if i > n₀ || tree[i] == false      # leaf node 
     return xw[:,i]
   end
 
