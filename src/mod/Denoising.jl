@@ -9,7 +9,6 @@ export
     relerrorplot
     
 using 
-    AutocorrelationShell,
     Wavelets, 
     LinearAlgebra, 
     Statistics, 
@@ -18,6 +17,7 @@ using
 using 
     ..WPD,
     ..SWT,
+    ..ACWT,
     ..Utils
 
 # DENOISING
