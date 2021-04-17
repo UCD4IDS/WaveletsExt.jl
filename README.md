@@ -59,7 +59,7 @@ coef = bestbasiscoef(y, bbt)
 ```
 
 ## Local Discriminant Basis
-Local Discriminant Basis (LDB) is a feature extraction method developed by Naoki Saito
+Local Discriminant Basis (LDB) is a feature extraction method developed by Naoki Saito.
 ```{julia}
 coef, y, ldb_tree, power, order = ldb(X, y, wavelet(WT.coif3))
 ```
