@@ -9,7 +9,6 @@ export
     relerrorplot
     
 using 
-    AutocorrelationShell,
     Wavelets, 
     LinearAlgebra, 
     Statistics, 
