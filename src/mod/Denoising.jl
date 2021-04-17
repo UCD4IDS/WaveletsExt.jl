@@ -17,6 +17,7 @@ using
 using 
     ..WPD,
     ..SWT,
+    ..ACWT,
     ..Utils
 
 # DENOISING
