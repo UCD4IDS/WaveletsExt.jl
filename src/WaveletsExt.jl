@@ -9,6 +9,7 @@ include("mod/BestBasis.jl")
 include("mod/SWT.jl")
 include("mod/Denoising.jl")
 include("mod/LDB.jl")
+include("mod/ACWT.jl")
 include("mod/Visualizations.jl")
 
 using Reexport
@@ -19,6 +20,7 @@ using Reexport
                 .LDB,
                 .SWT,
                 .SIWPD,
+                .ACWT,
                 .Visualizations
 
 end
