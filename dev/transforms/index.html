@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Wavelet Transforms · WaveletsExt.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">WaveletsExt.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">WaveletsExt.jl</a></li><li class="is-active"><a class="tocitem" href>Wavelet Transforms</a><ul class="internal"><li><a class="tocitem" href="#Wavelet-Packet-Decomposition"><span>Wavelet Packet Decomposition</span></a></li><li><a class="tocitem" href="#Stationary-Discrete-Wavelet-Transform"><span>Stationary Discrete Wavelet Transform</span></a></li><li><a class="tocitem" href="#Stationary-Wavelet-Packet-Decomposition"><span>Stationary Wavelet Packet Decomposition</span></a></li><li><a class="tocitem" href="#Shift-Invariant-Wavelet-Packet-Decomposition"><span>Shift-Invariant Wavelet Packet Decomposition</span></a></li></ul></li><li><a class="tocitem" href="../bestbasis/">Best Basis Examples</a></li><li><a class="tocitem" href="../denoising/">Denoising Examples</a></li><li><a class="tocitem" href="../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Wavelet Transforms</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Wavelet Transforms</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/zengfung/WaveletsExt.jl/blob/master/docs/src/transforms.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Wavelet-Transforms"><a class="docs-heading-anchor" href="#Wavelet-Transforms">Wavelet Transforms</a><a id="Wavelet-Transforms-1"></a><a class="docs-heading-anchor-permalink" href="#Wavelet-Transforms" title="Permalink"></a></h1><h2 id="Wavelet-Packet-Decomposition"><a class="docs-heading-anchor" href="#Wavelet-Packet-Decomposition">Wavelet Packet Decomposition</a><a id="Wavelet-Packet-Decomposition-1"></a><a class="docs-heading-anchor-permalink" href="#Wavelet-Packet-Decomposition" title="Permalink"></a></h2><h3 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h3><pre><code class="language-julia">using Wavelets, WaveletsExt
+
+# define function and wavelet
+x = testfunction(256, &quot;HeaviSine&quot;)
+wt = wavelet(WT.db4)
+
+# decomposition
+y = wpd(x, wt)</code></pre><pre class="documenter-example-output">256×9 Matrix{Float64}:
+  0.0        0.279149     1.1812       …  -17.1538     -13.5
+  0.196271   0.831598     2.70212          -1.93811     10.7591
+  0.392069   1.37604      4.1192           25.0478      26.4257
+  0.586922   1.90723      5.37798          12.3239      -8.99716
+  0.780361   2.42005      6.43009           3.90855      2.74448
+  0.971921   2.90956      7.23509      …   -0.027268    -2.78304
+  1.16114    3.37106      7.76205          24.9929      35.7429
+  1.34756    3.80008      7.99073          25.5551       0.397523
+  1.53073    4.19252      7.91232           1.06019      1.63765
+  1.71022    4.54457      7.52984           1.2558       0.138315
+  ⋮                                    ⋱               
+ -1.71022   -1.00006e-5  -5.27424e-10       0.0687552    0.0188928
+ -1.53073   -9.27951e-6  -5.67389e-10      -0.0569394   -0.0612432
+ -1.34756   -8.46903e-6  -5.85548e-10      -0.0296716    0.0192812
+ -1.16114   -7.57699e-6  -5.81206e-10  …    0.0118058   -0.0474892
+ -0.971921  -6.61198e-6  -5.54527e-10      -0.0789656   -0.0641851
+ -0.780361  -5.5833e-6   -5.06539e-10      -0.0584258   -0.061477
+ -0.586922  -4.50084e-6  -4.39084e-10      -0.0285158    0.0211496
+ -0.392069  -3.37504e-6  -3.54756e-10       0.038191     0.0891858
+ -0.196271  -2.21673e-6  -2.56795e-10  …    0.0879367    0.0351755</pre><h2 id="Stationary-Discrete-Wavelet-Transform"><a class="docs-heading-anchor" href="#Stationary-Discrete-Wavelet-Transform">Stationary Discrete Wavelet Transform</a><a id="Stationary-Discrete-Wavelet-Transform-1"></a><a class="docs-heading-anchor-permalink" href="#Stationary-Discrete-Wavelet-Transform" title="Permalink"></a></h2><h3 id="Example-2"><a class="docs-heading-anchor" href="#Example-2">Example</a><a class="docs-heading-anchor-permalink" href="#Example-2" title="Permalink"></a></h3><pre><code class="language-julia">using Wavelets, WaveletsExt
+
+# define function and wavelet
+x = testfunction(256, &quot;HeaviSine&quot;)
+wt = wavelet(WT.db4)
+
+# transform
+y = sdwt(x, wt)</code></pre><pre class="documenter-example-output">256×9 Matrix{Float64}:
+ -13.5  10.7591   12.3239   17.5259  -3.49744  …  0.000123222   2.516e-6
+ -13.5  10.5653   13.3731   16.9279  -3.53221     0.000135058   3.09524e-6
+ -13.5  10.365    14.3811   16.2803  -3.55144     0.000146568   3.66703e-6
+ -13.5  10.1579   15.345    15.5854  -3.55753     0.000157725   4.22998e-6
+ -13.5   9.94435  16.2616   14.846   -3.55031     0.000168503   4.78274e-6
+ -13.5   9.72463  17.128    14.0648  -3.53033  …  0.000178874   5.32398e-6
+ -13.5   9.49908  17.9417   13.2445  -3.49674     0.000188814   5.8524e-6
+ -13.5   9.26802  18.7009   12.3878  -3.44863     0.000198299   6.36671e-6
+ -13.5   9.03149  19.4022   11.4978  -3.38822     0.000207307   6.86569e-6
+ -13.5   8.78938  20.0429   10.5778  -3.31798     0.000215815   7.34813e-6
+   ⋮                                           ⋱               
+ -13.5  12.2058    1.58219  20.3903  -2.32786     6.96817e-6   -2.79925e-6
+ -13.5  12.0731    2.85222  20.3013  -2.53357     2.03783e-5   -2.21673e-6
+ -13.5  11.9338    4.10932  20.1572  -2.72012     3.37393e-5   -1.62886e-6
+ -13.5  11.7873    5.35158  19.9556  -2.88791  …  4.70191e-5   -1.03708e-6
+ -13.5  11.6331    6.57695  19.6948  -3.03723     6.01856e-5   -4.42788e-7
+ -13.5  11.4717    7.78175  19.3753  -3.16779     7.3207e-5     1.52566e-7
+ -13.5  11.3032    8.96239  18.9979  -3.27996     8.60522e-5    7.47553e-7
+ -13.5  11.128    10.1153   18.5632  -3.37248     9.869e-5      1.34074e-6
+ -13.5  10.9467   11.2369   18.0718  -3.44448  …  0.00011109    1.93069e-6</pre><h2 id="Stationary-Wavelet-Packet-Decomposition"><a class="docs-heading-anchor" href="#Stationary-Wavelet-Packet-Decomposition">Stationary Wavelet Packet Decomposition</a><a id="Stationary-Wavelet-Packet-Decomposition-1"></a><a class="docs-heading-anchor-permalink" href="#Stationary-Wavelet-Packet-Decomposition" title="Permalink"></a></h2><h3 id="Example-3"><a class="docs-heading-anchor" href="#Example-3">Example</a><a class="docs-heading-anchor-permalink" href="#Example-3" title="Permalink"></a></h3><pre><code class="language-julia">using Wavelets, WaveletsExt
+
+# define function and wavelet
+x = testfunction(256, &quot;HeaviSine&quot;)
+wt = wavelet(WT.db4)
+
+# decomposition
+y = swpd(x, wt)</code></pre><pre class="documenter-example-output">256×511 Matrix{Float64}:
+  0.0        0.279149     2.516e-6    …   0.0337899   -0.00576979
+  0.196271   0.556044     3.09524e-6     -0.0840498    0.106657
+  0.392069   0.831598     3.66703e-6     -0.0104833   -0.0776025
+  0.586922   1.10515      4.22998e-6      0.120531     0.0720635
+  0.780361   1.37604      4.78274e-6     -0.0193655    0.0271062
+  0.971921   1.64361      5.32398e-6  …  -0.0565757   -0.158009
+  1.16114    1.90723      5.8524e-6       0.0891858    0.0351755
+  1.34756    2.16625      6.36671e-6     -0.161531     0.0704729
+  1.53073    2.42005      6.86569e-6     -0.02566     -0.0348609
+  1.71022    2.66802      7.34813e-6      0.230228     0.0446806
+  ⋮                                   ⋱                ⋮
+ -1.71022   -2.16332     -2.79925e-6      0.214045    -0.0197544
+ -1.53073   -1.90425     -2.21673e-6     -0.00130599   0.0277436
+ -1.34756   -1.64058     -1.62886e-6     -0.185195    -0.0678879
+ -1.16114   -1.37297     -1.03708e-6  …   0.0995338   -0.0190483
+ -0.971921  -1.10205     -4.42788e-7     -0.0769515    0.11415
+ -0.780361  -0.828467     1.52566e-7     -0.0331818   -0.00808744
+ -0.586922  -0.552894     7.47553e-7      0.193963    -0.0798273
+ -0.392069  -0.275988     1.34074e-6     -0.0672075    0.0595933
+ -0.196271   0.00158266   1.93069e-6  …  -0.0385817   -0.0739754</pre><h2 id="Shift-Invariant-Wavelet-Packet-Decomposition"><a class="docs-heading-anchor" href="#Shift-Invariant-Wavelet-Packet-Decomposition">Shift-Invariant Wavelet Packet Decomposition</a><a id="Shift-Invariant-Wavelet-Packet-Decomposition-1"></a><a class="docs-heading-anchor-permalink" href="#Shift-Invariant-Wavelet-Packet-Decomposition" title="Permalink"></a></h2><h3 id="Example-4"><a class="docs-heading-anchor" href="#Example-4">Example</a><a class="docs-heading-anchor-permalink" href="#Example-4" title="Permalink"></a></h3><pre><code class="language-julia">using Wavelets, WaveletsExt
+
+# define function and wavelet
+x = testfunction(256, &quot;HeaviSine&quot;)
+wt = wavelet(WT.db4)
+
+# decomposition
+y = siwpd(x, wt, maxtransformlevels(x),)</code></pre><pre class="documenter-example-output">256×511 Matrix{Float64}:
+  0.0        0.279149  -1.03708e-6   1.1812   …   0.0891858    0.0351755
+  0.196271   0.831598   1.52566e-7   2.70212     -0.0565757   -0.158009
+  0.392069   1.37604    1.34074e-6   4.1192      -0.0193655    0.0271062
+  0.586922   1.90723    2.516e-6     5.37798      0.120531     0.0720635
+  0.780361   2.42005    3.66703e-6   6.43009     -0.0104833   -0.0776025
+  0.971921   2.90956    4.78274e-6   7.23509  …  -0.0840498    0.106657
+  1.16114    3.37106    5.8524e-6    7.76205      0.0337899   -0.00576979
+  1.34756    3.80008    6.86569e-6   7.99073     -0.0385817   -0.0739754
+  1.53073    4.19252    7.81286e-6   7.91232     -0.0672075    0.0595933
+  1.71022    4.54457    8.68479e-6   7.52984      0.193963    -0.0798273
+  ⋮                                           ⋱                ⋮
+ -1.71022   -4.3718    -1.03255e-5  -7.84773      0.143853     0.0720697
+ -1.53073   -3.99888   -9.65169e-6  -8.0         -0.00899092  -0.0950511
+ -1.34756   -3.58745   -8.88497e-6  -7.84483     -0.111289     0.170931
+ -1.16114   -3.14146   -8.03269e-6  -7.38819  …   0.0414924   -0.00137438
+ -0.971921  -2.66523   -7.10304e-6  -6.64762     -0.0359333   -0.179913
+ -0.780361  -2.16332   -6.10499e-6  -5.65159     -0.0751831    0.0547268
+ -0.586922  -1.64058   -5.04815e-6  -4.43838      0.230228     0.0446806
+ -0.392069  -1.10205   -3.94269e-6  -3.05459     -0.02566     -0.0348609
+ -0.196271  -0.552894  -2.79925e-6  -1.55343  …  -0.161531     0.0704729</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« WaveletsExt.jl</a><a class="docs-footer-nextpage" href="../bestbasis/">Best Basis Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 17 April 2021 22:19">Saturday 17 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
