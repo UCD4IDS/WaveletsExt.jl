@@ -42,7 +42,7 @@ z = iswpt(y, wavelet(WT.db4))
 ```
 
 ## Autocorrelation Wavelet Transform
-The [autocorrelation wavelet transform (ACWT)](https://ieeexplore.ieee.org/document/226356) is a special case of the stationary wavelet transform. Some desirable properties of ACWT are symmetry without losing vanishing moments, edge detection/characterization capabilities, and shift invariance. To transform a signal using AC wavelets, use `acwt` (discreate AC wavelet transform) or `acwpt` (a.c. packet transform). The reconstruction of signals can be performed using `iacwt` and `iacwpt`.
+The [autocorrelation wavelet transform (ACWT)](https://www.math.ucdavis.edu/~saito/publications/saito_minframe.pdf) is a special case of the stationary wavelet transform. Some desirable properties of ACWT are symmetry without losing vanishing moments, edge detection/characterization capabilities, and shift invariance. To transform a signal using AC wavelets, use `acwt` (discreate AC wavelet transform) or `acwpt` (a.c. packet transform). The reconstruction of signals can be performed using `iacwt` and `iacwpt`.
 ```
 # autocorrelation discrete wavelet transform
 y = acwt(x, wavelet(WT.db4))
