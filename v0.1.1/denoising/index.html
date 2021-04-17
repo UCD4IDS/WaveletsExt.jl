@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Denoising Examples · WaveletsExt.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">WaveletsExt.jl</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">WaveletsExt.jl</a></li><li><a class="tocitem" href="../transforms/">Wavelet Transforms</a></li><li><a class="tocitem" href="../bestbasis/">Best Basis Examples</a></li><li class="is-active"><a class="tocitem" href>Denoising Examples</a><ul class="internal"><li><a class="tocitem" href="#Denoising-a-single-signal"><span>Denoising a single signal</span></a></li><li><a class="tocitem" href="#Denoising-a-group-of-signals"><span>Denoising a group of signals</span></a></li></ul></li><li><a class="tocitem" href="../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Denoising Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Denoising Examples</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/zengfung/WaveletsExt.jl/blob/master/docs/src/denoising.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Denoising-Examples"><a class="docs-heading-anchor" href="#Denoising-Examples">Denoising Examples</a><a id="Denoising-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-Examples" title="Permalink"></a></h1><h2 id="Denoising-a-single-signal"><a class="docs-heading-anchor" href="#Denoising-a-single-signal">Denoising a single signal</a><a id="Denoising-a-single-signal-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-single-signal" title="Permalink"></a></h2><pre><code class="language-">using Wavelets, WaveletsExt, Random
+
+# define function and wavelet
+x = testfunction(256, &quot;HeaviSine&quot;) + randn(256, 0.5)
+wt = wavelet(WT.db4)
+
+# best basis tree
+bt = bestbasistree(wpd(x, wt), BB())
+y = bestbasiscoef(x, wt, bt)
+
+# denoise
+x̂ = denoise(y, :wpt, wt, tree=bt)</code></pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
+
+# define function and wavelet
+x = testfunction(256, &quot;HeaviSine&quot;)
+X = generatesignals(x, 10, 2, true, 0.5)
+wt = wavelet(WT.db4)
+
+# decomposition
+coef = cat([wpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
+
+# best basis tree
+bt = bestbasistree(coef, JBB())
+Y = bestbasiscoef(coef, bt)
+
+# denoise
+X̂ = denoiseall(Y, :wpt, wt, tree=bt)</code></pre><pre class="documenter-example-output">256×10 Matrix{Float64}:
+  0.065927  -0.433135   -0.75784    …  -2.36412  -2.32036  -2.10277
+  0.274606  -0.248877   -0.564487      -2.22637  -2.19218  -3.11912
+  0.805997  -0.0622688  -0.381474      -2.08741  -2.0707   -2.66383
+  0.432588   0.127664   -0.218868      -1.95419  -1.96377  -2.21095
+  0.892021   0.323259   -0.0329736     -1.81748  -1.85154  -1.78724
+  1.34158    0.524063    0.179023   …  -1.6767   -1.73335  -2.17442
+  1.38564    0.729769    0.387008      -1.54242  -1.62615  -2.30668
+  1.02676    0.940789    0.601291      -1.41314  -1.52609  -1.38263
+  1.52683    1.14968     0.807158      -1.24456  -1.41707  -1.86287
+  1.90791    1.35581     1.00065       -1.03421  -1.29997  -1.28656
+  ⋮                                 ⋱                      
+ -1.52082   -1.90279    -2.56907       -3.40386  -3.44715  -3.72969
+ -1.39341   -1.76948    -2.43241       -3.34344  -3.37649  -4.64979
+ -1.3345    -1.61747    -2.25473       -3.26219  -3.28195  -3.82338
+ -1.32042   -1.45684    -2.06966    …  -3.17002  -3.17364  -3.60355
+ -0.953544  -1.28114    -1.86512       -3.06047  -3.04554  -3.41445
+ -0.420143  -1.11208    -1.656         -2.94296  -2.91373  -3.60766
+ -0.653218  -0.951086   -1.4461        -2.81757  -2.77924  -3.61754
+ -0.261315  -0.782168   -1.21817       -2.674    -2.62896  -3.10461
+  0.116534  -0.610289   -0.976231   …  -2.51358  -2.46639  -3.09512</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bestbasis/">« Best Basis Examples</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Saturday 17 April 2021 22:33">Saturday 17 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
