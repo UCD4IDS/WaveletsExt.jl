@@ -9,7 +9,6 @@ export
     relerrorplot
     
 using 
-    AutocorrelationShell,
     Wavelets, 
     LinearAlgebra, 
     Statistics, 
@@ -18,6 +17,7 @@ using
 using 
     ..WPD,
     ..SWT,
+    ..ACWT,
     ..Utils
 
 # DENOISING
@@ -36,13 +36,13 @@ struct SureShrink <: DNFT
 end
 
 """
-    VisuShrink(th, n)
+    VisuShrink(n, th)
 
 Extension to the `VisuShrink` struct constructor from `Wavelets.jl`.
 """
-function Wavelets.Threshold.VisuShrink(th::Wavelets.Threshold.THType, 
-    n::Integer)
-return VisuShrink(th, sqrt(2*log(n)))
+function Wavelets.Threshold.VisuShrink(n::Integer, 
+        th::Wavelets.Threshold.THType)
+    return VisuShrink(th, sqrt(2*log(n)))
 end
 
 """
@@ -349,7 +349,7 @@ end
 
 # BEST THRESHOLD VALUES
 """
-    noisest(x, stationary[, tree=nothing])
+    noisest(x, redundant[, tree=nothing])
 
 Extension to the `noisest` function from `Wavelets.jl`. Estimates the noise of
 a signal from its coefficients.
@@ -379,39 +379,39 @@ noise = noisest(y, true, tree)
 
 **See also:** `relerrorthreshold`
 """
-function Wavelets.Threshold.noisest(x::AbstractArray{T}, stationary::Bool,
+function Wavelets.Threshold.noisest(x::AbstractArray{T}, redundant::Bool,
         tree::Union{BitVector,Nothing}=nothing) where T<:Number
 
     @assert isdyadic(size(x,1))
-    if !stationary && isa(tree, Nothing)        # regular dwt
+    if !redundant && isa(tree, Nothing)        # regular dwt
         n₀ = size(x,1) ÷ 2
         dr = x[(n₀+1):end]
-    elseif !stationary && isa(tree, BitVector)  # regular wpt
+    elseif !redundant && isa(tree, BitVector)  # regular wpt
         dr = x[finestdetailrange(x, tree)]
-    elseif stationary && isa(tree, Nothing)     # stationary dwt
+    elseif redundant && isa(tree, Nothing)     # redundant dwt
         dr = x[:,end]
-    else                                        # stationary wpd
+    else                                       # redundant wpd
         dr = x[finestdetailrange(x, tree, true)...]
     end
     return Wavelets.Threshold.mad!(dr)/0.6745
 end
 
 """
-    surethreshold(coef, stationary[, tree=nothing])
+    surethreshold(coef, redundant[, tree=nothing])
 
 Determination of the `t` value used for `SureShrink`.
 
 **See also:** `SureShrink`
 """
-function surethreshold(coef::AbstractArray{T}, stationary::Bool,
+function surethreshold(coef::AbstractArray{T}, redundant::Bool,
         tree::Union{BitVector,Nothing}=nothing) where T<:Number
 
     # extract necessary coefficients
-    if !stationary                              # dwt or wpt
+    if !redundant                              # dwt or wpt
         y = coef
-    elseif stationary && isa(tree, Nothing)     # sdwt
+    elseif redundant && isa(tree, Nothing)     # sdwt
         y = reshape(coef, :)
-    else                                        # swpd
+    else                                       # swpd
         leaves = getleaf(tree)
         y = reshape(coef[:, leaves], :)
     end
@@ -426,7 +426,7 @@ function surethreshold(coef::AbstractArray{T}, stationary::Bool,
 end
 
 """
-    relerrorthreshold(coef, stationary[, tree, elbows=2; makeplot=false])
+    relerrorthreshold(coef, redundant[, tree, elbows=2; makeplot=false])
 
 Takes in a set of expansion coefficients, 'plot' the threshold vs relative error 
 curve and select the best threshold value based on the elbow method.
@@ -456,17 +456,17 @@ noise = relerrorthreshold(y, true, tree)
 
 **See also:** `noisest`, `RelErrorShrink`
 """
-function relerrorthreshold(coef::AbstractArray{T}, stationary::Bool,
+function relerrorthreshold(coef::AbstractArray{T}, redundant::Bool,
         tree::Union{BitVector,Nothing}=nothing, elbows::Integer=2;
         makeplot::Bool=false) where T<:Number
 
     @assert elbows >= 1
     # extract necessary coefficients
-    if !stationary                              # dwt or wpt
+    if !redundant                              # dwt or wpt
         c = coef
-    elseif stationary && isa(tree, Nothing)     # sdwt
+    elseif redundant && isa(tree, Nothing)     # sdwt
         c = reshape(coef, :)
-    else                                        # swpd
+    else                                       # swpd
         leaves = getleaf(tree)
         c = reshape(coef[:, leaves], :)
     end

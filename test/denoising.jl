@@ -12,13 +12,15 @@
 end
 
 @testset "Denoise" begin
-    # single denoising
+    # Single denoising
     n = 2^8
     x0 = testfunction(n, "HeaviSine")
     x = x0 + 0.5*randn(n)
     wt = wavelet(WT.haar)
     err = relativenorm(x, x0)
-    dnt = VisuShrink(HardTH(), 2)
+    dnt = VisuShrink(2, HardTH())
+
+    ## Non-redundant Wavelet Transforms
     y = denoise(x, :sig, wt, dnt=dnt)
     @test relativenorm(y, x0) <= err
     y = denoise(dwt(x, wt, 4), :dwt, wt, L=4, dnt=dnt, smooth=:undersmooth)
@@ -30,16 +32,26 @@ end
         smooth=:undersmooth
     )
     @test relativenorm(y, x0) <= 2*err
+
+    ## Stationary Wavelet Transforms
     y = denoise(sdwt(x, wt), :sdwt, wt, dnt=dnt, smooth=:undersmooth)
     @test relativenorm(y, x0) <= 2*err
     y = denoise(swpd(x, wt), :swpd, wt, smooth=:undersmooth)
     @test relativenorm(y, x0) <= 2*err
+
+    ## Autocorrelation wavelet transforms
+    y = denoise(acwt(x, wt), :acwt, wt, dnt=dnt, smooth=:undersmooth)
+    @test relativenorm(y, x0) <= 2*err
+    y = denoise(acwpt(x, wt), :acwpt, wt, smooth=:undersmooth)
+    @test relativenorm(y, x0) <= 2*err
     
-    # group denoising
+    # Group denoising
     x0 = generatesignals(testfunction(n, "HeaviSine"), 5, 2)
     x = generatesignals(testfunction(n, "HeaviSine"), 5, 2, true, 0.5)
     max_err = maximum([relativenorm(x[:,i],x0[:,i]) for i in 1:5])
-    dnt = VisuShrink(HardTH(), 5)
+    dnt = VisuShrink(2, HardTH())
+
+    ## Non-redundant Transforms
     y = denoiseall(x, :sig, wt, dnt=dnt, bestTH=mean)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
     y = denoiseall(hcat([dwt(x[:,i], wt) for i in 1:5]...), :dwt, wt, dnt=dnt)
@@ -48,10 +60,29 @@ end
     y = denoiseall(hcat([wpt(x[:,i], wt) for i in 1:5]...), :wpt, wt,
         tree=maketree(n, 8, :full), dnt=dnt, estnoise=relerrorthreshold)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
+    y = denoiseall(hcat([wpt(x[:,i], wt) for i in 1:5]...), :wpt, wt,
+        tree=maketree(n, 8, :full), dnt=dnt, estnoise=relerrorthreshold, 
+        bestTH=mean)
+    @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
+
+    ## Stationary Wavelet Transforms
+    y = denoiseall(cat([sdwt(x[:,i], wt) for i in 1:5]..., dims=3), :sdwt, wt)
+    @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
     y = denoiseall(cat([sdwt(x[:,i], wt) for i in 1:5]..., dims=3), :sdwt, wt,
-        dnt=dnt, estnoise=relerrorthreshold)
+        dnt=dnt, estnoise=relerrorthreshold, bestTH=mean)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
     y = denoiseall(cat([swpd(x[:,i], wt) for i in 1:5]..., dims=3), :swpd, wt,
+        tree=maketree(n, 7, :full), dnt=dnt, estnoise=relerrorthreshold)
+    @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
+    y = denoiseall(cat([swpd(x[:,i], wt) for i in 1:5]..., dims=3), :swpd, wt,
+        tree=maketree(n, 7, :full), dnt=dnt, estnoise=relerrorthreshold, 
+        bestTH=mean)
+    @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
+
+    ## Autocorrelation Wavelet Transforms
+    y = denoiseall(cat([acwt(x[:,i], wt) for i in 1:5]..., dims=3), :acwt, wt)
+    @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err 
+    y = denoiseall(cat([acwpt(x[:,i], wt) for i in 1:5]..., dims=3), :acwpt, wt,
         tree=maketree(n, 7, :full), dnt=dnt, estnoise=relerrorthreshold)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
 end

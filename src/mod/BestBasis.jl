@@ -130,16 +130,19 @@ function coefcost(x::AbstractArray{T,2}, et::DifferentialEntropyCost) where
 end
 
 
-## BEST BASIS TYPES                                                             # TODO: change all stationary parameters to downsampled
+## BEST BASIS TYPES                                                             
 abstract type BestBasisType end
-struct LSDB <: BestBasisType end        # Least Statistically Dependent Basis
+@with_kw struct LSDB <: BestBasisType   # Least Statistically Dependent Basis
+    cost::LSDBCost = DifferentialEntropyCost()
+    redundant::Bool = false
+end
 @with_kw struct JBB <: BestBasisType    # Joint Best Basis
     cost::JBBCost = LoglpCost(2)
-    stationary::Bool = false
+    redundant::Bool = false
 end                                     
 @with_kw struct BB <: BestBasisType     # Individual Best Basis
     cost::BBCost = ShannonEntropyCost()
-    stationary::Bool = false
+    redundant::Bool = false
 end                                     
 @with_kw struct SIBB <: BestBasisType   # Shift invariant best basis
     cost::BBCost = ShannonEntropyCost()
@@ -155,15 +158,23 @@ Returns the cost of each node in a binary tree in order to find the best basis.
 function tree_costs(X::AbstractArray{T,3}, method::LSDB) where T<:AbstractFloat
     L = size(X, 2)
     n = size(X, 1)
-    costs = Vector{T}(undef, 2^L - 1)
 
-    i = 1
-    for lvl in 0:(L-1)
-        n₀ = nodelength(n, lvl)
-        for node in 0:(2^lvl-1)
-            rng = (node * n₀ + 1):((node + 1) * n₀)
-            costs[i] = coefcost(X[rng, lvl+1, :], DifferentialEntropyCost())
-            i += 1
+    if method.redundant
+        costs = Vector{T}(undef, L)
+        for i in eachindex(costs)
+            j = floor(Integer, log2(i))
+            costs[i] = coefcost(X[:,i,:], method.cost) / (1<<j)
+        end
+    else
+        costs = Vector{T}(undef, 2^L - 1)
+        i = 1
+        for lvl in 0:(L-1)
+            n₀ = nodelength(n, lvl)
+            for node in 0:(2^lvl-1)
+                rng = (node * n₀ + 1):((node + 1) * n₀)
+                costs[i] = coefcost(X[rng, lvl+1, :], method.cost)
+                i += 1
+            end
         end
     end
     return costs
@@ -179,7 +190,7 @@ function tree_costs(X::AbstractArray{T,3}, method::JBB) where T<:AbstractFloat
     σ = VarX .^ 0.5                         # calculate σ = √Var(X)
     @assert all(σ .>= 0)
 
-    if method.stationary
+    if method.redundant
         costs = Vector{T}(undef, L)
         for i in eachindex(costs)
             j = floor(Integer, log2(i))
@@ -206,7 +217,7 @@ function tree_costs(X::AbstractArray{T,2}, method::BB) where T<:AbstractFloat
     L = size(X, 2)                      # count of levels if wpd, nodes if swpd
     n = size(X,1)
 
-    if method.stationary                # swpd
+    if method.redundant                # swpd
         costs = Vector{T}(undef, L)
         for i in eachindex(costs)
             j = floor(Integer, log2(i))
@@ -373,7 +384,7 @@ methods specified. Available methods are the joint best basis (`JBB()`), least
 statistically dependent basis (`LSDB()`), and individual regular best basis 
 (`BB()`).
 """
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                # TODO: LSDB for stationary transform
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                
         method::LSDB) where T<:AbstractFloat
     costs = tree_costs(X, method)
     besttree = bestbasis_treeselection(costs, size(X,1))

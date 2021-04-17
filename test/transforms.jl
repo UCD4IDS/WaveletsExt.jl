@@ -54,3 +54,26 @@ end
     ]
     @test makesiwpdtree(4, 2, 1) == tree
 end
+
+@testset "ACWT" begin
+    # acwt (1D)
+    x₁ = randn(8)
+    y₁ = acwt(x₁, wavelet(WT.haar))
+    @test iacwt(y₁) ≈ x₁
+
+    # acwt (2D)
+    x₂ = randn(8,8)
+    y₂ = acwt(x₂, wavelet(WT.haar))
+    @test iacwt(y₂) ≈ x₂
+    
+    # acwpt
+    tree = maketree(x₁)
+    y₃ = acwpt(x₁, wavelet(WT.haar))
+    @test y₃[:,8] == y₁[:,1]
+    @test iacwpt(y₃, tree) ≈ x₁
+end
+
+x₁ = randn(8)
+tree = maketree(x₁)
+y₃ = acwpt(x₁, wavelet(WT.haar))
+iacwpt(y₃, tree) ≈ x₁

@@ -3,10 +3,10 @@
 [![CI](https://github.com/zengfung/WaveletsExt.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/zengfung/WaveletsExt.jl/actions)
 [![codecov](https://codecov.io/gh/zengfung/WaveletsExt.jl/branch/master/graph/badge.svg?token=3J520FN4J2)](https://codecov.io/gh/zengfung/WaveletsExt.jl)
 
-This package is a [Julia](https://github.com/JuliaLang/julia) extension package to [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl) (WaveletsExt is short for Wavelets Extension). It contains additional functionalities that complement Wavelets.jl, which include multiple best basis algorithms, denoising methods, [Local Discriminant Basis (LDB)](https://www.math.ucdavis.edu/~saito/publications/saito_ldb_jmiv.pdf), [Stationary Wavelet Transform](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.49.2662&rep=rep1&type=pdf), and the [Shift Invariant Wavelet Decomposition](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf).
+This package is a [Julia](https://github.com/JuliaLang/julia) extension package to [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl) (WaveletsExt is short for Wavelets Extension). It contains additional functionalities that complement Wavelets.jl, which include multiple best basis algorithms, denoising methods, [Local Discriminant Basis (LDB)](https://www.math.ucdavis.edu/~saito/publications/saito_ldb_jmiv.pdf), [Stationary Wavelet Transform](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.49.2662&rep=rep1&type=pdf), [Autocorrelation Wavelet Transform (ACWT)](https://www.math.ucdavis.edu/~saito/publications/saito_minframe.pdf), and the [Shift Invariant Wavelet Decomposition](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf).
 
 ## Authors
-This package is written and maintained by Zeng Fung Liew under the supervision of Professor Naoki Saito at the University of California, Davis.
+This package is written and maintained by Zeng Fung Liew and Shozen Dan under the supervision of Professor Naoki Saito at the University of California, Davis.
 
 ## Installation
 The package is part of the official Julia Registry. It can be install via the Julia REPL.
@@ -39,6 +39,19 @@ z = isdwt(y, wavelet(WT.db4))
 # stationary wavelet packet decomposition
 y = swpd(x, wavelet(WT.db4))
 z = iswpt(y, wavelet(WT.db4))
+```
+
+## Autocorrelation Wavelet Transform
+The [autocorrelation wavelet transform (ACWT)](https://www.math.ucdavis.edu/~saito/publications/saito_minframe.pdf) is a special case of the stationary wavelet transform. Some desirable properties of ACWT are symmetry without losing vanishing moments, edge detection/characterization capabilities, and shift invariance. To transform a signal using AC wavelets, use `acwt` (discreate AC wavelet transform) or `acwpt` (a.c. packet transform). `acwt` can also handle 2D signals, which is useful in applications such as image denoising or compression. The reconstruction of signals can be performed using `iacwt` and `iacwpt`.
+```
+# autocorrelation discrete wavelet transform
+y = acwt(x, wavelet(WT.db4))
+z = iacwt(y)
+
+# autocorrelation wavelet packet transform
+tree = maketree(x, :full)
+y = acwpt(x, wavelet(WT.db4))
+z = iacwpt(y, tree)
 ```
 
 ## Best Basis

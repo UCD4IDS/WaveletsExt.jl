@@ -64,23 +64,23 @@ function getleaf(tree::BitVector)
 end
 
 """
-    coarsestscalingrange(x, tree[, stationary=false])
+    coarsestscalingrange(x, tree[, redundant=false])
 
-    coarsestscalingrange(n, tree[, stationary=false])
+    coarsestscalingrange(n, tree[, redundant=false])
 
 Given a binary tree, returns the index range of the coarsest scaling 
 coefficients.
 """
 function coarsestscalingrange(x::AbstractArray{T}, tree::BitVector, 
-        stationary::Bool=false) where T<:Number
+        redundant::Bool=false) where T<:Number
 
-    return coarsestscalingrange(size(x,1), tree, stationary)
+    return coarsestscalingrange(size(x,1), tree, redundant)
 end
 
 function coarsestscalingrange(n::Integer, tree::BitVector, 
-        stationary::Bool=false)
+        redundant::Bool=false)
 
-    if !stationary          # regular wt
+    if !redundant          # regular wt
         i = 1
         j = 0
         while i<length(tree) && tree[i]       # has children
@@ -88,7 +88,7 @@ function coarsestscalingrange(n::Integer, tree::BitVector,
             j += 1
         end
         rng = 1:(n>>j) 
-    else                    # stationary wt
+    else                   # redundant wt
         i = 1
         while i<length(tree) && tree[i]       # has children
             i = left(i)
@@ -99,21 +99,21 @@ function coarsestscalingrange(n::Integer, tree::BitVector,
 end
 
 """
-    finestdetailrange(x, tree[, stationary=false])
+    finestdetailrange(x, tree[, redundant=false])
     
-    finestdetailrange(n, tree[, stationary=false])
+    finestdetailrange(n, tree[, redundant=false])
 
 Given a binary tree, returns the index range of the coarsest scaling 
 coefficients.
 """
 function finestdetailrange(x::AbstractArray{T}, tree::BitVector,
-        stationary::Bool=false) where T<:Number
+        redundant::Bool=false) where T<:Number
 
-    return finestdetailrange(size(x,1), tree, stationary)
+    return finestdetailrange(size(x,1), tree, redundant)
 end
 
-function finestdetailrange(n::Integer, tree::BitVector, stationary::Bool=false)
-    if !stationary      # regular wt
+function finestdetailrange(n::Integer, tree::BitVector, redundant::Bool=false)
+    if !redundant      # regular wt
         i = 1
         j = 0
         while i<length(tree) && tree[i]
@@ -122,7 +122,7 @@ function finestdetailrange(n::Integer, tree::BitVector, stationary::Bool=false)
         end
         n₀ = nodelength(n, j)
         rng = (n-n₀+1):n
-    else                # stationary wt
+    else               # redundant wt
         i = 1
         while i<length(tree) && tree[i]
             i = right(i)
