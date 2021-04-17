@@ -41,6 +41,19 @@ y = swpd(x, wavelet(WT.db4))
 z = iswpt(y, wavelet(WT.db4))
 ```
 
+## Autocorrelation Wavelet Transform
+The [autocorrelation wavelet transform (ACWT)](https://ieeexplore.ieee.org/document/226356) is a special case of the stationary wavelet transform. Some desirable properties of ACWT are symmetry without losing vanishing moments, edge detection/characterization capabilities, and shift invariance. To transform a signal using AC wavelets, use `acwt` (discreate AC wavelet transform) or `acwpt` (a.c. packet transform). The reconstruction of signals can be performed using `iacwt` and `iacwpt`.
+```
+# autocorrelation discrete wavelet transform
+y = acwt(x, wavelet(WT.db4))
+z = iacwt(y)
+
+# autocorrelation wavelet packet transform
+tree = maketree(x)
+y = acwpt(x, wavelet(WT.db4))
+z = iacwpt(y, tree)
+```
+
 ## Best Basis
 In addition to the best basis algorithm by M.V. Wickerhauser implemented in Wavelets.jl, WaveletsExt.jl contains the implementation of the Joint Best Basis (JBB) by Wickerhauser an the [Least Statistically-Dependent Basis (LSDB)](https://www.math.ucdavis.edu/~saito/courses/ACHA.suppl/lsdb-pr-journal.pdf) by Saito.
 ```
