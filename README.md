@@ -1,7 +1,10 @@
 # WaveletsExt.jl
 
-[![CI](https://github.com/zengfung/WaveletsExt.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/zengfung/WaveletsExt.jl/actions)
-[![codecov](https://codecov.io/gh/zengfung/WaveletsExt.jl/branch/master/graph/badge.svg?token=3J520FN4J2)](https://codecov.io/gh/zengfung/WaveletsExt.jl)
+| Docs | Build | Test |
+|------|-------|------|
+| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zengfung.github.io/WaveletsExt.jl/stable) | [![CI](https://github.com/zengfung/WaveletsExt.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/zengfung/WaveletsExt.jl/actions) | [![codecov](https://codecov.io/gh/zengfung/WaveletsExt.jl/branch/master/graph/badge.svg?token=3J520FN4J2)](https://codecov.io/gh/zengfung/WaveletsExt.jl) |
+
+
 
 This package is a [Julia](https://github.com/JuliaLang/julia) extension package to [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl) (WaveletsExt is short for Wavelets Extension). It contains additional functionalities that complement Wavelets.jl, which include multiple best basis algorithms, denoising methods, [Local Discriminant Basis (LDB)](https://www.math.ucdavis.edu/~saito/publications/saito_ldb_jmiv.pdf), [Stationary Wavelet Transform](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.49.2662&rep=rep1&type=pdf), [Autocorrelation Wavelet Transform (ACWT)](https://www.math.ucdavis.edu/~saito/publications/saito_minframe.pdf), and the [Shift Invariant Wavelet Decomposition](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf).
 
