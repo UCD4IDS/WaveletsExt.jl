@@ -9,12 +9,14 @@ export
     relativenorm,
     psnr,
     snr,
+    ssim,
     generatesignals
 
 using
     Wavelets,
     LinearAlgebra,
-    Random
+    Random, 
+    ImageQualityIndexes
 
 """
     left(i)
@@ -170,6 +172,18 @@ signal x.
 function snr(x::AbstractVector{T}, x₀::AbstractVector{T}) where T<:Number
     @assert length(x) == length(x₀)             # ensure same lengths
     return 20 * log(10, norm(x₀,2)/norm(x-x₀,2))
+end
+
+"""
+    ssim(x, x₀)
+
+Wrapper for `assess_ssim` function from ImageQualityIndex.jl.
+
+Returns the Structural Similarity Index Measure (SSIM) between the original 
+signal/image x₀ and noisy signal/image x. 
+"""
+function ssim(x::AbstractArray{T}, x₀::AbstractArray{T}) where T<:Number
+    return assess_ssim(x, x₀)
 end
 
 """

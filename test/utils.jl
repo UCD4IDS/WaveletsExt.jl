@@ -25,6 +25,7 @@ end
     @test relativenorm(x, x₀, 1.0) == 1
     @test psnr(x, x₀) == 0
     @test snr(x, x₀) == 0
+    @test ssim(x, x₀) == assess_ssim(x, x₀)
 end
 
 @testset "Generate Signals" begin

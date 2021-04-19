@@ -1,6 +1,7 @@
 using 
     Test,
     Distributions,
+    ImageQualityIndexes,
     Random,
     Plots,
     Statistics,

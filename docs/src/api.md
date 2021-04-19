@@ -4,5 +4,6 @@
 ```
 
 ```@autodocs
-Modules = [WaveletsExt]
+Modules = [ACWT, BestBasis, Denoising, LDB, SIWPD, SWT, Utils, Visualizations, WPD]
+Order = [:module, :function, :type]
 ```

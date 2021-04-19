@@ -5,7 +5,7 @@
 using Wavelets, WaveletsExt, Random
 
 # define function and wavelet
-x = testfunction(256, "HeaviSine") + randn(256, 0.5)
+x = testfunction(256, "HeaviSine") + 0.5*randn(256)
 wt = wavelet(WT.db4)
 
 # best basis tree
