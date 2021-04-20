@@ -5,12 +5,24 @@ makedocs(
     format = Documenter.HTML(),
     authors = "Zeng Fung Liew",
     clean = true,
-    pages = [
-        "index.md",
-        "transforms.md",
-        "bestbasis.md",
-        "denoising.md",
-        "api.md"
+    pages = Any[
+        "Home" => "index.md",
+        "Manual" => Any[
+            "Transforms" => "manual/transforms.md",
+            "Best Basis" => "manual/bestbasis.md",
+            "Denoising" => "manual/denoising.md",
+        ],
+        "API" => Any[
+            "ACWT" => "api/acwt.md",
+            "Best Basis" => "api/bestbasis.md",
+            "Denoising" => "api/denoising.md",
+            "LDB" => "api/ldb.md",
+            "SIWPD" => "api/siwpd.md",
+            "SWT" => "api/swt.md",
+            "Utils" => "api/utils.md",
+            "Visualizations" => "api/visualizations.md",
+            "WPD" => "api/wpd.md",
+        ]
     ]
 )
 

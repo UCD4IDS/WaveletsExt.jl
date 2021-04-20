@@ -17,6 +17,7 @@ Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
 
 [compat]
 AverageShiftedHistograms = "0.8.6"
+ImageQualityIndexes = "0.2"
 Parameters = "0.12.2"
 Plots = "1.11.2"
 Reexport = "0.2.0, 1.0"

@@ -85,19 +85,19 @@ end
 Plot a set of shaded wiggles.
 
 # Arguments
-- 'wav::AbstractArray{<:Number, 2}': matrix of waveform columns.
-- 'taxis::AbstractVector=1:size(wav,1)': time axis vector
-- 'zaxis::AbstractVector=1:size(wav,2)': space axis vector
-- 'sc::Real=1': scale factor/magnification.
-- 'EdgeColor::Symbol=:black': Sets edge of wiggles color.
-- 'FaceColor::Symbol=:black': Sets shading color of wiggles.
-- 'Overlap::Bool=true': How signals are scaled.
+- `wav::AbstractArray{<:Number, 2}`: matrix of waveform columns.
+- `taxis::AbstractVector=1:size(wav,1)`: time axis vector
+- `zaxis::AbstractVector=1:size(wav,2)`: space axis vector
+- `sc::Real=1`: scale factor/magnification.
+- `EdgeColor::Symbol=:black`: Sets edge of wiggles color.
+- `FaceColor::Symbol=:black`: Sets shading color of wiggles.
+- `Overlap::Bool=true`: How signals are scaled.
         true  - Signals overlap (default);
         false - Signals are scaled so they do not overlap.
-- 'Orient::Symbol=:across': Controls orientation of wiggles.
+- `Orient::Symbol=:across`: Controls orientation of wiggles.
         :across - from left to right
         :down   - from top to down
-- 'ZDir::Symbol=:normal': Direction of space axis.
+- `ZDir::Symbol=:normal`: Direction of space axis.
         :normal  - First signal at bottom (default)
         :reverse - First signal at top.
 
@@ -207,19 +207,19 @@ end
 Plot a set of shaded wiggles on the current displayed graphics
 
 # Arguments
-- 'wav::AbstractArray{<:Number,2}': matrix of waveform columns.
-- 'taxis::AbstractVector=1:size(wav,1)': time axis vector
-- 'zaxis::AbstractVector=1:size(wav,2)': space axis vector
-- 'sc::Real=1': scale factor/magnification.
-- 'EdgeColor::Symbol=:black': Sets edge of wiggles color.
-- 'FaceColor::Symbol=:black': Sets shading color of wiggles.
-- 'Overlap::Bool=true': How signals are scaled.
+- `wav::AbstractArray{<:Number,2}`: matrix of waveform columns.
+- `taxis::AbstractVector=1:size(wav,1)`: time axis vector
+- `zaxis::AbstractVector=1:size(wav,2)`: space axis vector
+- `sc::Real=1`: scale factor/magnification.
+- `EdgeColor::Symbol=:black`: Sets edge of wiggles color.
+- `FaceColor::Symbol=:black`: Sets shading color of wiggles.
+- `Overlap::Bool=true`: How signals are scaled.
         true  - Signals overlap (default);
         false - Signals are scaled so they do not overlap.
-- 'Orient::Symbol=:across': Controls orientation of wiggles.
+- `Orient::Symbol=:across`: Controls orientation of wiggles.
         :across - from left to right
         :down   - from top to down
-- 'ZDir::Symbol=:normal': Direction of space axis.
+- `ZDir::Symbol=:normal`: Direction of space axis.
         :normal  - First signal at bottom (default)
         :reverse - First signal at top.
 
