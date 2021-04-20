@@ -11,26 +11,26 @@ y = bestbasiscoef(x, wt, bt)
 
 # denoise
 x̂ = denoise(y, :wpt, wt, tree=bt)</code></pre><pre class="documenter-example-output">256-element Vector{Float64}:
-  0.12056894438970396
- -0.09415137562297661
- -0.0955067349460557
-  0.276986609500896
-  1.1911947429660499
-  0.8007536760887726
-  0.799576005289501
-  1.5202754561160126
-  1.6461487314902243
-  1.6468624502716083
+ -0.1604123518341908
+  0.0252456566681866
+  0.20861059325372772
+  0.3930585326670101
+  0.5872463257396343
+  0.7904040297656617
+  1.001034474126126
+  1.221130013712053
+  1.4292795867110608
+  1.6239599001186478
   ⋮
- -2.1901258920949243
- -1.5767209459419331
- -2.216775707282014
- -0.6316032348416784
- -0.46415682569618594
- -0.6591686074000578
-  0.2360000765075292
- -0.14673631043422025
-  0.4169483544341364</pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
+ -1.7323263686037031
+ -1.583962243810942
+ -1.4144592360969759
+ -1.2307125697947658
+ -1.025498238327595
+ -0.8388830593525082
+ -0.6728831439414742
+ -0.5018130092328388
+ -0.3350945356604803</pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
 
 # define function and wavelet
 x = testfunction(256, &quot;HeaviSine&quot;)
@@ -46,23 +46,23 @@ Y = bestbasiscoef(coef, bt)
 
 # denoise
 X̂ = denoiseall(Y, :wpt, wt, tree=bt)</code></pre><pre class="documenter-example-output">256×10 Matrix{Float64}:
-  0.150509  -0.728837   -0.757845    …  -2.31893  -2.8378   -3.01239
- -0.333049  -0.0108213  -0.591038       -2.18039  -2.59082  -2.82967
-  0.503151   0.728476   -0.317108       -2.04524  -2.1373   -2.62436
-  0.63312    0.394085    0.299455       -1.91839  -2.72943  -2.46364
-  1.36034    0.980061    0.591546       -1.78293  -2.10978  -2.29107
-  0.16625    1.16858     0.0769204   …  -1.63861  -2.03615  -2.13434
-  1.4648     0.57866     0.00939505     -1.49816  -1.80965  -2.05931
-  1.98509    0.810547    0.836486       -1.35824  -1.37096  -2.03984
-  1.32289    1.06907     1.00906        -1.21349  -1.53404  -1.83076
-  1.64593    1.30497     0.505736       -1.06499  -1.2478   -1.61533
-  ⋮                                  ⋱                      
- -2.20039   -3.08177    -2.33792        -3.42965  -3.91172  -3.84821
- -1.55567   -1.91963    -2.09099        -3.36725  -4.3974   -3.69169
- -0.627276  -1.47769    -2.55726        -3.27156  -3.85781  -3.82192
- -0.792687  -1.11185    -2.24432     …  -3.16066  -3.49341  -3.75162
- -1.35566   -1.76016    -1.53564        -3.02397  -2.97658  -3.67864
- -0.441096  -1.21726    -1.77895        -2.89126  -3.0283   -3.71677
- -0.848231  -0.914774   -2.31786        -2.76461  -2.84822  -3.54058
- -1.16795   -0.725963   -1.76014        -2.62044  -2.81957  -3.21665
-  0.778492  -0.382314   -0.966181    …  -2.46537  -2.76719  -3.06334</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bestbasis/">« Best Basis Examples</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 19 April 2021 02:53">Monday 19 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ -0.246185   -0.39491   -1.914      …  -2.55378   -2.57716  -3.0643
+ -0.0251163  -0.286789  -1.43892       -2.17164   -2.41943  -2.9335
+  0.0542562  -0.531173  -0.152023      -2.82041   -2.26948  -2.80178
+  0.223221   -0.326751  -0.0131101     -1.74694   -2.13985  -2.67527
+  0.82147     0.415992  -0.279287      -1.12298   -2.00433  -2.5385
+  0.541339    1.54097   -0.521974   …  -2.07401   -1.86154  -2.39073
+  0.7008      1.30084    0.489993      -1.99734   -1.73576  -2.24511
+  1.3388      1.50522    1.1984        -1.32522   -1.62192  -2.09851
+  0.90875     1.32086    0.160659      -1.23462   -1.48792  -1.93607
+  1.55054     1.42388    1.47878       -0.700405  -1.3343   -1.75813
+  ⋮                                 ⋱                       
+ -1.67849    -1.84379   -2.83001       -3.59203   -3.95447  -3.97679
+ -1.95873    -1.86072   -2.24811       -3.87419   -3.86613  -3.93503
+ -2.07869    -2.20264   -2.57446       -3.06877   -3.76034  -3.87471
+ -1.23441    -1.56386   -2.27859    …  -3.59781   -3.63854  -3.79804
+ -1.48917    -1.49776   -0.605337      -3.53689   -3.49968  -3.702
+ -1.08671    -1.27849   -1.84477       -3.68989   -3.34332  -3.59674
+ -0.549697   -1.27902   -0.860068      -2.65621   -3.16915  -3.48221
+ -0.778593   -0.688528  -1.52466       -2.39203   -2.97623  -3.35058
+ -0.516923   -0.289988  -0.899791   …  -2.76944   -2.7641   -3.20373</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bestbasis/">« Best Basis Examples</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 20 April 2021 02:10">Tuesday 20 April 2021</span>. Using Julia version 1.6.0.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
