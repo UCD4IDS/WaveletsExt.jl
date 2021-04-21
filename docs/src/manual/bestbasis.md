@@ -30,6 +30,7 @@ y = cat([wpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
 
 # best basis tree
 bt = bestbasistree(y, JBB())
+plot_tfbdry(bt)
 ```
 
 ## Least Statistically Dependent Basis (LSDB)
@@ -46,4 +47,5 @@ y = cat([wpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
 
 # best basis tree
 bt = bestbasistree(y, LSDB())
+plot_tfbdry(bt)
 ```
