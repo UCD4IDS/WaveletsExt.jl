@@ -3,7 +3,7 @@ using Documenter, WaveletsExt
 makedocs(
     sitename = "WaveletsExt.jl",
     format = Documenter.HTML(),
-    authors = "Zeng Fung Liew",
+    authors = "Zeng Fung Liew, Shozen Dan",
     clean = true,
     pages = Any[
         "Home" => "index.md",
@@ -30,5 +30,5 @@ makedocs(
 # See "Hosting Documentation" and deploydocs() in the Documenter manual
 # for more information.
 deploydocs(
-    repo = "github.com/zengfung/WaveletsExt.jl.git"
+    repo = "github.com/UCD4IDS/WaveletsExt.jl.git"
 )
