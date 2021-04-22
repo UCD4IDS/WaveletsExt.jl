@@ -2,8 +2,8 @@
 
 | Docs | Build | Test |
 |------|-------|------|
-| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://zengfung.github.io/WaveletsExt.jl/stable) | [![CI](https://github.com/zengfung/WaveletsExt.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/zengfung/WaveletsExt.jl/actions) | [![codecov](https://codecov.io/gh/zengfung/WaveletsExt.jl/branch/master/graph/badge.svg?token=3J520FN4J2)](https://codecov.io/gh/zengfung/WaveletsExt.jl) |
-| [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://zengfung.github.io/WaveletsExt.jl/dev) | | |
+| [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://UCD4IDS.github.io/WaveletsExt.jl/stable) | [![CI](https://github.com/UCD4IDS/WaveletsExt.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/UCD4IDS/WaveletsExt.jl/actions) | [![codecov](https://codecov.io/gh/zengfung/WaveletsExt.jl/branch/master/graph/badge.svg?token=3J520FN4J2)](https://codecov.io/gh/zengfung/WaveletsExt.jl) |
+| [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://UCD4IDS.github.io/WaveletsExt.jl/dev) | | |
 
 
 
