@@ -8,7 +8,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
 
 [compat]
-Distributions = "0.24"
+Distributions = "0.24, 0.25"
 ImageQualityIndexes = "0.2"
 Plots = "1.12"
 Wavelets = "0.9"
