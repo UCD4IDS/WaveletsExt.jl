@@ -207,4 +207,85 @@ function generatesignals(x::AbstractVector{T}, N::Integer, k::Integer,
     return X
 end
 
+function generatefunction(fn::Symbol, L::Integer)
+    @assert L >= 1
+
+    t = [0.1, 0.13, 0.15, 0.23, 0.25, 0.4, 0.44, 0.65, 0.76, 0.78, 0.81]
+    h = [4, -5, 3, -4, 5, -4.2, 2.1, 4.3, -3.1, 5.1, -4.2]
+    
+    n = 1<<L
+    if fn == :blocks
+        tt = collect(range(0, 1, length=n))
+        x = zeros(n)
+        for j in eachindex(h)
+            x += (h[j]*(1 .+ sign.(tt .- t[j]))/2)
+        end
+    elseif fn == :bumps
+        h = abs.(h)
+        w = 0.01*[0.5, 0.5, 0.6, 1, 1, 3, 1, 1, 0.5, 0.8, 0.5]
+        tt = collect(range(0, 1, length=n))
+        x = zeros(n)
+        for j in eachindex(h)
+            x += (h[j] ./ (1 .+ ((tt .- t[j]) / w[j]).^4))
+        end
+    elseif fn == :heavysine
+        x = collect(range(0, 1, length=n))
+        x = 4*sin.(4*pi*x) - sign.(x .- 0.3) - sign.(0.72 .- x)
+    elseif fn == :doppler
+        x = collect(range(0, 1, length=n))
+        ϵ = 0.05
+        x = sqrt.(x.*(1 .- x)) .* sin.(2*pi*(1+ϵ) ./ (x.+ϵ))
+    elseif fn == :quadchirp
+        tt = collect(range(0, 1, length=n))
+        x = sin.((π/3) * tt .* (n * tt.^2))
+    elseif fn == :mishmash
+        tt = collect(range(0, 1, length=n))
+        x = sin.((π/3) * tt .* (n * tt.^2))
+        x = x + sin.(π * (n * 0.6902) * tt)
+        x = x + sin.(π * tt .* (n * 0.125 * tt))
+    else
+        throw(ArgumentError("Unrecognised `fn`. Type `?generatefunction` to learn more."))
+    end
+    return x
+end
+
+h₁(i::Int) = max(6 - abs(i-7), 0)
+h₂(i::Int) = h₁(i - 8)
+h₃(i::Int) = h₁(i - 4)
+
+"""
+    generatetriangular(c1::Int, c2::Int, c3::Int, L::Int=32)
+
+Generates a set of triangluar test functions with 3 classes.
+"""
+function generatetriangular(c1::Int, c2::Int, c3::Int; L::Int=32, shuffle::Bool=false)
+    @assert c1 >= 0
+    @assert c2 >= 0
+    @assert c3 >= 0
+  
+    u = rand(Uniform(0,1),1)[1]
+    ϵ = rand(Normal(0,1),(L,c1+c2+c3))
+  
+    y = vcat(ones(c1), ones(c2) .+ 1, ones(c3) .+ 2)
+  
+    H₁ = Array{Float64,2}(undef,L,c1)
+    H₂ = Array{Float64,2}(undef,L,c2)
+    H₃ = Array{Float64,2}(undef,L,c3)
+    for i in 1:L
+      H₁[i,:] .= u * h₁(i) + (1 - u) * h₂(i)
+      H₂[i,:] .= u * h₁(i) + (1 - u) * h₃(i)
+      H₃[i,:] .= u * h₂(i) + (1 - u) * h₃(i)
+    end
+  
+    H = hcat(H₁, H₂, H₃) + ϵ
+  
+    if shuffle
+      idx = [1:(c1+c2+c3)...]
+      shuffle!(idx)
+      return H[:,idx], y[idx]
+    end
+  
+    return H, y
+end
+
 end # end module
