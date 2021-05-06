@@ -14,7 +14,7 @@ end
 @testset "Denoise" begin
     # Single denoising
     n = 2^8
-    x0 = testfunction(n, "HeaviSine")
+    x0 = generatesignals(:heavysine, 8)
     x = x0 + 0.5*randn(n)
     wt = wavelet(WT.haar)
     err = relativenorm(x, x0)
@@ -46,8 +46,8 @@ end
     @test relativenorm(y, x0) <= 2*err
     
     # Group denoising
-    x0 = generatesignals(testfunction(n, "HeaviSine"), 5, 2)
-    x = generatesignals(testfunction(n, "HeaviSine"), 5, 2, true, 0.5)
+    x0 = duplicatesignals(generatesignals(:heavysine, 8), 5, 2)
+    x = duplicatesignals(generatesignals(:heavysine, 8), 5, 2, true, 0.5)
     max_err = maximum([relativenorm(x[:,i],x0[:,i]) for i in 1:5])
     dnt = VisuShrink(2, HardTH())
 

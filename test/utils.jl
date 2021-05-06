@@ -30,7 +30,18 @@ end
 
 @testset "Generate Signals" begin
     x = [1, 0, 0, 0]
-    @test generatesignals(x, 2, 1) == [1 0; 0 1; 0 0; 0 0]
-    @test generatesignals(x, 2, 1, true) != generatesignals(x, 2, 1)
-    @test generatesignals(x, 2, 1, true, 0.5) != generatesignals(x, 2, 1)
+    @test duplicatesignals(x, 2, 1) == [1 0; 0 1; 0 0; 0 0]
+    @test duplicatesignals(x, 2, 1, true) != duplicatesignals(x, 2, 1)
+    @test duplicatesignals(x, 2, 1, true, 0.5) != duplicatesignals(x, 2, 1)
+
+    @test length(generatesignals(:blocks, 5)) == 32
+    @test length(generatesignals(:bumps, 5)) == 32
+    @test length(generatesignals(:doppler, 5)) == 32
+    @test length(generatesignals(:heavysine, 5)) == 32
+    @test length(generatesignals(:quadchirp, 5)) == 32
+    @test length(generatesignals(:mishmash, 5)) == 32
+
+    @test typeof(ClassData(:tri, 5, 5, 5)) == ClassData
+    @test typeof(ClassData(:cbf, 5, 5, 5)) == ClassData
+    @test_throws ArgumentError ClassData(:fail, 5, 5, 5)
 end

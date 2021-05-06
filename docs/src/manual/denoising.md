@@ -1,11 +1,12 @@
 # Denoising Examples
+For more information and examples on wavelet denoising, visit [Wavelets Denoising Experiment repository under UCD4IDS](https://github.com/UCD4IDS/WaveletsDenoisingExperiment) for a step-by-step tutorial in a Pluto notebook.
 
 ## Denoising a single signal
 ```@example
 using Wavelets, WaveletsExt, Random
 
 # define function and wavelet
-x = testfunction(256, "HeaviSine") + 0.5*randn(256)
+x = generatesignals(:heavysine, 8) + 0.5*randn(256)
 wt = wavelet(WT.db4)
 
 # best basis tree
@@ -21,8 +22,8 @@ x̂ = denoise(y, :wpt, wt, tree=bt)
 using Wavelets, WaveletsExt, Random
 
 # define function and wavelet
-x = testfunction(256, "HeaviSine")
-X = generatesignals(x, 10, 2, true, 0.5)
+x = generatesignals(:heavysine, 8)
+X = duplicatesignals(x, 10, 2, true, 0.5)
 wt = wavelet(WT.db4)
 
 # decomposition

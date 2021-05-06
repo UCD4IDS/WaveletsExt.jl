@@ -5,8 +5,8 @@
 using Wavelets, WaveletsExt
 
 # define function and wavelet
-x = testfunction(256, "HeaviSine")
-X = generatesignals(x, 10, 2, true, 0.5)
+x = generatesignals(:heavysine, 8)
+X = duplicatesignals(x, 10, 2, true, 0.5)
 wt = wavelet(WT.db4)
 
 # decomposition
@@ -21,8 +21,8 @@ bt = bestbasistree(y, BB())
 using Wavelets, WaveletsExt
 
 # define function and wavelet
-x = testfunction(256, "HeaviSine")
-X = generatesignals(x, 10, 2, true, 0.5)
+x = generatesignals(:heavysine, 8)
+X = duplicatesignals(x, 10, 2, true, 0.5)
 wt = wavelet(WT.db4)
 
 # decomposition
@@ -38,8 +38,8 @@ plot_tfbdry(bt)
 using Wavelets, WaveletsExt
 
 # define function and wavelet
-x = testfunction(256, "HeaviSine")
-X = generatesignals(x, 10, 2, true, 0.5)
+x = generatesignals(:heavysine, 8)
+X = duplicatesignals(x, 10, 2, true, 0.5)
 wt = wavelet(WT.db4)
 
 # decomposition

@@ -10,11 +10,15 @@ export
     psnr,
     snr,
     ssim,
-    generatesignals
+    duplicatesignals,
+    generatesignals,
+    ClassData,
+    generateclassdata
 
 using
     Wavelets,
     LinearAlgebra,
+    Distributions,
     Random, 
     ImageQualityIndexes
 
@@ -187,7 +191,7 @@ function ssim(x::AbstractArray{T}, x₀::AbstractArray{T}) where T<:Number
 end
 
 """
-    generatesignals(x, N, k[, noise=false, t=1])
+    duplicatesignals(x, N, k[, noise=false, t=1])
 
 Given a signal x, returns N shifted versions of the signal, each with shifts
 of multiples of k. 
@@ -195,7 +199,7 @@ of multiples of k.
 Setting `noise = true` allows randomly generated Gaussian noises of μ = 0, 
 σ² = t to be added to the circularly shifted signals.
 """
-function generatesignals(x::AbstractVector{T}, N::Integer, k::Integer, 
+function duplicatesignals(x::AbstractVector{T}, N::Integer, k::Integer, 
         noise::Bool=false, t::Real=1) where T<:Number
 
     n = length(x)
@@ -207,7 +211,23 @@ function generatesignals(x::AbstractVector{T}, N::Integer, k::Integer,
     return X
 end
 
-function generatefunction(fn::Symbol, L::Integer)
+"""
+    generatesignals(fn, L)
+
+Generates a signal of length 2ᴸ given the function symbol `fn`. Current accepted inputs 
+below are based on D. Donoho and I. Johnstone in "Adapting to Unknown Smoothness via Wavelet 
+Shrinkage" Preprint Stanford, January 93, p 27-28.  
+- `:blocks`
+- `:bumps`
+- `:heavysine`
+- `:doppler`
+- `:quadchirp`
+- `:mishmash`
+
+The code for this function is adapted and translated based on MATLAB's Wavelet Toolbox's 
+`wnoise` function.
+"""
+function generatesignals(fn::Symbol, L::Integer)
     @assert L >= 1
 
     t = [0.1, 0.13, 0.15, 0.23, 0.25, 0.4, 0.44, 0.65, 0.76, 0.78, 0.81]
@@ -249,42 +269,107 @@ function generatefunction(fn::Symbol, L::Integer)
     return x
 end
 
-h₁(i::Int) = max(6 - abs(i-7), 0)
-h₂(i::Int) = h₁(i - 8)
-h₃(i::Int) = h₁(i - 4)
+"""
+    ClassData(type, s₁, s₂, s₃, n)
+
+Based on the input `type`, generates 3 classes of signals with sample sizes
+`s₁`, `s₂`, and `s₃` respectively. Accepted input types are:  
+- `:tri`: Triangular signals of length 32
+- `:cbf`: Cylinder-Bell-Funnel signals of length 128
+
+Based on N. Saito and R. Coifman in "Local Discriminant Basis and their Applications" in the
+Journal of Mathematical Imaging and Vision, Vol. 5, 337-358 (1995).
+"""
+struct ClassData
+    "Signal type, accepted inputs are `:tri` and `:cbf`"
+    type::Symbol
+    "Sample size for class 1"
+    s₁::Int
+    "Sample size for class 2"
+    s₂::Int
+    "Sample size for class 3"
+    s₃::Int
+    ClassData(type, s₁, s₂, s₃) = type ∈ [:tri, :cbf] ? new(type, s₁, s₂, s₃) : 
+        throw(ArgumentError("Invalid type. Accepted types are :tri and :cbf only."))
+end
 
 """
-    generatetriangular(c1::Int, c2::Int, c3::Int, L::Int=32)
+    generateclassdata(c[, shuffle=false])
 
-Generates a set of triangluar test functions with 3 classes.
+Generates 3 classes of data given a `ClassData` struct as an input. Returns a matrix 
+containing the 3 classes of signals and a vector containing their corresponding labels.
+
+Based on N. Saito and R. Coifman in "Local Discriminant Basis and their Applications" in the
+Journal of Mathematical Imaging and Vision, Vol. 5, 337-358 (1995).
 """
-function generatetriangular(c1::Int, c2::Int, c3::Int; L::Int=32, shuffle::Bool=false)
-    @assert c1 >= 0
-    @assert c2 >= 0
-    @assert c3 >= 0
-  
-    u = rand(Uniform(0,1),1)[1]
-    ϵ = rand(Normal(0,1),(L,c1+c2+c3))
-  
-    y = vcat(ones(c1), ones(c2) .+ 1, ones(c3) .+ 2)
-  
-    H₁ = Array{Float64,2}(undef,L,c1)
-    H₂ = Array{Float64,2}(undef,L,c2)
-    H₃ = Array{Float64,2}(undef,L,c3)
-    for i in 1:L
-      H₁[i,:] .= u * h₁(i) + (1 - u) * h₂(i)
-      H₂[i,:] .= u * h₁(i) + (1 - u) * h₃(i)
-      H₃[i,:] .= u * h₂(i) + (1 - u) * h₃(i)
+function generateclassdata(c::ClassData, shuffle::Bool=false)
+    @assert c.s₁ >= 0
+    @assert c.s₂ >= 0
+    @assert c.s₃ >= 0
+
+    if c.type == :tri
+        n = 32
+        i = collect(1:n)
+        u = rand(Uniform(0,1),1)[1]
+        ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
+        y = vcat(ones(c.s₁), 2*ones(c.s₂), 3*ones(c.s₃))
+        
+        h₁ = max.(6 .- abs.(i.-7), 0)
+        h₂ = max.(6 .- abs.(i.-15), 0)
+        h₃ = max.(6 .- abs.(i.-11), 0)
+
+        H₁ = repeat(u*h₁ + (1-u)*h₂, outer=c.s₁) |> y -> reshape(y, (n, c.s₁))
+        H₂ = repeat(u*h₁ + (1-u)*h₃, outer=c.s₁) |> y -> reshape(y, (n, c.s₂))
+        H₃ = repeat(u*h₂ + (1-u)*h₃, outer=c.s₁) |> y -> reshape(y, (n, c.s₃))
+        
+        H = hcat(H₁, H₂, H₃) + ϵ
+    elseif c.type == :cbf
+        n = 128
+        ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
+        y = vcat(ones(c.s₁), 2*ones(c.s₂), 3*ones(c.s₃))
+
+        d₁ = DiscreteUniform(16,32)
+        d₂ = DiscreteUniform(32,96)
+
+        # cylinder signals
+        H₁ = zeros(n,c,s₁)
+        a = rand(d₁,c,s₁)
+        b = a+rand(d₁,c.s₁)
+        η = randn(c.s₁)
+        for k in 1:c.s₁
+            H₁[a[k]:b[k],k]=(6+η[k])*ones(b[k]-a[k]+1)
+        end
+
+        # bell signals
+        H₂ = zeros(n,c.s₂)
+        a = rand(d₁,c.s₂)
+        b = a+rand(d₂,c.s₂)
+        η = randn(c.s₂);
+        for k in 1:c.s₂
+            H₂[a[k]:b[k],k]=(6+η[k])*collect(0:(b[k]-a[k]))/(b[k]-a[k])
+        end
+
+        # funnel signals
+        H₃ = zeros(n,c.s₃)
+        a = rand(d₁,c.s₃)
+        b = a+rand(d₂,c.s₃)
+        η = randn(c.s₃)
+        for k in 1:c.s₃
+            H₃[a[k]:b[k],k]=(6+η[k])*collect((b[k]-a[k]):-1:0)/(b[k]-a[k])
+        end
+
+        H = hcat(H₁, H₂, H₃) + ϵ
+    else
+        throw(ArgumentError("Invalid type. Accepted types are :tri and :cbf only."))
     end
-  
-    H = hcat(H₁, H₂, H₃) + ϵ
-  
+
     if shuffle
-      idx = [1:(c1+c2+c3)...]
-      shuffle!(idx)
-      return H[:,idx], y[idx]
+        idx = [1:(c.s₁+c.s₂+c.s₃)...]
+        shuffle!(idx)
+        H = H[:,idx]
+        y = y[idx]
     end
-  
+
     return H, y
 end
 
