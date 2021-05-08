@@ -78,10 +78,19 @@ coef = bestbasiscoef(y, bbt)
 ## Local Discriminant Basis
 Local Discriminant Basis (LDB) is a feature extraction method developed by Naoki Saito.
 ```julia
-coef, y, ldb_tree, power, order = ldb(X, y, wavelet(WT.coif3))
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+wt = wavelet(WT.haar)
+
+f = LocalDiscriminantBasis(wt, top_k=5, n_features=5)
+Xt = fit_transform(f, X, y)
 ```
 
-## TODO:
+## TODO(By next patch release):
+* Improve webpage "Manual" documentation 
+* Bug fix on cases where `f.n_features` is changed after `change_nfeatures` function is ran but resulting output is not saved.
+* More checking on class attributes for `transform` function in LDB.jl.
+
+## TODO(long term):
 * Inverse Transforms for Shift-Invariant WPT
 * Improve API for LDB by utilizing `fit`, `fit_transform`, `transform` functions.
 * Better documentation.
