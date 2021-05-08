@@ -270,7 +270,7 @@ function generatesignals(fn::Symbol, L::Integer)
 end
 
 """
-    ClassData(type, s₁, s₂, s₃, n)
+    ClassData(type, s₁, s₂, s₃)
 
 Based on the input `type`, generates 3 classes of signals with sample sizes
 `s₁`, `s₂`, and `s₃` respectively. Accepted input types are:  
@@ -312,7 +312,7 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
         i = collect(1:n)
         u = rand(Uniform(0,1),1)[1]
         ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
-        y = vcat(ones(c.s₁), 2*ones(c.s₂), 3*ones(c.s₃))
+        y = vcat(ones(Int, c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃))
         
         h₁ = max.(6 .- abs.(i.-7), 0)
         h₂ = max.(6 .- abs.(i.-15), 0)
@@ -326,13 +326,13 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
     elseif c.type == :cbf
         n = 128
         ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
-        y = vcat(ones(c.s₁), 2*ones(c.s₂), 3*ones(c.s₃))
+        y = vcat(Int, ones(c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃))
 
         d₁ = DiscreteUniform(16,32)
         d₂ = DiscreteUniform(32,96)
 
         # cylinder signals
-        H₁ = zeros(n,c,s₁)
+        H₁ = zeros(n,c.s₁)
         a = rand(d₁,c,s₁)
         b = a+rand(d₁,c.s₁)
         η = randn(c.s₁)
