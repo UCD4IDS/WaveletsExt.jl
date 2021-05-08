@@ -40,6 +40,7 @@ end
     @test length(generatesignals(:heavysine, 5)) == 32
     @test length(generatesignals(:quadchirp, 5)) == 32
     @test length(generatesignals(:mishmash, 5)) == 32
+    @test_throws ArgumentError generatesignals(:fail, 5)
 
     @test typeof(ClassData(:tri, 5, 5, 5)) == ClassData
     @test typeof(ClassData(:cbf, 5, 5, 5)) == ClassData
@@ -47,4 +48,5 @@ end
 
     @test size(generateclassdata(ClassData(:tri, 5, 5, 5))[1]) == (32,15)
     @test size(generateclassdata(ClassData(:cbf, 5, 5, 5))[1]) == (128,15)
+    @test_nowarn generateclassdata(ClassData(:tri, 5, 5, 5), true)
 end

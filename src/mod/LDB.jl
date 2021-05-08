@@ -251,40 +251,42 @@ function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S},
 end
 
 ## LOCAL DISCRIMINANT BASIS
-# TODO: work on documentation
 """
-    ldb(X, y, wt[; dm=AsymmetricRelativeEntropy(), energy=TimeFrequency(),
-        dp=BasisDiscriminantMeasure(), topk=size(X,1), m=size(X,1)])
+    LocalDiscriminantBasis
 
-The Local Discriminant Basis (LDB) feature selection algorithm developed by 
-Saito and Coifman. This function takes in the input signals and their 
-respective class labels, an orthogonal wavelet filter, and returns a set of 
-expansion coefficients of reduced features and dimensions.
+Class type for the Local Discriminant Basis (LDB), a feature selection algorithm
+developed by N. Saito and R. Coifman in "Local Discriminant Bases and Their
+Applications" in the Journal of Mathematical Imaging and Vision, Vol 5, 337-358
+(1995). This function takes in the input signals and their 
+respective 
 
-# Arguments:
-- `X::AbstractArray{<:Number,2}`: the input set of signals. each column 
-    represents a signal.
-- `y::AbstractVector{T}`: the corresponding labels
+# Parameters and Attributes:
 - `wt::DiscreteWavelet`: a discrete wavelet for transform purposes
 - `dm::DiscriminantMeasure`: the discriminant measure for the LDB algorithm. 
-    Supported measures are the `AsymmetricRelativeEntropy()`, `LpEntropy()`
-    `SymmetricRelativeEntropy()`, and `HellingerDistance()`. Default is set to 
-    be `AsymmetricRelativeEntropy()`.
-- `energy::EnergyMap`: the type of energy map used. Supported maps are 
-    `TimeFrequency()` and `ProbabilityDensity()`. Default is set to be 
-    `TimeFrequency()`.
+    Supported measures are the `AsymmetricRelativeEntropy()`, `LpEntropy()`,
+    `SymmetricRelativeEntropy()`, and `HellingerDistance()`
+- `en::EnergyMap`: the type of energy map used. Supported maps are 
+    `TimeFrequency()` and `ProbabilityDensity()`.
 - `dp::DiscriminantPower()`: the measure of discriminant power among expansion
     coefficients. Supported measures are `BasisDiscriminantMeasure()`,
     `FishersClassSeparability()`, and `RobustFishersClassSeparability()`. 
-    Default is set to be `BasisDiscriminantMeasure()`.
-- `topk::Integer`: the top-k coefficients used in each node to determine the 
-    discriminant measure. Default is set to all coefficients.
-- `m::Integer`: the dimension of output after undergoing feature selection and
-    transformation. Default is set to all coefficients of most discriminant 
-    subtree, ie. the length of each signals.
+- `top_k::Union{Integer, Nothing}`: the top-k coefficients used in each node to 
+    determine the discriminant measure.
+- `n_features::Union{Integer, Nothing}`: the dimension of output after 
+    undergoing feature selection and transformation.
+- `n::Union{Integer, Nothing}`: length of signal
+- `Γ::Union{AbstractArray{<:AbstractFloat}, Nothing}`: computed energy map
+- `DM::Union{AbstractArray{<:AbstractFloat}, Nothing}`: computed discriminant
+    measure
+- `cost::Union{AbstractVector{<:AbstractFloat}, Nothing}`: computed wavelet
+    packet decomposition (WPD) tree cost based on the discriminant measure `DM`.
+- `tree::Union{BitVector, Nothing}`: computed best WPD tree based on the 
+    discriminant measure `DM`.
+- `DP::Union{AbstractVector{<:AbstractFloat}, Nothing}`: computed discriminant 
+    power
+- `order::Union{AbstractVector{Integer}, Nothing}`: ordering of `DP` by 
+    descending order.
 """
-
-# struct for LDB
 mutable struct LocalDiscriminantBasis
     # to be declared by user
     wt::DiscreteWavelet
@@ -303,6 +305,34 @@ mutable struct LocalDiscriminantBasis
     order::Union{AbstractVector{Integer}, Nothing}
 end
 
+"""
+    LocalDiscriminantBasis(wt[; dm=AsymmetricRelativeEntropy(),
+        em=TimeFrequency(), dp=BasisDiscriminantMeasure(), top_k=nothing,
+        n_features=nothing])
+
+Class constructor for `LocalDiscriminantBasis`. 
+
+# Arguments:
+- `wt::DiscreteWavelet`: Wavelet used for decomposition of signals.
+- `dm::DiscriminantMeasure`: the discriminant measure for the LDB algorithm. 
+    Supported measures are the `AsymmetricRelativeEntropy()`, `LpEntropy()`, 
+    `SymmetricRelativeEntropy()`, and `HellingerDistance()`. Default is set to
+    be `AsymmetricRelativeEntropy()`.
+- `en::EnergyMap`: the type of energy map used. Supported maps are 
+    `TimeFrequency()` and `ProbabilityDensity()`. Default is set to be 
+    `TimeFrequency()`.
+- `dp::DiscriminantPower=BasisDiscriminantMeasure()`: the measure of 
+    discriminant power among expansion coefficients. Supported measures are 
+    `BasisDiscriminantMeasure()`, `FishersClassSeparability()`, and 
+    `RobustFishersClassSeparability()`. Default is set to be `BasisDiscriminantMeasure()`.
+- `top_k::Union{Integer, Nothing}`: the top-k coefficients used in each node to 
+    determine the discriminant measure. When `top_k=nothing`, all coefficients 
+    are used to determine the discriminant measure. Default is set to be 
+    `nothing`.
+- `n_features::Union{Integer, Nothing}`: the dimension of output after 
+    undergoing feature selection and transformation. When `n_features=nothing`,
+    all features will be returned as output. Default is set to be `nothing`.
+"""
 function LocalDiscriminantBasis(wt::DiscreteWavelet; 
         dm::DiscriminantMeasure=AsymmetricRelativeEntropy(),
         en::EnergyMap=TimeFrequency(), 
@@ -316,7 +346,12 @@ function LocalDiscriminantBasis(wt::DiscreteWavelet;
     )
 end
 
-# fit!
+"""
+    fit!(f, X, y)
+
+Fits the Local Discriminant Basis feature selection algorithm `f` onto the 
+signals `X` (or the decomposed signals `Xw`) with labels `y`.
+"""
 function fit!(f::LocalDiscriminantBasis, X::AbstractArray{S,2}, 
         y::AbstractVector{T}) where {S<:Number, T}
 
@@ -382,14 +417,22 @@ function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3},
     return nothing
 end
 
-# transform
+"""
+    transform(f, X)
+
+Extract the LDB features on signals `X`.
+"""
 function transform(f::LocalDiscriminantBasis, X::AbstractArray{<:Number,2})
     Xw = cat([wpd(X[:,i], f.wt) for i in axes(X,2)]..., dims=3)
     coefs = bestbasiscoef(Xw, f.tree)
     return coefs[f.order[1:f.n_features],:]
 end
 
-# fit_transform
+"""
+    fit_transform(f, X, y)
+
+Fit and transform the signals `X` with labels `y` based on the LDB class `f`.
+"""
 function fit_transform(f::LocalDiscriminantBasis, X::AbstractArray{S,2},
     y::AbstractVector{T}) where {S<:Number, T}
 
@@ -399,7 +442,12 @@ function fit_transform(f::LocalDiscriminantBasis, X::AbstractArray{S,2},
     return coefs[f.order[1:f.n_features],:], y
 end
 
-# inverse_transform
+"""
+    inverse_transform(f, x)
+
+Compute the inverse transform on the feature matrix `x` to form the original
+signal based on the LDB class `f`.
+"""
 function inverse_transform(f::LocalDiscriminantBasis, 
         x::AbstractArray{T,2}) where T<:Number
 
@@ -411,7 +459,16 @@ function inverse_transform(f::LocalDiscriminantBasis,
     return X
 end
 
-# change number of features
+"""
+    change_nfeatures(f, x, n_features)
+
+Change the number of features from `f.n_features` to `n_features`. 
+
+Note that if the input `n_features` is larger than `f.n_features`, it results in
+the regeneration of signals based on the current `f.n_features` before 
+reselecting the features. This will cause additional features to be less 
+accurate and effective.
+"""
 function change_nfeatures(f::LocalDiscriminantBasis, x::AbstractArray{T,2},
         n_features::Integer) where T<:Number
 
