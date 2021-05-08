@@ -19,7 +19,12 @@ export
     RobustFishersClassSeparability,
     discriminant_power,
     # local discriminant basis
-    ldb
+    LocalDiscriminantBasis,
+    fit!,
+    fit_transform,
+    transform,
+    inverse_transform,
+    change_nfeatures
 
 using
     AverageShiftedHistograms,
@@ -246,6 +251,7 @@ function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S},
 end
 
 ## LOCAL DISCRIMINANT BASIS
+# TODO: work on documentation
 """
     ldb(X, y, wt[; dm=AsymmetricRelativeEntropy(), energy=TimeFrequency(),
         dp=BasisDiscriminantMeasure(), topk=size(X,1), m=size(X,1)])
@@ -277,83 +283,152 @@ expansion coefficients of reduced features and dimensions.
     transformation. Default is set to all coefficients of most discriminant 
     subtree, ie. the length of each signals.
 """
-function ldb(X::AbstractArray{S,2}, y::AbstractVector{T}, wt::DiscreteWavelet; 
-    dm::DiscriminantMeasure=AsymmetricRelativeEntropy(), 
-    energy::EnergyMap=TimeFrequency(), 
-    dp::DiscriminantPower=BasisDiscriminantMeasure(), topk::Integer=size(X,1), 
-    m::Integer=size(X,1)) where {S<:Number, T}
-    
-    classes = unique(y)
-    C = length(classes)
-    n, N = size(X)
 
-    @assert size(X,2) == length(y) 
-    @assert 1 <= topk <= n  
-    @assert 1 <= m <= n       
-    @assert C > 1                  # checking number of classes > 1
-    @assert isdyadic(n)            # checking if input signals of length 2ᴸ
-    
-    # compute wpt for each signal and construct energy map for each class
-    L = maxtransformlevels(n) + 1
-    X_wpt = Array{Float64, 3}(undef, (n, L, N))
+# struct for LDB
+mutable struct LocalDiscriminantBasis
+    # to be declared by user
+    wt::DiscreteWavelet
+    dm::DiscriminantMeasure
+    en::EnergyMap
+    dp::DiscriminantPower
+    top_k::Union{Integer, Nothing}
+    n_features::Union{Integer, Nothing}
+    # to be computed in fit!
+    n::Union{Integer, Nothing}
+    Γ::Union{AbstractArray{<:AbstractFloat}, Nothing}
+    DM::Union{AbstractArray{<:AbstractFloat}, Nothing}
+    cost::Union{AbstractVector{<:AbstractFloat}, Nothing}
+    tree::Union{BitVector, Nothing}
+    DP::Union{AbstractVector{<:AbstractFloat}, Nothing}
+    order::Union{AbstractVector{Integer}, Nothing}
+end
+
+function LocalDiscriminantBasis(wt::DiscreteWavelet; 
+        dm::DiscriminantMeasure=AsymmetricRelativeEntropy(),
+        en::EnergyMap=TimeFrequency(), 
+        dp::DiscriminantPower=BasisDiscriminantMeasure(), 
+        top_k::Union{Integer, Nothing}=nothing, 
+        n_features::Union{Integer, Nothing}=nothing)
+
+    return LocalDiscriminantBasis(
+        wt, dm, en, dp, top_k, n_features, 
+        nothing, nothing, nothing, nothing, nothing, nothing, nothing
+    )
+end
+
+# fit!
+function fit!(f::LocalDiscriminantBasis, X::AbstractArray{S,2}, 
+        y::AbstractVector{T}) where {S<:Number, T}
+
+    Xw = cat([wpd(X[:,i], f.wt) for i in axes(X,2)]..., dims=3)
+    fit!(f, Xw, y)
+    return nothing
+end
+
+function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3}, 
+        y::AbstractVector{T}) where {S<:Number, T}
+
+    # basic summary of data
+    c = unique(y)       # unique classes
+    nc = length(c)      # number of classes
+    Ny = length(y)
+    f.n, L, Nx = size(Xw)
+
+    # change LocalDiscriminantBasis parameters if necessary
+    f.top_k = f.top_k === nothing ? f.n : f.top_k
+    f.n_features = f.n_features === nothing ? f.n : f.n_features
+
+    # parameter checking
+    @assert Nx == Ny
+    @assert 1 <= f.top_k <= f.n
+    @assert 1 <= f.n_features <= f.n
+    @assert nc > 1
+    @assert isdyadic(f.n)
+
+    # construct energy map for each class
     ỹ = similar(y)
-    Γ = Array{Float64, 3}(undef, (n, L, C))
-    j = 1
-    for (i,c) in enumerate(classes)
-        # settle indexing
-        idx = findall(yᵢ -> yᵢ == c, y)
-        Nc = length(idx)
-        rng = j:(j+Nc-1)
-        j += Nc
-        # wavelet packet decomposition and energy map
-        X_wpt[:,:,rng] = cat([wpd(X[:,k], wt) for k in idx]..., dims=3)
-        ỹ[rng] .= c
-        Γ[:,:,i] = energy_map(X_wpt[:,:,rng], energy)
+    f.Γ = Array{Float64, 3}(undef, (f.n, L, nc))
+    for (i,cᵢ) in enumerate(c)
+        idx = findall(yᵢ -> yᵢ==cᵢ, y)
+        f.Γ[:,:,i] = energy_map(Xw[:,:,idx], f.en)
     end
 
-    # compute discriminant measure D and obtain Δ
-    D = discriminant_measure(Γ, dm)
-    Δ = Vector{Float64}(undef, 2^L-1)
-    for i in eachindex(Δ)
-        level = floor(Integer, log2(i))
-        node = i - 2^level 
-        len = nodelength(n, level)
-        rng = (node*len+1):((node+1)*len)
-        if topk < len               # sum up top k coefficients
-            node_dm = D[rng, level+1]
-            sort!(node_dm, rev = true)
-            Δ[i] = sum(node_dm[1:topk])
-        else                        # sum of all coefficients
-            Δ[i] = sum(D[rng, level+1])      
+    # compute discriminant measure D and obtain 
+    f.DM = discriminant_measure(f.Γ, f.dm)
+    f.cost = Vector{Float64}(undef, 1<<L-1)
+    for i in eachindex(f.cost)
+        lθ = floor(Integer, log2(i))    # node level
+        θ = i - 1<<lθ                   # node 
+        nθ = nodelength(f.n, lθ)          # node length
+        rng = (θ*nθ+1):((θ+1)*nθ)
+        if f.top_k < nθ
+            DMθ = f.DM[rng,lθ+1]
+            sort!(DMθ, rev=true)
+            f.cost[i] = sum(DMθ[1:f.top_k])
+        else
+            f.cost[i] = sum(f.DM[rng,lθ+1])
         end
     end
 
     # select best tree and best set of expansion coefficients
-    besttree = ldb_besttree(Δ, n)
-    coefs = bestbasiscoef(X_wpt, besttree)
+    f.tree = bestbasis_treeselection(f.cost, f.n, :max)
+    coefs = bestbasiscoef(Xw, f.tree)
 
     # obtain and order basis functions by power of discrimination
-    (power, order) = dp == BasisDiscriminantMeasure() ? 
-        discriminant_power(D, besttree, dp) : 
-        discriminant_power(coefs, ỹ, besttree, dp)
-
-    return (coefs[order[1:m],:], ỹ, besttree, power[order[1:m]], order[1:m])        
+    (f.DP, f.order) = f.dp == BasisDiscriminantMeasure() ?
+        discriminant_power(f.DM, f.tree, f.dp) :
+        discriminant_power(coefs, y, f.tree, f.dp)
+    
+    return nothing
 end
 
-# select best ldb tree
-function ldb_besttree(Δ::AbstractVector{T}, n::Integer) where T<:Number
-    @assert length(Δ) == 2*n - 1
-    bt = trues(n-1)
-    for i in reverse(eachindex(bt))
-        δ = Δ[i<<1] + Δ[(i<<1)+1]
-        if δ > Δ[i]     # child cost > parent cost
-            Δ[i] = δ
-        else
-            BestBasis.delete_subtree!(bt, i)                                                    
-        end
+# transform
+function transform(f::LocalDiscriminantBasis, X::AbstractArray{<:Number,2})
+    Xw = cat([wpd(X[:,i], f.wt) for i in axes(X,2)]..., dims=3)
+    coefs = bestbasiscoef(Xw, f.tree)
+    return coefs[f.order[1:f.n_features],:]
+end
+
+# fit_transform
+function fit_transform(f::LocalDiscriminantBasis, X::AbstractArray{S,2},
+    y::AbstractVector{T}) where {S<:Number, T}
+
+    Xw = cat([wpd(X[:,i], f.wt) for i in axes(X,2)]..., dims=3)
+    fit!(f, Xw, y)
+    coefs = bestbasiscoef(Xw, f.tree)
+    return coefs[f.order[1:f.n_features],:], y
+end
+
+# inverse_transform
+function inverse_transform(f::LocalDiscriminantBasis, 
+        x::AbstractArray{T,2}) where T<:Number
+
+    @assert size(x,1) == f.n_features
+    Nx = size(x,2)
+    Xc = zeros(f.n, Nx)
+    Xc[f.order[1:f.n_features],:] = x
+    X = hcat([iwpt(Xc[:,i], f.wt, f.tree) for i in axes(Xc,2)]...)
+    return X
+end
+
+# change number of features
+function change_nfeatures(f::LocalDiscriminantBasis, x::AbstractArray{T,2},
+        n_features::Integer) where T<:Number
+
+    @assert size(x,1) == f.n_features
+    @assert 1 <= n_features <= f.n
+
+    if f.n_features >= n_features
+        f.n_features = n_features
+        y = x[1:f.n_features,:]
+    else
+        @warn "Proposed n_features larger than currently saved n_features. Results will be less accurate since inverse_transform and transform is involved."
+        X = inverse_transform(f, x)
+        f.n_features = n_features
+        y = transform(f, X)
     end
-    return bt
-end
 
+    return y
+end
 
 end # end module

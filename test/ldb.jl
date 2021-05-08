@@ -1,48 +1,59 @@
-function generatedata(N::Integer, noise::Real)
-    n = 128
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+wt = wavelet(WT.haar)
 
-    d1=DiscreteUniform(16,32); d2=DiscreteUniform(32,96);
-    
-    # Making cylinder signals
-    cylinder=zeros(n,N);
-    a=rand(d1,N); b=a+rand(d2,N);
-    η=randn(N);
-    for k=1:N
-        cylinder[a[k]:b[k],k]=(6+η[k])*ones(b[k]-a[k]+1);
-    end
-    cylinder += noise*randn(n,N);     # adding noise
-    
-    # Making bell signals
-    bell=zeros(n,N);
-    a=rand(d1,N); b=a+rand(d2,N);
-    η=randn(N);
-    for k=1:N
-        bell[a[k]:b[k],k]=(6+η[k])*collect(0:(b[k]-a[k]))/(b[k]-a[k]);
-    end
-    bell += noise*randn(n,N);         # adding noise
-    
-    # Making funnel signals
-    funnel=zeros(n,N);
-    a=rand(d1,N); b=a+rand(d2,N);
-    η=randn(N);
-    for k=1:N
-        funnel[a[k]:b[k],k]=(6+η[k])*collect((b[k]-a[k]):-1:0)/(b[k]-a[k]);
-    end
-    funnel += noise*randn(n,N);       # adding noise
-    return cylinder, bell, funnel
-end
+# AsymmetricRelativeEntropy + TimeFrequency + BasisDiscriminantMeasure
+f = LocalDiscriminantBasis(wt, top_k=5, n_features=5)
+@test typeof(f) == LocalDiscriminantBasis
+@test_nowarn fit_transform(f, X, y)
+@test_nowarn fit!(f, X, y)
+@test_nowarn transform(f, X)
+Xc = transform(f, X)
+@test size(Xc) == (5,15)
+@test_nowarn inverse_transform(f, Xc)
+X̂ = inverse_transform(f, Xc)
+@test size(X̂) == (32, 15) 
 
-cylinder, bell, funnel = generatedata(100, 0.8)
-X = hcat(cylinder, bell, funnel)
-y = repeat(["cylinder","bell","funnel"], inner = 100)
-wt = wavelet(WT.coif4)
+# SymmetricRelativeEntropy + TimeFrequency + FishersClassSeparability
+f = LocalDiscriminantBasis(wt, dm=SymmetricRelativeEntropy(), 
+    dp=FishersClassSeparability(), top_k=5, n_features=5)
+@test typeof(f) == LocalDiscriminantBasis
+@test_nowarn fit_transform(f, X, y)
+@test_nowarn fit!(f, X, y)
+@test_nowarn transform(f, X)
+Xc = transform(f, X)
+@test size(Xc) == (5,15)
+@test_nowarn inverse_transform(f, Xc)
+X̂ = inverse_transform(f, Xc)
+@test size(X̂) == (32, 15) 
 
-@test length(ldb(X, y, wt)) == 5
-@test length(ldb(X, y, wt, topk=10, m=10)) == 5
-@test length(ldb(X, y, wt, dm=SymmetricRelativeEntropy())) == 5
-@test length(ldb(X, y, wt, dm=LpEntropy())) == 5
-@test length(ldb(
-        X, y, wt, dm=HellingerDistance(), energy=ProbabilityDensity()
-    )) == 5
-@test length(ldb(X, y, wt, dp=FishersClassSeparability())) == 5
-@test length(ldb(X, y, wt, dp=RobustFishersClassSeparability())) == 5
+# LpEntropy + TimeFrequency + RobustFishersClassSeparability
+f = LocalDiscriminantBasis(wt, dm=LpEntropy(), dp=RobustFishersClassSeparability(), 
+    top_k=5, n_features=5)
+@test typeof(f) == LocalDiscriminantBasis
+@test_nowarn fit_transform(f, X, y)
+@test_nowarn fit!(f, X, y)
+@test_nowarn transform(f, X)
+Xc = transform(f, X)
+@test size(Xc) == (5,15)
+@test_nowarn inverse_transform(f, Xc)
+X̂ = inverse_transform(f, Xc)
+@test size(X̂) == (32, 15) 
+
+# HellingerDistance + ProbabilityDensity + BasisDiscriminantMeasure
+f = LocalDiscriminantBasis(wt, dm=HellingerDistance(), en=ProbabilityDensity(), 
+    top_k=5, n_features=5)
+@test typeof(f) == LocalDiscriminantBasis
+@test_nowarn fit_transform(f, X, y)
+@test_nowarn fit!(f, X, y)
+@test_nowarn transform(f, X)
+Xc = transform(f, X)
+@test size(Xc) == (5,15)
+@test_nowarn inverse_transform(f, Xc)
+X̂ = inverse_transform(f, Xc)
+@test size(X̂) == (32, 15) 
+
+# change number of features
+@test_nowarn change_nfeatures(f, Xc, 5)
+x = change_nfeatures(f, Xc, 5)
+@test size(x) == (5, 15)
+@test_logs (:warn, "Proposed n_features larger than currently saved n_features. Results will be less accurate since inverse_transform and transform is involved.") change_nfeatures(f, Xc, 10)

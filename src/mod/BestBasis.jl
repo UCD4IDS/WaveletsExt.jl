@@ -268,22 +268,35 @@ end
 
 ## BEST TREE SELECTION
 """
-    bestbasis_treeselection(costs, n)
+    bestbasis_treeselection(costs, n[, type=:min])
 
 Computes the best tree based on the given cost vector.
 """
-function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer) where 
-        T<:AbstractFloat
+function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer,
+        type::Symbol=:min) where T<:AbstractFloat
 
     @assert length(costs) == 2*n - 1
     bt = trues(n-1)
-    for i in reverse(eachindex(bt))
-        childcost = costs[left(i)] + costs[right(i)]
-        if childcost < costs[i]     # child cost < parent cost
-            costs[i] = childcost
-        else
-            delete_subtree!(bt, i)
+    if type == :min
+        for i in reverse(eachindex(bt))
+            childcost = costs[left(i)] + costs[right(i)]
+            if childcost < costs[i]     # child cost < parent cost
+                costs[i] = childcost
+            else
+                delete_subtree!(bt, i)
+            end
         end
+    elseif type == :max
+        for i in reverse(eachindex(bt))
+            childcost = costs[left(i)] + costs[right(i)]
+            if childcost > costs[i]     # child cost < parent cost
+                costs[i] = childcost
+            else
+                delete_subtree!(bt, i)
+            end
+        end
+    else
+        throw(ArgumentError("Accepted types are :min and :max only"))
     end
     return bt
 end

@@ -333,7 +333,7 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
 
         # cylinder signals
         H₁ = zeros(n,c.s₁)
-        a = rand(d₁,c,s₁)
+        a = rand(d₁,c.s₁)
         b = a+rand(d₁,c.s₁)
         η = randn(c.s₁)
         for k in 1:c.s₁
