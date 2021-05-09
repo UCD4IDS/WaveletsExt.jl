@@ -185,13 +185,13 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         if smooth == :regular
             leaves = findall(getleaf(tree))
             x̃ = copy(x)
-            x̃[:, leaves] = threshold!(x[:,leaves], dnt.th, σ*dnt.t)             
+            @inbounds x̃[:, leaves] = threshold!(x[:,leaves], dnt.th, σ*dnt.t)             
         else    # :undersmooth
             x̃ = copy(x)
             leaves = findall(getleaf(tree))
             _, coarsestnode = coarsestscalingrange(x, tree, true)
             rng = setdiff(leaves, coarsestnode)
-            x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
+            @inbounds x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
         end
         # reconstruction
         y = wt === nothing ? x̃ : iswpt(x̃, wt, tree)
@@ -218,13 +218,13 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         if smooth == :regular
             leaves = findall(getleaf(tree))
             x̃ = copy(x)
-            x̃[:, leaves] = threshold!(x[:,leaves], dnt.th, σ*dnt.t)             
+            @inbounds x̃[:, leaves] = threshold!(x[:,leaves], dnt.th, σ*dnt.t)             
         else    # :undersmooth
             x̃ = copy(x)
             leaves = findall(getleaf(tree))
             _, coarsestnode = coarsestscalingrange(x, tree, true)
             rng = setdiff(leaves, coarsestnode)
-            x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
+            @inbounds x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
         end
         # reconstruction
         y = iacwpt(x̃, tree)
@@ -309,13 +309,13 @@ function denoiseall(x::AbstractArray{T1},
     # denoise each signal
     y = Array{T1}(undef, (n,N))
     if bestTH === nothing           # using individual threshold values
-        for i in axes(x, ndims(x))                                              # TODO: figure out a way to make iterating over xw cleaner
+        for i in axes(x, ndims(x))
             xᵢ = ndims(x) == 2 ? x[:,i] : x[:,:,i]
             # noise estimation
             σ = isa(estnoise, Function) ? estnoise : estnoise[i]
             # denoising
-            y[:,i] = denoise(xᵢ, inputtype, wt, L=L, tree=tree, dnt=dnt, 
-                estnoise=σ, smooth=smooth)
+            @inbounds y[:,i] = denoise(xᵢ, inputtype, wt, L=L, tree=tree, 
+                dnt=dnt, estnoise=σ, smooth=smooth)
         end
     else                            # using summary threshold value
         # noise estimation
@@ -324,13 +324,13 @@ function denoiseall(x::AbstractArray{T1},
             for i in axes(x, ndims(x))
                 xᵢ = ndims(x) == 2 ? x[:,i] : x[:,:,i]
                 if inputtype == :dwt
-                    σ[i] = estnoise(xᵢ, false, nothing)
+                    @inbounds σ[i] = estnoise(xᵢ, false, nothing)
                 elseif inputtype == :wpt
-                    σ[i] = estnoise(xᵢ, false, tree)
+                    @inbounds σ[i] = estnoise(xᵢ, false, tree)
                 elseif inputtype == :sdwt
-                    σ[i] = estnoise(xᵢ, true, nothing)
+                    @inbounds σ[i] = estnoise(xᵢ, true, nothing)
                 else
-                    σ[i] = estnoise(xᵢ, true, tree)
+                    @inbounds σ[i] = estnoise(xᵢ, true, tree)
                 end
             end
             σ = bestTH(σ)
@@ -340,8 +340,8 @@ function denoiseall(x::AbstractArray{T1},
         # denoising
         for i in axes(x, ndims(x))
             xᵢ = ndims(x) == 2 ? x[:,i] : x[:,:,i]
-            y[:,i] = denoise(xᵢ, inputtype, wt, L=L, tree=tree, dnt=dnt, 
-                estnoise=σ, smooth=smooth)
+            @inbounds y[:,i] = denoise(xᵢ, inputtype, wt, L=L, tree=tree, 
+                dnt=dnt, estnoise=σ, smooth=smooth)
         end
     end
     return y
