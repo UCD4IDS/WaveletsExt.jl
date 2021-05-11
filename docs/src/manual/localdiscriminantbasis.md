@@ -36,7 +36,7 @@ Next, we define the parameters for our Local Discriminant Basis object. Here are
     - `FishersClassSeparability()`
     - `RobustFishersClassSeparability()`
 ```@example ldb_tutorial
-wt = wavelet(WT.haar);
+wt = wavelet(WT.coif4);
 ldb = LocalDiscriminantBasis(
     wt, 
     max_dec_level=7,
@@ -49,6 +49,7 @@ ldb = LocalDiscriminantBasis(
 
 # transform and extract the features using LDB
 X̂ = fit_transform(ldb, X, y);
+nothing # hide
 ```
 
 After fitting our data, we will then also be able to conduct our own analysis. We can observe where the best basis is selected from using the `plot_tfbdry` function.
@@ -90,7 +91,8 @@ plot!(title="Top 6 LDB vectors")
 
 Since we have decided that 6 features are optimum for classification purposes, we can use the `change_nfeatures` function as below.
 ```@example ldb_tutorial
-X̂ = change_nfeatures(ldb, X̂, 6);
+X̂ = change_nfeatures(ldb, X̂, 6); 
+nothing # hide
 ```
 
 If we are curious, we can use the `inverse_transform` function to observe how the signals look like if they're generated from these 6 features.

@@ -9,8 +9,8 @@ makedocs(
         "Home" => "index.md",
         "Manual" => Any[
             "Transforms" => "manual/transforms.md",
-            "Best Basis" => "manual/bestbasis.md",
             "Denoising" => "manual/denoising.md",
+            "Local Discriminant Basis" => "manual/localdiscriminantbasis.md"
         ],
         "API" => Any[
             "ACWT" => "api/acwt.md",
