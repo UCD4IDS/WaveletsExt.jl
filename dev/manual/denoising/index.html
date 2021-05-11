@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Denoising · WaveletsExt.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">WaveletsExt.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../transforms/">Transforms</a></li><li><a class="tocitem" href="../bestbasis/">Best Basis</a></li><li class="is-active"><a class="tocitem" href>Denoising</a><ul class="internal"><li><a class="tocitem" href="#Denoising-a-single-signal"><span>Denoising a single signal</span></a></li><li><a class="tocitem" href="#Denoising-a-group-of-signals"><span>Denoising a group of signals</span></a></li></ul></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../api/acwt/">ACWT</a></li><li><a class="tocitem" href="../../api/bestbasis/">Best Basis</a></li><li><a class="tocitem" href="../../api/denoising/">Denoising</a></li><li><a class="tocitem" href="../../api/ldb/">LDB</a></li><li><a class="tocitem" href="../../api/siwpd/">SIWPD</a></li><li><a class="tocitem" href="../../api/swt/">SWT</a></li><li><a class="tocitem" href="../../api/utils/">Utils</a></li><li><a class="tocitem" href="../../api/visualizations/">Visualizations</a></li><li><a class="tocitem" href="../../api/wpd/">WPD</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Manual</a></li><li class="is-active"><a href>Denoising</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Denoising</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/UCD4IDS/WaveletsExt.jl/blob/master/docs/src/manual/denoising.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Denoising-Examples"><a class="docs-heading-anchor" href="#Denoising-Examples">Denoising Examples</a><a id="Denoising-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-Examples" title="Permalink"></a></h1><p>For more information and examples on wavelet denoising, visit <a href="https://github.com/UCD4IDS/WaveletsDenoisingExperiment">Wavelets Denoising Experiment repository under UCD4IDS</a> for a step-by-step tutorial in a Pluto notebook.</p><h2 id="Denoising-a-single-signal"><a class="docs-heading-anchor" href="#Denoising-a-single-signal">Denoising a single signal</a><a id="Denoising-a-single-signal-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-single-signal" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Denoising · WaveletsExt.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">WaveletsExt.jl</span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../transforms/">Transforms</a></li><li class="is-active"><a class="tocitem" href>Denoising</a><ul class="internal"><li><a class="tocitem" href="#Denoising-a-single-signal"><span>Denoising a single signal</span></a></li><li><a class="tocitem" href="#Denoising-a-group-of-signals"><span>Denoising a group of signals</span></a></li></ul></li><li><a class="tocitem" href="../localdiscriminantbasis/">Local Discriminant Basis</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../api/acwt/">ACWT</a></li><li><a class="tocitem" href="../../api/bestbasis/">Best Basis</a></li><li><a class="tocitem" href="../../api/denoising/">Denoising</a></li><li><a class="tocitem" href="../../api/ldb/">LDB</a></li><li><a class="tocitem" href="../../api/siwpd/">SIWPD</a></li><li><a class="tocitem" href="../../api/swt/">SWT</a></li><li><a class="tocitem" href="../../api/utils/">Utils</a></li><li><a class="tocitem" href="../../api/visualizations/">Visualizations</a></li><li><a class="tocitem" href="../../api/wpd/">WPD</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Manual</a></li><li class="is-active"><a href>Denoising</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Denoising</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/UCD4IDS/WaveletsExt.jl/blob/master/docs/src/manual/denoising.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Denoising-Examples"><a class="docs-heading-anchor" href="#Denoising-Examples">Denoising Examples</a><a id="Denoising-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-Examples" title="Permalink"></a></h1><p>For more information and examples on wavelet denoising, visit <a href="https://github.com/UCD4IDS/WaveletsDenoisingExperiment">Wavelets Denoising Experiment repository under UCD4IDS</a> for a step-by-step tutorial in a Pluto notebook.</p><h2 id="Denoising-a-single-signal"><a class="docs-heading-anchor" href="#Denoising-a-single-signal">Denoising a single signal</a><a id="Denoising-a-single-signal-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-single-signal" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
 
 # define function and wavelet
 x = generatesignals(:heavysine, 8) + 0.5*randn(256)
@@ -11,26 +11,26 @@ y = bestbasiscoef(x, wt, bt)
 
 # denoise
 x̂ = denoise(y, :wpt, wt, tree=bt)</code></pre><pre class="documenter-example-output">256-element Vector{Float64}:
-  0.34603773625008694
-  0.18604423311725118
- -0.2133649908835933
-  0.7775106793150685
-  0.7546379636958639
-  0.8255041233150333
-  0.40717891562463154
-  1.3126146506049376
-  1.5713167384434528
-  1.0878083608332165
+  0.7580914225654894
+  0.43123984105644475
+  0.3770865135933438
+  1.052637682665188
+  1.3663127713416436
+  1.487845999931135
+  2.07861648180009
+  1.061531755422561
+  2.4050154162549178
+  2.1876696769821096
   ⋮
- -1.7851251395024066
- -1.798397047218255
- -2.1339078224580366
- -1.909322267264463
- -1.5944873067159442
- -0.5898409110121299
- -1.1532056614352661
- -0.923492086955513
- -0.4005083617059064</pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
+ -2.3143342045925603
+ -0.70743774095096
+ -1.719239865845937
+ -0.5383219319860573
+ -0.7808902241333409
+ -0.48724729843960013
+  0.474805472884803
+ -0.4487977062993694
+  0.5935463563678623</pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
 
 # define function and wavelet
 x = generatesignals(:heavysine, 8)
@@ -46,23 +46,23 @@ Y = bestbasiscoef(coef, bt)
 
 # denoise
 X̂ = denoiseall(Y, :wpt, wt, tree=bt)</code></pre><pre class="documenter-example-output">256×10 Matrix{Float64}:
- -0.11722    -0.274316   -0.492222   …  -2.06273   -2.41214   -2.78104
- -0.117271    0.197461   -0.315988      -2.4112    -2.10549   -2.64985
-  0.0872054  -0.0859984  -0.142336      -2.1547    -2.02144   -2.52186
-  0.627964    0.193584    0.0260413     -1.63135   -2.01815   -2.40645
-  1.07927     0.629499    0.196799      -1.77146   -1.98933   -2.28398
-  1.48665     1.17233     0.369889   …  -2.03248   -1.92284   -2.15331
-  1.67345     1.09847     0.538985      -0.955079  -1.53135   -2.0326
-  1.53401     0.951158    0.705434      -0.931748  -1.15334   -1.918
-  1.51022     1.49822     0.873321      -0.819421  -0.563118  -1.78498
-  1.53981     2.00983     1.04205       -0.757851  -0.751376  -1.63387
-  ⋮                                  ⋱                        
- -2.06684    -1.38551    -2.02771       -3.86855   -3.13797   -3.82671
- -1.76266    -1.63882    -1.88519       -3.76108   -3.64213   -3.76689
- -1.37438    -1.67272    -1.72975       -3.15917   -3.56527   -3.69257
- -0.895204   -1.88083    -1.56588    …  -3.59357   -4.04481   -3.60456
- -0.348175   -0.974663   -1.39026       -2.93699   -3.84639   -3.50226
-  0.0740608  -0.83876    -1.21518       -3.69818   -3.69954   -3.3841
-  0.343503   -0.739286   -1.0413        -3.37608   -3.03479   -3.24977
-  0.356996   -1.10526    -0.859838      -3.25683   -3.42564   -3.09923
-  0.0328096  -0.33988    -0.673554   …  -2.22797   -3.00861   -2.93185</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../bestbasis/">« Best Basis</a><a class="docs-footer-nextpage" href="../../api/acwt/">ACWT »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 11 May 2021 08:38">Tuesday 11 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+  0.0326983  -0.15736    -0.292992   …  -2.00092   -2.48212  -3.12193
+ -0.038615    0.0260095   0.0502094     -1.79215   -2.32544  -2.99362
+ -0.0109577  -0.059682    0.252066      -1.65339   -2.1772   -2.60973
+  0.441136    0.297058   -0.510345      -1.77877   -2.04852  -2.8104
+  0.800873    0.510526    0.229935      -2.40444   -1.91318  -2.46255
+  1.25601     0.361819   -0.0411224  …  -1.85764   -1.77012  -2.36295
+  1.15677     0.953101    0.0277406     -1.0179    -1.64233  -2.19882
+  1.3361      0.949725    1.4603        -1.15629   -1.52472  -1.69758
+  1.16184     0.886614    0.443835      -0.618891  -1.39227  -2.21077
+  1.57968     1.49237     0.643341      -0.985263  -1.24591  -1.41959
+  ⋮                                  ⋱                       
+ -1.49095    -2.15806    -2.75167       -3.06959   -3.85913  -3.87672
+ -1.21549    -1.77593    -2.056         -3.0738    -3.77482  -3.94094
+ -1.80186    -2.0241     -2.4132        -3.18018   -3.66401  -3.54276
+ -0.908606   -1.39051    -1.45292    …  -3.52208   -3.53616  -3.98723
+ -1.16254    -1.23725    -2.16318       -3.68878   -3.38566  -3.27203
+ -0.369962   -1.36592    -2.7339        -3.75123   -3.22594  -3.75383
+ -0.395749   -0.816303   -0.856391      -2.22594   -3.0578   -3.38167
+ -0.110273   -0.758934   -1.43995       -3.13687   -2.86968  -3.25202
+  0.318715   -0.642445   -0.111586   …  -2.3711    -2.66438  -3.12848</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transforms/">« Transforms</a><a class="docs-footer-nextpage" href="../localdiscriminantbasis/">Local Discriminant Basis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 11 May 2021 18:02">Tuesday 11 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
