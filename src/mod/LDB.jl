@@ -82,7 +82,7 @@ function energy_map(coef::AbstractArray{T,3}, method::ProbabilityDensity) where
             # number of histograms using M/nbins, where M=100 is arbitrary
             mbins = ceil(Integer, 100/nbins)     
 
-            σ = std(x)                           # standard deviatio of x
+            σ = std(x)                           # standard deviation of x
             s = 0.5                              
             δ = (maximum(x) - minimum(x) + σ)/((nbins+1) * mbins - 1)               
             rng = (minimum(x) - s*σ):δ:(maximum(x) + s*σ)   
@@ -122,9 +122,11 @@ function discriminant_measure(Γ::AbstractArray{T,3},
     @assert C > 1       # ensure more than 1 class
 
     D = zeros(T, (n,levels))
-    for i in 1:(C-1)
-        for j in (i+1):C
-            D += discriminant_measure(Γ[:,:,i], Γ[:,:,j], dm)
+    @inbounds begin
+        for i in 1:(C-1)
+            for j in (i+1):C
+                D += discriminant_measure(Γ[:,:,i], Γ[:,:,j], dm)
+            end
         end
     end
 
@@ -207,11 +209,13 @@ function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S},
     Nᵢ = Array{T,1}(undef, C)
     Eαᵢ = Array{T,2}(undef, (n,C))                # mean of each entry
     Varαᵢ = Array{T,2}(undef, (n,C))              # variance of each entry
-    for (i, c) in enumerate(classes)
-        idx = findall(yᵢ -> yᵢ == c, y)
-        Nᵢ[i] = length(idx)
-        Eαᵢ[:,i] = mean(coefs[:, idx], dims = 2)
-        Varαᵢ[:,i] = var(coefs[:, idx], dims = 2)
+    @inbounds begin
+        for (i, c) in enumerate(classes)
+            idx = findall(yᵢ -> yᵢ == c, y)
+            Nᵢ[i] = length(idx)
+            Eαᵢ[:,i] = mean(coefs[:, idx], dims = 2)
+            Varαᵢ[:,i] = var(coefs[:, idx], dims = 2)
+        end
     end
     Eα = mean(Eαᵢ, dims = 2)                      # overall mean of each entry
     pᵢ = Nᵢ / sum(Nᵢ)                             # proportions of each class
@@ -234,12 +238,14 @@ function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S},
     Nᵢ = Array{T,1}(undef, C)
     Medαᵢ = Array{T,2}(undef, (n,C))             # mean of each entry
     Madαᵢ = Array{T,2}(undef, (n,C))             # variance of each entry
-    for (i, c) in enumerate(classes)
-        idx = findall(yᵢ -> yᵢ == c, y)
-        Nᵢ[i] = length(idx)
-        Medαᵢ[:,i] = median(coefs[:, idx], dims = 2)
-        Madαᵢ[:,i] = mapslices(x -> mad(x, normalize = false), coefs[:, idx], 
-            dims = 2)
+    @inbounds begin
+        for (i, c) in enumerate(classes)
+            idx = findall(yᵢ -> yᵢ == c, y)
+            Nᵢ[i] = length(idx)
+            Medαᵢ[:,i] = median(coefs[:, idx], dims = 2)
+            Madαᵢ[:,i] = mapslices(x -> mad(x, normalize = false), coefs[:, idx], 
+                dims = 2)
+        end
     end
     Medα = median(Medαᵢ, dims = 2)               # overall mean of each entry
     pᵢ = Nᵢ / sum(Nᵢ)                            # proportions of each class
@@ -257,11 +263,12 @@ end
 Class type for the Local Discriminant Basis (LDB), a feature selection algorithm
 developed by N. Saito and R. Coifman in "Local Discriminant Bases and Their
 Applications" in the Journal of Mathematical Imaging and Vision, Vol 5, 337-358
-(1995). This function takes in the input signals and their 
-respective 
+(1995). This struct contains the following field values: 
 
 # Parameters and Attributes:
 - `wt::DiscreteWavelet`: a discrete wavelet for transform purposes
+- `max_dec_level::Union{Integer, Nothing}`: max level of wavelet packet
+    decomposition to be computed.
 - `dm::DiscriminantMeasure`: the discriminant measure for the LDB algorithm. 
     Supported measures are the `AsymmetricRelativeEntropy()`, `LpEntropy()`,
     `SymmetricRelativeEntropy()`, and `HellingerDistance()`
@@ -290,6 +297,7 @@ respective
 mutable struct LocalDiscriminantBasis
     # to be declared by user
     wt::DiscreteWavelet
+    max_dec_level::Union{Integer, Nothing}
     dm::DiscriminantMeasure
     en::EnergyMap
     dp::DiscriminantPower
@@ -306,14 +314,18 @@ mutable struct LocalDiscriminantBasis
 end
 
 """
-    LocalDiscriminantBasis(wt[; dm=AsymmetricRelativeEntropy(),
-        em=TimeFrequency(), dp=BasisDiscriminantMeasure(), top_k=nothing,
+    LocalDiscriminantBasis(wt[; max_dec_level=nothing,
+        dm=AsymmetricRelativeEntropy(), em=TimeFrequency(), 
+        dp=BasisDiscriminantMeasure(), top_k=nothing,
         n_features=nothing])
 
 Class constructor for `LocalDiscriminantBasis`. 
 
 # Arguments:
 - `wt::DiscreteWavelet`: Wavelet used for decomposition of signals.
+- `max_dec_level::Union{Integer, Nothing}`: max level of wavelet packet
+    decomposition to be computed. When `max_dec_level=nothing`, the maximum
+    transform levels will be used. Default is set to be `nothing`.
 - `dm::DiscriminantMeasure`: the discriminant measure for the LDB algorithm. 
     Supported measures are the `AsymmetricRelativeEntropy()`, `LpEntropy()`, 
     `SymmetricRelativeEntropy()`, and `HellingerDistance()`. Default is set to
@@ -333,7 +345,8 @@ Class constructor for `LocalDiscriminantBasis`.
     undergoing feature selection and transformation. When `n_features=nothing`,
     all features will be returned as output. Default is set to be `nothing`.
 """
-function LocalDiscriminantBasis(wt::DiscreteWavelet; 
+function LocalDiscriminantBasis(wt::DiscreteWavelet;
+        max_dec_level::Union{Integer, Nothing}=nothing, 
         dm::DiscriminantMeasure=AsymmetricRelativeEntropy(),
         en::EnergyMap=TimeFrequency(), 
         dp::DiscriminantPower=BasisDiscriminantMeasure(), 
@@ -341,7 +354,7 @@ function LocalDiscriminantBasis(wt::DiscreteWavelet;
         n_features::Union{Integer, Nothing}=nothing)
 
     return LocalDiscriminantBasis(
-        wt, dm, en, dp, top_k, n_features, 
+        wt, max_dec_level, dm, en, dp, top_k, n_features, 
         nothing, nothing, nothing, nothing, nothing, nothing, nothing
     )
 end
@@ -355,7 +368,23 @@ signals `X` (or the decomposed signals `Xw`) with labels `y`.
 function fit!(f::LocalDiscriminantBasis, X::AbstractArray{S,2}, 
         y::AbstractVector{T}) where {S<:Number, T}
 
-    Xw = cat([wpd(X[:,i], f.wt) for i in axes(X,2)]..., dims=3)
+    # basic summary of data
+    n, N = size(X)
+
+    # change LocalDiscriminantBasis parameters if necessary
+    f.max_dec_level = f.max_dec_level === nothing ? 
+        maxtransformlevels(n) : f.max_dec_level
+    @assert 1 <= f.max_dec_level <= maxtransformlevels(n)
+    
+    # wavelet packet decomposition
+    Xw = Array{S, 3}(undef, (n,f.max_dec_level+1,N))
+    @inbounds begin
+        for i in axes(Xw,3)
+            Xw[:,:,i] = wpd(X[:,i], f.wt, f.max_dec_level)
+        end
+    end
+
+    # fit local discriminant basis
     fit!(f, Xw, y)
     return nothing
 end
@@ -372,47 +401,54 @@ function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3},
     # change LocalDiscriminantBasis parameters if necessary
     f.top_k = f.top_k === nothing ? f.n : f.top_k
     f.n_features = f.n_features === nothing ? f.n : f.n_features
+    f.max_dec_level = f.max_dec_level === nothing ? 
+        maxtransformlevels(f.n) : f.max_dec_level
 
     # parameter checking
     @assert Nx == Ny
     @assert 1 <= f.top_k <= f.n
     @assert 1 <= f.n_features <= f.n
+    @assert f.max_dec_level+1 == L
+    @assert 1 <= f.max_dec_level <= maxtransformlevels(f.n)
     @assert nc > 1
     @assert isdyadic(f.n)
 
     # construct energy map for each class
-    ỹ = similar(y)
     f.Γ = Array{Float64, 3}(undef, (f.n, L, nc))
-    for (i,cᵢ) in enumerate(c)
-        idx = findall(yᵢ -> yᵢ==cᵢ, y)
-        f.Γ[:,:,i] = energy_map(Xw[:,:,idx], f.en)
+    @inbounds begin
+        for (i,cᵢ) in enumerate(c)
+            idx = findall(yᵢ -> yᵢ==cᵢ, y)
+            f.Γ[:,:,i] = energy_map(Xw[:,:,idx], f.en)
+        end
     end
 
-    # compute discriminant measure D and obtain 
+    # compute discriminant measure D and obtain tree cost
     f.DM = discriminant_measure(f.Γ, f.dm)
     f.cost = Vector{Float64}(undef, 1<<L-1)
-    for i in eachindex(f.cost)
-        lθ = floor(Integer, log2(i))    # node level
-        θ = i - 1<<lθ                   # node 
-        nθ = nodelength(f.n, lθ)          # node length
-        rng = (θ*nθ+1):((θ+1)*nθ)
-        if f.top_k < nθ
-            DMθ = f.DM[rng,lθ+1]
-            sort!(DMθ, rev=true)
-            f.cost[i] = sum(DMθ[1:f.top_k])
-        else
-            f.cost[i] = sum(f.DM[rng,lθ+1])
+    @inbounds begin
+        for i in eachindex(f.cost)
+            lθ = floor(Integer, log2(i))    # node level
+            θ = i - 1<<lθ                   # node 
+            nθ = nodelength(f.n, lθ)        # node length
+            rng = (θ*nθ+1):((θ+1)*nθ)
+            if f.top_k < nθ
+                DMθ = f.DM[rng,lθ+1]        # discriminant measure for node θ
+                sort!(DMθ, rev=true)
+                f.cost[i] = sum(DMθ[1:f.top_k])
+            else
+                f.cost[i] = sum(f.DM[rng,lθ+1])
+            end
         end
     end
 
     # select best tree and best set of expansion coefficients
     f.tree = bestbasis_treeselection(f.cost, f.n, :max)
-    coefs = bestbasiscoef(Xw, f.tree)
+    Xc = bestbasiscoef(Xw, f.tree)
 
     # obtain and order basis functions by power of discrimination
     (f.DP, f.order) = f.dp == BasisDiscriminantMeasure() ?
         discriminant_power(f.DM, f.tree, f.dp) :
-        discriminant_power(coefs, y, f.tree, f.dp)
+        discriminant_power(Xc, y, f.tree, f.dp)
     
     return nothing
 end
@@ -422,10 +458,32 @@ end
 
 Extract the LDB features on signals `X`.
 """
-function transform(f::LocalDiscriminantBasis, X::AbstractArray{<:Number,2})
-    Xw = cat([wpd(X[:,i], f.wt) for i in axes(X,2)]..., dims=3)
-    coefs = bestbasiscoef(Xw, f.tree)
-    return coefs[f.order[1:f.n_features],:]
+function transform(f::LocalDiscriminantBasis, X::AbstractArray{T,2}) where T
+    # check necessary measurements
+    n, N = size(X)
+    @assert f.max_dec_level !== nothing
+    @assert f.top_k !== nothing
+    @assert f.n_features !== nothing
+    @assert f.n !== nothing
+    @assert f.Γ !== nothing
+    @assert f.DM !== nothing
+    @assert f.cost !== nothing
+    @assert f.tree !== nothing
+    @assert f.DP !== nothing
+    @assert f.order !== nothing
+    @assert n == f.n
+    @assert 1 <= f.max_dec_level <= maxtransformlevels(f.n)
+    @assert 1 <= f.top_k <= f.n
+    @assert 1 <= f.n_features <= f.n
+
+    # wpt on X based on given f.tree
+    Xc = Array{T, 2}(undef, (n,N))
+    @inbounds begin
+        for i in axes(Xc,2)
+            Xc[:,i] = wpt(X[:,i], f.wt, f.tree)
+        end
+    end
+    return Xc[f.order[1:f.n_features],:]
 end
 
 """
@@ -434,12 +492,24 @@ end
 Fit and transform the signals `X` with labels `y` based on the LDB class `f`.
 """
 function fit_transform(f::LocalDiscriminantBasis, X::AbstractArray{S,2},
-    y::AbstractVector{T}) where {S<:Number, T}
+        y::AbstractVector{T}) where {S<:Number, T}
 
-    Xw = cat([wpd(X[:,i], f.wt) for i in axes(X,2)]..., dims=3)
+    # get necessary measurements
+    n, N = size(X)
+    L = maxtransformlevels(n)
+
+    # wpd on X
+    Xw = Array{S, 3}(undef, (n,L+1,N))
+    @inbounds begin
+        for i in axes(Xw,3)
+            Xw[:,:,i] = wpd(X[:,i], f.wt)
+        end
+    end
+
+    # fit LDB and return best features
     fit!(f, Xw, y)
-    coefs = bestbasiscoef(Xw, f.tree)
-    return coefs[f.order[1:f.n_features],:], y
+    Xc = bestbasiscoef(Xw, f.tree)
+    return Xc[f.order[1:f.n_features],:]
 end
 
 """
@@ -451,11 +521,21 @@ signal based on the LDB class `f`.
 function inverse_transform(f::LocalDiscriminantBasis, 
         x::AbstractArray{T,2}) where T<:Number
 
+    # get necessary measurements
     @assert size(x,1) == f.n_features
-    Nx = size(x,2)
-    Xc = zeros(f.n, Nx)
+    N = size(x,2)
+
+    # insert the features x into the full matrix X padded with 0's
+    Xc = zeros(f.n, N)
     Xc[f.order[1:f.n_features],:] = x
-    X = hcat([iwpt(Xc[:,i], f.wt, f.tree) for i in axes(Xc,2)]...)
+
+    # iwpt on X
+    X = Array{T,2}(undef, (f.n, N))
+    @inbounds begin
+        for i in axes(Xc, 2)
+            X[:,i] = iwpt(Xc[:,i], f.wt, f.tree)
+        end
+    end
     return X
 end
 
@@ -472,9 +552,13 @@ accurate and effective.
 function change_nfeatures(f::LocalDiscriminantBasis, x::AbstractArray{T,2},
         n_features::Integer) where T<:Number
 
-    @assert size(x,1) == f.n_features
+    # check measurements
+    @assert f.n_features !== nothing
+    @assert size(x,1) == f.n_features ||
+        throw(ArgumentError("f.n_features and number of rows of x do not match!"))
     @assert 1 <= n_features <= f.n
 
+    # change number of features
     if f.n_features >= n_features
         f.n_features = n_features
         y = x[1:f.n_features,:]

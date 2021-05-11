@@ -20,6 +20,7 @@ x.
 function wpd(x::AbstractVector{<:Number}, wt::OrthoFilter, 
         L::Integer=maxtransformlevels(x))
 
+    @assert 0 <= L <= maxtransformlevels(x)
     gqf, hqf = WT.makereverseqmfpair(wt, true)
     
     return wpd(x, wt, hqf, gqf, L)
@@ -65,18 +66,18 @@ function wpd!(y::AbstractArray{T,2}, x::AbstractArray{T,1},
 
     y[:,1] = x
     si = Vector{S}(undef, length(wt)-1)
-    for i in 0:(L - 1)
+    for i in 0:(L-1)
         # parent node length
         nₚ = nodelength(n, i) 
-        for j in 0:((1<<i) - 1)
+        for j in 0:((1<<i)-1)
             # extract parent node
             colₚ = i + 1
             rng = (j * nₚ + 1):((j + 1) * nₚ)
-            nodeₚ = @view y[rng, colₚ]
+            @inbounds nodeₚ = @view y[rng, colₚ]
 
             # extract left and right child nodes
             colₘ = colₚ + 1
-            nodeₘ = @view y[rng, colₘ]
+            @inbounds nodeₘ = @view y[rng, colₘ]
 
             # perform 1 level of wavelet decomposition
             Transforms.unsafe_dwt1level!(nodeₘ, nodeₚ, wt, true, hqf, gqf, si)

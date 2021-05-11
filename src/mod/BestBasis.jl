@@ -278,21 +278,25 @@ function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer,
     @assert length(costs) == 2*n - 1
     bt = trues(n-1)
     if type == :min
-        for i in reverse(eachindex(bt))
-            childcost = costs[left(i)] + costs[right(i)]
-            if childcost < costs[i]     # child cost < parent cost
-                costs[i] = childcost
-            else
-                delete_subtree!(bt, i)
+        @inbounds begin
+            for i in reverse(eachindex(bt))
+                childcost = costs[left(i)] + costs[right(i)]
+                if childcost < costs[i]     # child cost < parent cost
+                    costs[i] = childcost
+                else
+                    delete_subtree!(bt, i)
+                end
             end
         end
     elseif type == :max
-        for i in reverse(eachindex(bt))
-            childcost = costs[left(i)] + costs[right(i)]
-            if childcost > costs[i]     # child cost < parent cost
-                costs[i] = childcost
-            else
-                delete_subtree!(bt, i)
+        @inbounds begin
+            for i in reverse(eachindex(bt))
+                childcost = costs[left(i)] + costs[right(i)]
+                if childcost > costs[i]     # child cost < parent cost
+                    costs[i] = childcost
+                else
+                    delete_subtree!(bt, i)
+                end
             end
         end
     else
@@ -478,13 +482,13 @@ function bestbasiscoef(X::AbstractArray{T,3}, tree::BitVector) where
     leaf = getleaf(tree)
     y = X[:,1,:]
     for (i, val) in enumerate(leaf)
-        if val == true
+        if val
             # if node is selected, use coefficients of the children of the node
             lvl = floor(Integer, log2(i))   # counting of lvl starts from 0
             node = i - 2^lvl            # counting of node starts from 0
             n₀ = nodelength(n, lvl)
             rng = (node * n₀ + 1):((node + 1) * n₀)
-            y[rng,:] = X[rng, lvl+1, :]
+            @inbounds y[rng,:] = X[rng, lvl+1, :]
         end
     end
     return y
@@ -498,7 +502,7 @@ function bestbasiscoef(X::AbstractArray{T,3}, tree::BitArray{2}) where
     (n,L,N) = size(X)
     y = Array{T,2}(undef, (n,N))
     for i in axes(X,3)
-            y[:,i] = bestbasiscoef(X[:,:,i], tree[:,i])
+        @inbounds y[:,i] = bestbasiscoef(X[:,:,i], tree[:,i])
     end
     return y
 end
@@ -514,8 +518,8 @@ function bestbasiscoef(X::AbstractArray{T,2}, wt::DiscreteWavelet,
     @assert size(X,1) == length(tree) + 1    
     (n, N) = size(X)
     y = Array{T,2}(undef, (n, N))
-    for i in 1:N
-        y[:,i] = wpt(X[:,i], wt, tree)
+    for i in axes(y,2)
+        @inbounds y[:,i] = wpt(X[:,i], wt, tree)
     end
     return y
 end
@@ -527,8 +531,8 @@ function bestbasiscoef(X::AbstractArray{T,2}, wt::DiscreteWavelet,
 
     (n, N) = size(X)
     y = Array{T,2}(undef, (n, N))
-    for i in 1:N
-        y[:,i] = wpt(X[:,i], wt, tree[:,i])
+    for i in axes(y,2)
+        @inbounds y[:,i] = wpt(X[:,i], wt, tree[:,i])
     end
     return y
 end

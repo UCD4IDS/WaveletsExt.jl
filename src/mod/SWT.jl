@@ -215,15 +215,15 @@ function swpd(x::AbstractVector{T}, wt::OrthoFilter,
     W = zeros(T, (N, n₀))
     W[:, 1] = x
 
-    for i in 1:n₀
-        if (i << 1) > n₀
-            break
+    @inbounds begin
+        for i in 1:n₀
+            if (i << 1) > n₀
+                break
+            end
+            j = floor(Int, log2(i))
+            c₁, c₂ = sdwt_step(W[:, i], j, h, g)
+            W[:,i<<1], W[:,i<<1+1] = c₁, c₂
         end
-        j = floor(Int, log2(i))
-        # c₁ = @view W[:, i << 1]             # left child 
-        # c₂ = @view W[:, i << 1 + 1]         # right child
-        c₁, c₂ = sdwt_step(W[:, i], j, h, g)
-        W[:,i<<1], W[:,i<<1+1] = c₁, c₂
     end
     return W
 end
@@ -295,21 +295,24 @@ function isdwt_step!(v0::AbstractVector{T}, v1::AbstractVector{T},
     # child start index and step size
     cstart = s1 + 1
     cstep = 1 << j
-    for (t, m) in enumerate(pstart:pstep:N)
-        i = rem(t, 2) == 1 ? 1 : 2
-        # circshift needed if s1 > s0
-        n = s1 == s0 ? m : mod1(m + pstep, N)
-        # child start index for calculating v0[n]
-        k = (ceil(Integer, t/2) - 1) * cstep + cstart
-        #calculation of v0[n]
-        v0[n] = h[i] * w1[k] + g[i] * v1[k]
-        while i + 2 <= L
-            k -= 1 << j
-            if k <= 0
-                k = mod1(k, N)
+    # isdwt for each coefficient
+    @inbounds begin
+        for (t, m) in enumerate(pstart:pstep:N)
+            i = rem(t, 2) == 1 ? 1 : 2
+            # circshift needed if s1 > s0
+            n = s1 == s0 ? m : mod1(m + pstep, N)
+            # child start index for calculating v0[n]
+            k = (ceil(Integer, t/2) - 1) * cstep + cstart
+            #calculation of v0[n]
+            v0[n] = h[i] * w1[k] + g[i] * v1[k]
+            while i + 2 <= L
+                k -= 1 << j
+                if k <= 0
+                    k = mod1(k, N)
+                end
+                i += 2
+                v0[n] += h[i] * w1[k] + g[i] * v1[k]
             end
-            i += 2
-            v0[n] += h[i] * w1[k] + g[i] * v1[k]
         end
     end
     return nothing
@@ -328,11 +331,13 @@ function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter,
     cumsum!(shifts, ε .<< shifts)    # shifts represented by each εᵢ
     j = L                            # current level
     x = xw[:, 1]
-    for i in 2:K
-        s0 = j == 1 ? 0 : shifts[j-1]
-        s1 = shifts[j]
-        x = isdwt_step(x, xw[:, i], j, s0, s1, g, h)
-        j -= 1
+    @inbounds begin
+        for i in 2:K
+            s0 = j == 1 ? 0 : shifts[j-1]
+            s1 = shifts[j]
+            x = isdwt_step(x, xw[:, i], j, s0, s1, g, h)
+            j -= 1
+        end
     end
     return x
 end

@@ -61,8 +61,8 @@ function getleaf(tree::BitVector)
             continue
         else
             result[i] = 0
-            result[i<<1] = 1
-            result[i<<1 + 1] = 1
+            result[left(i)] = 1
+            result[right(i)] = 1
         end
     end
     
@@ -204,8 +204,10 @@ function duplicatesignals(x::AbstractVector{T}, N::Integer, k::Integer,
 
     n = length(x)
     X = Array{T, 2}(undef, (n, N))
-    for i in 1:N
-        X[:,i] = circshift(x, k*(i-1)) 
+    @inbounds begin
+        for i in axes(X,2)
+            X[:,i] = circshift(x, k*(i-1)) 
+        end
     end
     X = noise ? X + t*randn(n,N) : X
     return X
@@ -312,7 +314,7 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
         i = collect(1:n)
         u = rand(Uniform(0,1),1)[1]
         ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
-        y = vcat(ones(Int, c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃))
+        y = Int64.(vcat(ones(Int, c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃)))
         
         h₁ = max.(6 .- abs.(i.-7), 0)
         h₂ = max.(6 .- abs.(i.-15), 0)
@@ -326,7 +328,7 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
     elseif c.type == :cbf
         n = 128
         ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
-        y = vcat(Int, ones(c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃))
+        y = Int64.(vcat(ones(c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃)))
 
         d₁ = DiscreteUniform(16,32)
         d₂ = DiscreteUniform(32,96)
