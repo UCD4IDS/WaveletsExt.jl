@@ -91,7 +91,7 @@ plot!(title="Top 6 LDB vectors")
 
 Since we have decided that 6 features are optimum for classification purposes, we can use the `change_nfeatures` function as below.
 ```@example ldb_tutorial
-X̂ = change_nfeatures(ldb, X̂, 6); 
+X̂ = change_nfeatures(ldb, X̂, 6);
 nothing # hide
 ```
 
