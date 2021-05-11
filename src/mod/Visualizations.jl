@@ -126,15 +126,15 @@ function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
     # For calculation purposes
     maxrow = zeros(m); minrow = zeros(m)
     for k = 1:m
-      maxrow[k] = maximum(wav[:,k]); minrow[k] = minimum(wav[:,k])
+        maxrow[k] = maximum(wav[:,k]); minrow[k] = minimum(wav[:,k])
     end
     
     # Scale the data for plotting
     wamp = deepcopy(wav)
     dt = mean(diff(taxis))
     dz = mean(diff(zaxis))
-        if Overlap
-      wamp *= 2 * dz * (sc/maximum(maxrow-minrow))
+    if Overlap
+        wamp *= 2 * dz * (sc/maximum(maxrow-minrow))
     else
         wmax = maximum(maxrow); wmin = minimum(minrow);
         if wmax<=0
@@ -152,9 +152,9 @@ function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
     z0 = minimum(zaxis)
     z1 = maximum(zaxis)
     if Orient == :down
-    plot(xlims=(z0-dz,z1+dz), ylims=(t0,t1), yflip=true, legend=:none)
+        plot(xlims=(z0-dz,z1+dz), ylims=(t0,t1), yflip=true, legend=:none)
     else
-    plot(xlims=(t0,t1), ylims=(z0-dz,z1+dz), legend=:none)
+        plot(xlims=(t0,t1), ylims=(z0-dz,z1+dz), legend=:none)
     end
     if ZDir == :reverse
         wamp = flipdim(wamp,2)

@@ -20,6 +20,7 @@ x.
 function wpd(x::AbstractVector{<:Number}, wt::OrthoFilter, 
         L::Integer=maxtransformlevels(x))
 
+    @assert 0 <= L <= maxtransformlevels(x)
     gqf, hqf = WT.makereverseqmfpair(wt, true)
     
     return wpd(x, wt, hqf, gqf, L)

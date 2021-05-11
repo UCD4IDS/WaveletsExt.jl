@@ -314,7 +314,7 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
         i = collect(1:n)
         u = rand(Uniform(0,1),1)[1]
         ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
-        y = vcat(ones(Int, c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃))
+        y = Int64.(vcat(ones(Int, c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃)))
         
         h₁ = max.(6 .- abs.(i.-7), 0)
         h₂ = max.(6 .- abs.(i.-15), 0)
@@ -328,7 +328,7 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
     elseif c.type == :cbf
         n = 128
         ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
-        y = vcat(Int, ones(c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃))
+        y = Int64.(vcat(ones(c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃)))
 
         d₁ = DiscreteUniform(16,32)
         d₂ = DiscreteUniform(32,96)
