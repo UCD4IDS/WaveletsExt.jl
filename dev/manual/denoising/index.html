@@ -11,26 +11,26 @@ y = bestbasiscoef(x, wt, bt)
 
 # denoise
 x̂ = denoise(y, :wpt, wt, tree=bt)</code></pre><pre class="documenter-example-output">256-element Vector{Float64}:
-  0.7580914225654894
-  0.43123984105644475
-  0.3770865135933438
-  1.052637682665188
-  1.3663127713416436
-  1.487845999931135
-  2.07861648180009
-  1.061531755422561
-  2.4050154162549178
-  2.1876696769821096
+ -0.0021465520762317947
+  0.0777552723041437
+  0.22874263614946416
+  0.4520962608094772
+  0.693691089696127
+  0.9833273210215939
+  1.1985912399924674
+  1.3287427484662668
+  1.4636743625101687
+  1.573518364033048
   ⋮
- -2.3143342045925603
- -0.70743774095096
- -1.719239865845937
- -0.5383219319860573
- -0.7808902241333409
- -0.48724729843960013
-  0.474805472884803
- -0.4487977062993694
-  0.5935463563678623</pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
+ -1.5683323429973117
+ -1.3670483324695581
+ -1.2426400277166838
+ -1.0946870155297213
+ -0.9550919299929422
+ -0.766156980806697
+ -0.5119559273761816
+ -0.3066848772938837
+ -0.13828465505496054</pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><pre><code class="language-julia">using Wavelets, WaveletsExt, Random
 
 # define function and wavelet
 x = generatesignals(:heavysine, 8)
@@ -46,23 +46,23 @@ Y = bestbasiscoef(coef, bt)
 
 # denoise
 X̂ = denoiseall(Y, :wpt, wt, tree=bt)</code></pre><pre class="documenter-example-output">256×10 Matrix{Float64}:
-  0.0326983  -0.15736    -0.292992   …  -2.00092   -2.48212  -3.12193
- -0.038615    0.0260095   0.0502094     -1.79215   -2.32544  -2.99362
- -0.0109577  -0.059682    0.252066      -1.65339   -2.1772   -2.60973
-  0.441136    0.297058   -0.510345      -1.77877   -2.04852  -2.8104
-  0.800873    0.510526    0.229935      -2.40444   -1.91318  -2.46255
-  1.25601     0.361819   -0.0411224  …  -1.85764   -1.77012  -2.36295
-  1.15677     0.953101    0.0277406     -1.0179    -1.64233  -2.19882
-  1.3361      0.949725    1.4603        -1.15629   -1.52472  -1.69758
-  1.16184     0.886614    0.443835      -0.618891  -1.39227  -2.21077
-  1.57968     1.49237     0.643341      -0.985263  -1.24591  -1.41959
+ -0.0244816  -0.483705   -0.861855   …  -2.14352   -2.50566  -2.71258
+  0.244774   -0.30722    -0.671572      -2.82225   -2.62557  -2.59329
+  0.293735   -0.124763   -0.478958      -2.17227   -2.35544  -2.47929
+  0.934161    0.0673827  -0.28492       -1.7258    -2.03438  -2.3777
+  0.896174    0.265797   -0.0842848     -1.55675   -2.39452  -2.27022
+  1.26337     0.469768    0.122822   …  -1.52179   -1.86828  -2.15627
+  1.39444     0.684331    0.333011      -1.43671   -2.02322  -2.05133
+  1.37436     0.908809    0.547273      -0.401342  -1.43272  -1.95185
+  1.61818     1.12902     0.764416      -0.746222  -1.41974  -1.84333
+  1.68512     1.34449     0.983926      -0.662248  -1.13149  -1.72655
   ⋮                                  ⋱                       
- -1.49095    -2.15806    -2.75167       -3.06959   -3.85913  -3.87672
- -1.21549    -1.77593    -2.056         -3.0738    -3.77482  -3.94094
- -1.80186    -2.0241     -2.4132        -3.18018   -3.66401  -3.54276
- -0.908606   -1.39051    -1.45292    …  -3.52208   -3.53616  -3.98723
- -1.16254    -1.23725    -2.16318       -3.68878   -3.38566  -3.27203
- -0.369962   -1.36592    -2.7339        -3.75123   -3.22594  -3.75383
- -0.395749   -0.816303   -0.856391      -2.22594   -3.0578   -3.38167
- -0.110273   -0.758934   -1.43995       -3.13687   -2.86968  -3.25202
-  0.318715   -0.642445   -0.111586   …  -2.3711    -2.66438  -3.12848</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transforms/">« Transforms</a><a class="docs-footer-nextpage" href="../localdiscriminantbasis/">Local Discriminant Basis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 11 May 2021 18:02">Tuesday 11 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ -1.44306    -1.81331    -2.36123       -3.48225   -3.64275  -3.72484
+ -1.58003    -1.68771    -2.23093       -3.6881    -4.12851  -3.66573
+ -1.35678    -1.54611    -2.0833        -3.60823   -4.00695  -3.5835
+ -1.04806    -1.39784    -1.92579    …  -3.95924   -4.13237  -3.48789
+ -1.0565     -1.23686    -1.75355       -3.57754   -3.54683  -3.37313
+ -0.504731   -1.08435    -1.58239       -2.62326   -2.70967  -3.25452
+ -0.559708   -0.941722   -1.41326       -2.58313   -2.61374  -3.13304
+ -0.18551    -0.793624   -1.23434       -3.63494   -2.0849   -2.99618
+ -0.253163   -0.644943   -1.04917    …  -2.04797   -2.6804   -2.84725</pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transforms/">« Transforms</a><a class="docs-footer-nextpage" href="../localdiscriminantbasis/">Local Discriminant Basis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 11 May 2021 18:26">Tuesday 11 May 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
