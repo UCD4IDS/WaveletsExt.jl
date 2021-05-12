@@ -1,6 +1,8 @@
 name: CI
 on:
   push:
+    branches:
+    - master
     paths: # Specifying which files to run CI/CD for
     - src/**
     - test/runtests.jl

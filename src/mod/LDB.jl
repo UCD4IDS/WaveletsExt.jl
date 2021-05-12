@@ -55,7 +55,7 @@ function energy_map(coef::AbstractArray{<:Number,3}, method::TimeFrequency)
     n = size(coef, 1)
     L = size(coef, 2) - 1
     @assert isdyadic(n)
-    @assert L == maxtransformlevels(n)
+    @assert 1 <= L <= maxtransformlevels(n)
 
     x = coef[:,1,:]
     normalization = sum(mapslices(xᵢ -> sum(xᵢ.^2), x, dims = 1))
@@ -71,7 +71,7 @@ function energy_map(coef::AbstractArray{T,3}, method::ProbabilityDensity) where
     L = size(coef, 2) - 1
     N = size(coef, 3)
     @assert isdyadic(n)
-    @assert L == maxtransformlevels(n)
+    @assert 1 <= L <= maxtransformlevels(n)
 
     Γ = Array{T,2}(undef, (n,L+1))
     for j in axes(coef, 2)
@@ -181,7 +181,7 @@ struct FishersClassSeparability <: DiscriminantPower end
 struct RobustFishersClassSeparability <: DiscriminantPower end
 
 """
-    discriminant_power(coefs, tree, dp)
+    discriminant_power(D, tree, dp)
 
 Returns the discriminant power of each leaf from the local discriminant basis
 (LDB) tree. 
@@ -189,7 +189,8 @@ Returns the discriminant power of each leaf from the local discriminant basis
 function discriminant_power(D::AbstractArray{T,2}, tree::BitVector, 
         dp::BasisDiscriminantMeasure) where T<:Number
 
-    @assert length(tree) == size(D,1) - 1
+    L = size(D,2)-1
+    @assert length(tree) == 1<<L-1
 
     power = bestbasiscoef(D, tree)
     order = sortperm(power, rev = true)
@@ -198,11 +199,10 @@ function discriminant_power(D::AbstractArray{T,2}, tree::BitVector,
 end
 
 function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S}, 
-        tree::BitVector, dp::FishersClassSeparability) where {T<:Number, S}
+        dp::FishersClassSeparability) where {T<:Number, S}
 
     n = size(coefs,1)                             # signal length
-    @assert length(tree) == size(coefs,1) - 1     # ensure tree is of right size
-
+    
     classes = unique(y)
     C = length(coefs)                             # number of classes
     
@@ -227,11 +227,10 @@ function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S},
 end
 
 function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S},
-        tree::BitVector, dp::RobustFishersClassSeparability) where {T<:Number,S}
+        dp::RobustFishersClassSeparability) where {T<:Number,S}
 
     n = size(coefs,1)                            # signal length
-    @assert length(tree) == size(coefs,1) - 1    # ensure tree is of right size
-
+    
     classes = unique(y)
     C = length(classes)
 
@@ -401,8 +400,7 @@ function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3},
     # change LocalDiscriminantBasis parameters if necessary
     f.top_k = f.top_k === nothing ? f.n : f.top_k
     f.n_features = f.n_features === nothing ? f.n : f.n_features
-    f.max_dec_level = f.max_dec_level === nothing ? 
-        maxtransformlevels(f.n) : f.max_dec_level
+    f.max_dec_level = f.max_dec_level === nothing ? L-1 : f.max_dec_level
 
     # parameter checking
     @assert Nx == Ny
@@ -442,13 +440,13 @@ function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3},
     end
 
     # select best tree and best set of expansion coefficients
-    f.tree = bestbasis_treeselection(f.cost, f.n, :max)
+    f.tree = bestbasis_treeselection(f.cost, f.max_dec_level, :max)
     Xc = bestbasiscoef(Xw, f.tree)
 
     # obtain and order basis functions by power of discrimination
     (f.DP, f.order) = f.dp == BasisDiscriminantMeasure() ?
         discriminant_power(f.DM, f.tree, f.dp) :
-        discriminant_power(Xc, y, f.tree, f.dp)
+        discriminant_power(Xc, y, f.dp)
     
     return nothing
 end
@@ -478,9 +476,11 @@ function transform(f::LocalDiscriminantBasis, X::AbstractArray{T,2}) where T
 
     # wpt on X based on given f.tree
     Xc = Array{T, 2}(undef, (n,N))
+    tree = falses(f.n-1)            # construct a tree for wpt
+    tree[1:length(f.tree)] = f.tree
     @inbounds begin
         for i in axes(Xc,2)
-            Xc[:,i] = wpt(X[:,i], f.wt, f.tree)
+            Xc[:,i] = wpt(X[:,i], f.wt, tree)
         end
     end
     return Xc[f.order[1:f.n_features],:]
@@ -496,13 +496,15 @@ function fit_transform(f::LocalDiscriminantBasis, X::AbstractArray{S,2},
 
     # get necessary measurements
     n, N = size(X)
-    L = maxtransformlevels(n)
+    f.max_dec_level = f.max_dec_level===nothing ? 
+        maxtransformlevels(n) : f.max_dec_level
+    @assert 1 <= f.max_dec_level <= maxtransformlevels(n)
 
     # wpd on X
-    Xw = Array{S, 3}(undef, (n,L+1,N))
+    Xw = Array{S, 3}(undef, (n,f.max_dec_level+1,N))
     @inbounds begin
         for i in axes(Xw,3)
-            Xw[:,:,i] = wpd(X[:,i], f.wt)
+            Xw[:,:,i] = wpd(X[:,i], f.wt, f.max_dec_level)
         end
     end
 
@@ -531,9 +533,11 @@ function inverse_transform(f::LocalDiscriminantBasis,
 
     # iwpt on X
     X = Array{T,2}(undef, (f.n, N))
+    tree = falses(f.n-1)            # constructing a tree for iwpt
+    tree[1:length(f.tree)] = f.tree
     @inbounds begin
         for i in axes(Xc, 2)
-            X[:,i] = iwpt(Xc[:,i], f.wt, f.tree)
+            X[:,i] = iwpt(Xc[:,i], f.wt, tree)
         end
     end
     return X

@@ -2,7 +2,7 @@ X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
 wt = wavelet(WT.haar)
 
 # AsymmetricRelativeEntropy + TimeFrequency + BasisDiscriminantMeasure
-f = LocalDiscriminantBasis(wt, top_k=5, n_features=5)
+f = LocalDiscriminantBasis(wt, max_dec_level=4, top_k=5, n_features=5)
 @test typeof(f) == LocalDiscriminantBasis
 @test_nowarn fit_transform(f, X, y)
 @test_nowarn fit!(f, X, y)
@@ -14,7 +14,7 @@ X̂ = inverse_transform(f, Xc)
 @test size(X̂) == (32, 15) 
 
 # SymmetricRelativeEntropy + TimeFrequency + FishersClassSeparability
-f = LocalDiscriminantBasis(wt, dm=SymmetricRelativeEntropy(), 
+f = LocalDiscriminantBasis(wt, max_dec_level=4, dm=SymmetricRelativeEntropy(), 
     dp=FishersClassSeparability(), top_k=5, n_features=5)
 @test typeof(f) == LocalDiscriminantBasis
 @test_nowarn fit_transform(f, X, y)
@@ -27,8 +27,8 @@ X̂ = inverse_transform(f, Xc)
 @test size(X̂) == (32, 15) 
 
 # LpEntropy + TimeFrequency + RobustFishersClassSeparability
-f = LocalDiscriminantBasis(wt, dm=LpEntropy(), dp=RobustFishersClassSeparability(), 
-    top_k=5, n_features=5)
+f = LocalDiscriminantBasis(wt, max_dec_level=4, dm=LpEntropy(), 
+    dp=RobustFishersClassSeparability(), top_k=5, n_features=5)
 @test typeof(f) == LocalDiscriminantBasis
 @test_nowarn fit_transform(f, X, y)
 @test_nowarn fit!(f, X, y)
@@ -40,8 +40,8 @@ X̂ = inverse_transform(f, Xc)
 @test size(X̂) == (32, 15) 
 
 # HellingerDistance + ProbabilityDensity + BasisDiscriminantMeasure
-f = LocalDiscriminantBasis(wt, dm=HellingerDistance(), en=ProbabilityDensity(), 
-    top_k=5, n_features=5)
+f = LocalDiscriminantBasis(wt, max_dec_level=4, dm=HellingerDistance(), 
+    en=ProbabilityDensity(), top_k=5, n_features=5)
 @test typeof(f) == LocalDiscriminantBasis
 @test_nowarn fit_transform(f, X, y)
 @test_nowarn fit!(f, X, y)
