@@ -92,19 +92,20 @@ Plot a set of shaded wiggles.
 - `EdgeColor::Symbol=:black`: Sets edge of wiggles color.
 - `FaceColor::Symbol=:black`: Sets shading color of wiggles.
 - `Overlap::Bool=true`: How signals are scaled.
-        true  - Signals overlap (default);
-        false - Signals are scaled so they do not overlap.
+    - `true`  - Signals overlap (default);
+    - `false` - Signals are scaled so they do not overlap.
 - `Orient::Symbol=:across`: Controls orientation of wiggles.
-        :across - from left to right
-        :down   - from top to down
+    - `:across` - from left to right
+    - `:down`   - from top to down
 - `ZDir::Symbol=:normal`: Direction of space axis.
-        :normal  - First signal at bottom (default)
-        :reverse - First signal at top.
+    - `:normal`  - First signal at bottom (default)
+    - `:reverse` - First signal at top.
 
 Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito
 The previous MATLAB version contributors are:
     Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)
 Revised by Naoki Saito, Feb. 05, 2018
+Further changes were made by Zeng Fung Liew for Julia v1.6 compatibility.
 """
 function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1), 
         zaxis::AbstractVector=1:size(wav,2), sc::Real=1, 
@@ -116,6 +117,8 @@ function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
     (n,m) = size(wav)
     
     # Sanity check
+    @assert Orient ∈ [:across, :down]
+    @assert ZDir ∈ [:normal, :reverse]
     if length(taxis) != n
         error("Inconsistent taxis dimension!")
     end
@@ -157,7 +160,7 @@ function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
         plot(xlims=(t0,t1), ylims=(z0-dz,z1+dz), legend=:none)
     end
     if ZDir == :reverse
-        wamp = flipdim(wamp,2)
+        wamp = reverse(wamp, dims=2)
     end
     
     # Plot each wavelet
@@ -214,19 +217,20 @@ Plot a set of shaded wiggles on the current displayed graphics
 - `EdgeColor::Symbol=:black`: Sets edge of wiggles color.
 - `FaceColor::Symbol=:black`: Sets shading color of wiggles.
 - `Overlap::Bool=true`: How signals are scaled.
-        true  - Signals overlap (default);
-        false - Signals are scaled so they do not overlap.
+    - `true`  - Signals overlap (default);
+    - `false` - Signals are scaled so they do not overlap.
 - `Orient::Symbol=:across`: Controls orientation of wiggles.
-        :across - from left to right
-        :down   - from top to down
+    - `:across` - from left to right
+    - `:down`   - from top to down
 - `ZDir::Symbol=:normal`: Direction of space axis.
-        :normal  - First signal at bottom (default)
-        :reverse - First signal at top.
+    - `:normal`  - First signal at bottom (default)
+    - `:reverse` - First signal at top.
 
 Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito
 The previous MATLAB version contributors are:
     Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)
 Revised by Naoki Saito, Feb. 05, 2018
+Further changes were made by Zeng Fung Liew for Julia v1.6 compatibility.
 """
 function wiggle!(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1), 
         zaxis::AbstractVector=1:size(wav,2), sc::Real=1, 
@@ -238,6 +242,8 @@ function wiggle!(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
     (n,m) = size(wav)
     
     # Sanity check
+    @assert Orient ∈ [:across, :down]
+    @assert ZDir ∈ [:normal, :reverse]
     if length(taxis) != n
         error("Inconsistent taxis dimension!")
     end
@@ -279,7 +285,7 @@ function wiggle!(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
         plot!(xlims=(t0,t1), ylims=(z0-dz,z1+dz), legend=:none)
     end
     if ZDir == :reverse
-        wamp = flipdim(wamp,2)
+        wamp = reverse(wamp, dims=2)
     end
     
     # Plot each wavelet
