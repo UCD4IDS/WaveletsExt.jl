@@ -8,8 +8,8 @@ export
 using ..Utils
 using LinearAlgebra, Wavelets
 
-"""
-	  acwt(x, wt[, L=maxtransformlevels(x)])
+"""@docs
+	acwt(x, wt[, L=maxtransformlevels(x)])
 
     acwt(x, wt[, Lrow=maxtransformlevels(x[1,:]), Lcol=maxtransformlevels(x[:,1])])
 
@@ -24,11 +24,11 @@ acwt(x, wavelet(WT.db4))
 acwt(x, wavelet(WT.db4), 4) # level 4 decomposition
 ```
 
-**See also:** `acwt_step`, `iacwt`
+**See also:** [`acwt_step`](@ref), [`iacwt`](@ref)
 """
 function acwt end
 
-"""
+"""@docs
     acwt_step(v, j, h, g)
 
 Performs one level of the autocorrelation discrete wavelet transform (ACWT) on the 
@@ -38,11 +38,11 @@ and scaling filters.
 
 Returns a tuple `(v, w)` of the scaling and detail coefficients at level `j+1`.
 
-**See also:** `acwt`, `iacwt`
+**See also:** [`acwt`](@ref), [`iacwt`](@ref)
 """
 function acwt_step end
 
-"""
+"""@docs
     acwpt(x, wt[, L=maxtransformlevels(x)])
 
 Performs a discrete autocorrelation wavelet packet transform for a given signal `x`.
@@ -55,33 +55,33 @@ acwpt(x, wavelet(WT.db4))
 acwpt(x, wavelet(WT.db4), 4)
 ```
 
-**See also:** `acwt`, `acwpt_step`, `iacwpt`
+**See also:** [`acwt`](@ref), `acwpt_step`, [`iacwpt`](@ref)
 """
 function acwpt end
 
-"""
-	  iacwt(xw::AbstractArray{<:Number,2})
+"""@docs
+	iacwt(xw::AbstractArray{<:Number,2})
 
     iacwt(xw::AbstractArray{<:Number,4})
 
 Performs the inverse autocorrelation discrete wavelet transform. 
 Can be used for both the 1D and 2D case.
 
-**See also:** `iacwt!, acwt`
+**See also:** `iacwt!`, [`acwt`](@ref)
 """
 function iacwt end
 
-"""
+"""@docs
     iacwpt(xw, tree, i)
 
 Performs the inverse autocorrelation discrete wavelet packet transform,
 with respect to a decomposition tree.
 
-**See also:** `acwpt`
+**See also:** [`acwpt`](@ref)
 """
 
 ### ACWT Base methods ###
-"""
+"""@docs
     autocorr(f::OrthoFilter)
 
 Generates the autocorrelation filter for a given wavelet filter.
@@ -99,10 +99,12 @@ function autocorr(f::OrthoFilter)
     return result
 end
 
-"""
+"""@docs
     pfilter(f::OrthoFilter)
 
-Generates the high-pass autocorrelation filter 
+Generates the high-pass autocorrelation filter
+
+**See also:** [`qfliter`](@ref)
 """
 function pfilter(f::OrthoFilter)
     a = autocorr(f)
@@ -112,10 +114,12 @@ function pfilter(f::OrthoFilter)
     return vcat(reverse(b), c1, b)
 end
 
-"""
+"""@docs
     qfilter(f::OrthoFilter)
 
 Generates the low-pass autocorrelation filter
+
+**See also:** [`pfliter`](@ref)
 """
 function qfilter(f::OrthoFilter)
     a = autocorr(f)
@@ -126,9 +130,11 @@ function qfilter(f::OrthoFilter)
 end
 
 """
-    acmakeqmfpair(f::OrthoFilter)
+    make_acqmfpair(f::OrthoFilter)
 
 Generates the autocorrelation quadratic mirror filters.
+
+**See also:** [`make_acreverseqmfpair`](@ref)
 """
 function make_acqmfpair(f::OrthoFilter)
     pmfilter, qmfilter = pfilter(f), qfilter(f)
@@ -136,9 +142,11 @@ function make_acqmfpair(f::OrthoFilter)
 end
 
 """
-    makereverseqmfpair(f::OrthoFilter)
+    make_acreverseqmfpair(f::OrthoFilter)
 
 Generates the reverse autocorrelation quadratic mirror filters.
+
+**See also:** [`make_acqmfpair`](@ref)
 """
 function make_acreverseqmfpair(f::OrthoFilter)
     pmf, qmf = make_acqmfpair(f)
@@ -191,6 +199,8 @@ end
     hacwt(x, wt[, L=maxtransformlevels(x)])
 
 Computes the column-wise discrete autocorrelation transform coeficients for 2D signals.
+
+**See also:** [`vacwt`](@ref)
 """
 function hacwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter, L::Integer=maxtransformlevels(x[:,1]))
     nrow, ncol = size(x)
@@ -205,6 +215,8 @@ end
     vacwt(x, wt[, L=maxtransformlevels(x)])
 
 Computes the row-wise discrete autocorrelation transform coeficients for 2D signals.
+
+**See also:** [`hacwt`](@ref)
 """
 function vacwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter, L::Integer=maxtransformlevels(x[1,:]))
     nrow, ncol = size(x)

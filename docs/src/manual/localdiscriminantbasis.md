@@ -1,4 +1,4 @@
-# Local Discriminant Basis
+# [Local Discriminant Basis](@id ldb_manual)
 
 Local Discriminant Basis is a feature extraction technique developed by N. Saito and R. Coifman in 1995. This algorithm follows the following basic steps:
 
@@ -29,6 +29,8 @@ plot(cylinder, bell, funnel, layout=(3,1))
 ```
 
 Next, we define the parameters for our Local Discriminant Basis object. Here are a few key parameters to note:
+* `wt`: Type of wavelet used. Default is `wavelet(WT.haar)`.
+* `max_dec_level`: Maximum decomposition level. Default is to decompose each signal all the way to its maximum possible depth.
 * `dm`: Type of discriminant measure. Available choices are:
     - `AsymmetricRelativeEntropy()` (default)
     - `SymmetricRelativeEntropy()`
@@ -41,10 +43,12 @@ Next, we define the parameters for our Local Discriminant Basis object. Here are
     - `BasisDiscriminantMeasure()` (default)
     - `FishersClassSeparability()`
     - `RobustFishersClassSeparability()`
+* `top_k`: Max number of coefficients used in each node for the computation of discriminant power. The default setting uses all available coefficients for the computation.
+* `n_features`: Number of features to be returned. All features/coefficients will be returned by default.
 ```@example ldb_tutorial
 wt = wavelet(WT.coif4);
 ldb = LocalDiscriminantBasis(
-    wt, 
+    wt=wt, 
     max_dec_level=7,
     dm=SymmetricRelativeEntropy(), 
     en=TimeFrequency(),

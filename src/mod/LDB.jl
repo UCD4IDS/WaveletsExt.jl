@@ -320,7 +320,8 @@ end
 Class constructor for `LocalDiscriminantBasis`. 
 
 # Arguments:
-- `wt::DiscreteWavelet`: Wavelet used for decomposition of signals.
+- `wt::DiscreteWavelet`: Wavelet used for decomposition of signals. Default is
+    set to be `wavelet(WT.haar)`.
 - `max_dec_level::Union{Integer, Nothing}`: max level of wavelet packet
     decomposition to be computed. When `max_dec_level=nothing`, the maximum
     transform levels will be used. Default is set to be `nothing`.
@@ -343,7 +344,7 @@ Class constructor for `LocalDiscriminantBasis`.
     undergoing feature selection and transformation. When `n_features=nothing`,
     all features will be returned as output. Default is set to be `nothing`.
 """
-function LocalDiscriminantBasis(wt::DiscreteWavelet;
+function LocalDiscriminantBasis(; wt::DiscreteWavelet=wavelet(WT.haar),
         max_dec_level::Union{Integer, Nothing}=nothing, 
         dm::DiscriminantMeasure=AsymmetricRelativeEntropy(),
         en::EnergyMap=TimeFrequency(), 

@@ -1,4 +1,4 @@
-# Wavelet Transforms and Their Best Bases
+# [Wavelet Transforms and Their Best Bases](@id transforms_manual)
 As an extension to Wavelets.jl's wavelet packet transform and best basis functions `wpt` and `bestbasistree`, WaveletsExt goes one step further and brings a full decomposition function `wpd` and redundant transforms in the form of Stationary Wavelet Transform, Autocorrelation Wavelet Transform, and Shift-Invariant Wavelet Transform. Additionally, more advanced best basis algorithms for a group of signals such as the Joint Best Basis (JBB) and Least Statistically Dependent Basis (LSDB) are also included here.
 
 ## Regular Wavelet Packet Transform
@@ -39,7 +39,7 @@ plot_tfbdry(trees[:,1])
 
 We can also view the JBB and LSDB trees using a similar syntax. Unlike the previous best basis algorithm, JBB and LSDB do not generate a tree for each individual signal, as they search for the best tree that generalizes the group of signal as a whole.
 
-* Joint Best Basis (JBB):
+* Joint Best Basis (JBB)
 ```@example wt
 # joint best basis
 tree = bestbasistree(xw, JBB())
@@ -53,8 +53,8 @@ tree = bestbasistree(xw, LSDB())
 plot_tfbdry(tree)
 ```
 
-## Stationary Wavelet Transform
-The Stationary Wavelet Transform (SWT) was developed by G.P. Nason and B.W. Silverman in the 1990s. One can use the discrete SWT as shown below, or the SWT decomposition shown after.
+## Stationary and Autocorrelation Wavelet Transforms
+The [Stationary Wavelet Transform (SWT)](https://link.springer.com/chapter/10.1007/978-1-4612-2544-7_17) was developed by G.P. Nason and B.W. Silverman in the 1990s. One can use the discrete SWT as shown below, or the SWT decomposition shown after.
 ### Example
 ```@example wt
 # discrete swt
@@ -89,10 +89,10 @@ tree = bestbasistree(xw, LSDB(redundant=true));
 plot_tfbdry(tree)
 ```
 
-In fact, this same exact procedures can be implemented with the autocorrelation wavelet transforms, since they're both redundant types of transform. To implement the autocorrelation transforms, simply change `sdwt` to `acwt`, and `swpd` to `acwpt`.
+In fact, this same exact procedures can be implemented with the [Autocorrelation wavelet transforms](https://www.math.ucdavis.edu/~saito/publications/saito_acs_spie.pdf), since they're both redundant types of transform. To implement the autocorrelation transforms, simply change `sdwt` to `acwt`, and `swpd` to `acwpt`.
 
 ## Shift-Invariant Wavelet Packet Decomposition
-The Shift-Invariant Wavelet Decomposition (SIWPD) is developed by I. Cohen. While it is also a type of redundant transform, it does not follow the same methodology as the SWT and the ACWT. One can decompose the SIWPD of a single signal as follows.
+The [Shift-Invariant Wavelet Decomposition (SIWPD)](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf) is developed by I. Cohen. While it is also a type of redundant transform, it does not follow the same methodology as the SWT and the ACWT. One can compute the SIWPD of a single signal as follows.
 ### Example
 ```@example wt
 # decomposition

@@ -1,4 +1,4 @@
-# Denoising
+# [Denoising](@id denoising_api)
 
 ```@index
 Modules = [Denoising]

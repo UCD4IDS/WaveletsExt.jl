@@ -40,18 +40,90 @@ using
 
 
 ## COST COMPUTATION
+"""@docs
+Cost function abstract type.
+
+**See also:** [`LSDBCost`](@ref), [`JBBCost`](@ref), [`BBCost`](@ref)
+"""
 abstract type CostFunction end
+
+"""@docs
+    LSDBCost <: CostFunction
+
+Cost function abstract type specifically for LSDB.
+
+**See also:** [`CostFunction`](@ref), [`JBBCost`](@ref), [`BBCost`](@ref)
+"""
 abstract type LSDBCost <: CostFunction end
+
+"""@docs
+    JBBCost <: CostFunction
+    
+Cost function abstract type specifically for JBB.
+
+**See also:** [`CostFunction`](@ref), [`LSDBCost`](@ref), [`BBCost`](@ref)
+"""
 abstract type JBBCost <: CostFunction end
+
+"""@docs
+    BBCost <: CostFunction
+    
+Cost function abstract type specifically for BB.
+
+**See also:** [`CostFunction`](@ref), [`LSDBCost`](@ref), [`JBBCost`](@ref)
+"""
 abstract type BBCost <: CostFunction end
+
+@doc raw"""
+    LoglpCost <: JBBCost
+    
+``\log \ell^p`` information cost used for JBB. Typically, we set `p=2` as in 
+Wickerhauser's original algorithm.
+
+**See also:** [`CostFunction`](@ref), [`JBBCost`](@ref), [`NormCost`](@ref)
+"""
 @with_kw struct LoglpCost <: JBBCost 
     p::Number = 2
 end
+
+@doc raw"""
+    NormCost <: JBBCost
+    
+``p``-norm information cost used for JBB.
+
+**See also:** [`CostFunction`](@ref), [`JBBCost`](@ref), [`LoglpCost`](@ref)
+"""
 @with_kw struct NormCost <: JBBCost 
     p::Number = 1
 end
+
+"""@docs
+    DifferentialEntropyCost <: LSDBCost
+
+Differential entropy cost used for LSDB.
+
+**See also:** [`CostFunction`](@ref), [`LSDBCost`](@ref)
+"""
 struct DifferentialEntropyCost <: LSDBCost end
-struct ShannonEntropyCost <: BBCost end  
+
+"""@docs
+    ShannonEntropyCost <: LSDBCost
+
+Shannon entropy cost used for BB.
+
+**See also:** [`CostFunction`](@ref), [`BBCost`](@ref), 
+    [`LogEnergyEntropyCost`](@ref)
+"""
+struct ShannonEntropyCost <: BBCost end
+
+"""@docs
+    LogEnergyEntropyCost <: LSDBCost
+
+Log energy entropy cost used for BB.
+
+**See also:** [`CostFunction`](@ref), [`BBCost`](@ref), 
+    [`ShannonEntropyCost`](@ref)
+"""
 struct LogEnergyEntropyCost <: BBCost end
 
 # cost functions for individual best basis algorithm
@@ -130,30 +202,78 @@ function coefcost(x::AbstractArray{T,2}, et::DifferentialEntropyCost) where
 end
 
 
-## BEST BASIS TYPES                                                             
+## BEST BASIS TYPES
+"""@docs
+Abstract type for best basis. Current available types are:
+- [`LSDB`](@ref)
+- [`JBB`](@ref)
+- [`BB`](@ref)
+- [`SIBB`](@ref)
+"""
 abstract type BestBasisType end
-@with_kw struct LSDB <: BestBasisType   # Least Statistically Dependent Basis
+
+"""@docs
+    LSDB([; cost=DifferentialEntropyCost(), redundant=false])
+
+Least Statistically Dependent Basis (LSDB). Set `redundant=true` when running
+LSDB with redundant wavelet transforms such as SWT or ACWT.
+
+**See also:** [`BestBasisType`](@ref), [`JBB`](@ref), [`BB`](@ref), 
+    [`SIBB`](@ref)
+"""
+@with_kw struct LSDB <: BestBasisType
     cost::LSDBCost = DifferentialEntropyCost()
     redundant::Bool = false
 end
+
+"""@docs
+    JBB([; cost=LoglpCost(2), redundant=false])
+
+Joint Best Basis (JBB). Set `redundant=true` when running JBB with redundant 
+wavelet transforms such as SWT or ACWT.
+
+**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`BB`](@ref), 
+    [`SIBB`](@ref)
+"""
 @with_kw struct JBB <: BestBasisType    # Joint Best Basis
     cost::JBBCost = LoglpCost(2)
     redundant::Bool = false
-end                                     
+end
+
+"""@docs
+    BB([; cost=LoglpCost(2), redundant=false])
+
+Best Basis (BB). Set `redundant=true` when running BB with redundant wavelet 
+transforms such as SWT or ACWT.
+
+**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), 
+    [`SIBB`](@ref)
+"""
 @with_kw struct BB <: BestBasisType     # Individual Best Basis
     cost::BBCost = ShannonEntropyCost()
     redundant::Bool = false
-end                                     
+end
+
+"""@docs
+    SIBB([; cost=ShannonEntropyCost()])
+
+Shift Invariant Best Basis (SIBB).
+
+**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), 
+    [`BB`](@ref)
+"""
 @with_kw struct SIBB <: BestBasisType   # Shift invariant best basis
     cost::BBCost = ShannonEntropyCost()
 end                     
 
 
 ## TREE COST
-"""
+"""@docs
     tree_costs(X, method)
 
 Returns the cost of each node in a binary tree in order to find the best basis.
+
+**See also:** [`bestbasistree`](@ref), [`bestbasis_treeselection`](@ref)
 """
 function tree_costs(X::AbstractArray{T,3}, method::LSDB) where T<:AbstractFloat
     L = size(X, 2)
@@ -267,10 +387,12 @@ end
 
 
 ## BEST TREE SELECTION
-"""
+"""@docs
     bestbasis_treeselection(costs, n[, type=:min])
 
 Computes the best tree based on the given cost vector.
+
+**See also:** [`bestbasistree`](@ref), [`tree_costs`](@ref)
 """
 function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer,
         type::Symbol=:min) where T<:AbstractFloat
@@ -393,14 +515,23 @@ end
 
 
 ## BEST BASIS TREES
-"""
+"""@docs
     bestbasistree(X[, method])
 
 Extension to the best basis tree function from Wavelets.jl. Given a set of 
 decomposed signals, returns different types of best basis trees based on the 
-methods specified. Available methods are the joint best basis (`JBB()`), least 
-statistically dependent basis (`LSDB()`), and individual regular best basis 
-(`BB()`).
+methods specified. Available methods are the joint best basis ([`JBB`](ref)), 
+least statistically dependent basis ([`LSDB`](@ref)), individual regular 
+best basis ([`BB`](@ref)), and shift-invariant best basis ([`SIBB`](@ref)).
+
+# Examples
+```julia
+bestbasistree(X, JBB())
+
+bestbasistree(X, SIBB())
+```
+
+**See also:** [`bestbasiscoef`](@ref)
 """
 function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                
         method::LSDB) where T<:AbstractFloat
@@ -459,14 +590,17 @@ end
 
 
 ## BEST BASIS EXPANSION COEFFICIENTS
-"""
+"""@docs
     bestbasiscoef(X, tree)
+
     bestbasiscoef(X, wt, tree)
 
 Returns the expansion coefficients based on the given tree(s) and wavelet packet
 decomposition (WPD) expansion coefficients. If the WPD expansion coefficients 
 were not provided, the expansion coefficients can be obtained by providing the
 signals and wavelet.
+
+**See also:** [`bestbasistree`](@ref), [`bestbasis_treeselection`](@ref)
 """
 function bestbasiscoef(X::AbstractArray{T, 2}, tree::BitVector) where 
         T<:AbstractFloat

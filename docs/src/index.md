@@ -8,7 +8,7 @@ This package is written and maintained by Zeng Fung Liew and Shozen Dan under th
 ## Installation
 The package is part of the official Julia Registry. It can be install via the Julia REPL.
 ```julia
-(@1.x) pkg> add WaveletsExt
+(v1.6) pkg> add WaveletsExt
 ```
 or
 ```julia
@@ -39,7 +39,7 @@ z = iswpt(y, wavelet(WT.db4))
 ```
 
 ## Best Basis
-In addition to the best basis algorithm by M.V. Wickerhauser implemented in Wavelets.jl, WaveletsExt.jl contains the implementation of the Joint Best Basis (JBB) by Wickerhauser an the [Least Statistically-Dependent Basis (LSDB)](https://www.math.ucdavis.edu/~saito/courses/ACHA.suppl/lsdb-pr-journal.pdf) by Saito.
+In addition to the best basis algorithm by M.V. Wickerhauser implemented in Wavelets.jl, WaveletsExt.jl contains the implementation of the Joint Best Basis (JBB) by Wickerhauser an the [Least Statistically-Dependent Basis (LSDB)](https://www.math.ucdavis.edu/~saito/courses/ACHA.suppl/lsdb-pr-journal.pdf) by N. Saito.
 ```julia
 y = cat([wpd(x[:,i], wt) for i in N]..., dims=3)    # x has size (2^L, N)
 
@@ -54,13 +54,27 @@ Given a `BitVector` representing a best basis tree, one can obtain the correspon
 ```julia
 coef = bestbasiscoef(y, bbt)
 ```
+For more information on the different wavelet transforms and best basis algorithms, please refer to its [manual](@ref transforms_manual).
+
+## Signal Denoising
+WaveletsExt.jl includes additional signal denoising and thresholding methods that complement those written in Wavelets.jl. One can denoise a signal as follows:
+```julia
+x̂ = denoise(y, :wpt, wt, tree=bt)
+```
+Additionally, for cases where there are multiple signals to be denoised, one can use the `denoiseall` function as below.
+```julia
+X̂ = denoiseall(Y, :wpt, wt, tree=bt)
+```
 
 ## Local Discriminant Basis
-Local Discriminant Basis (LDB) is a feature extraction method developed by Naoki Saito.
+Local Discriminant Basis (LDB) is a feature extraction method developed by N. Saito and R. Coifman and can be accessed as follows.
 ```julia
+# generate data
 X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
 wt = wavelet(WT.haar)
 
+# LDB
 f = LocalDiscriminantBasis(wt, top_k=5, n_features=5)
 Xt = fit_transform(f, X, y)
 ```
+For more information on how to use LDB, please refer to its [manual](@ref ldb_manual).
