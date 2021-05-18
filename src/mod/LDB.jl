@@ -41,15 +41,42 @@ using
 
 
 ## ENERGY MAPS
+"""
+Energy map for Local Discriminant Basis. Current available types are:
+- [`TimeFrequency`](@ref)
+- [`ProbabilityDensity`](@ref)
+"""
 abstract type EnergyMap end
+
+@doc raw"""
+    TimeFrequency <: EnergyMap
+
+An energy map based on time frequencies, a measure based on the differences of 
+derived quantities from projection ``Z_i``, such as mean class energies or 
+cumulants.
+
+**See also:** [`EnergyMap`](@ref), [`ProbabilityDensity`](@ref)
+"""
 struct TimeFrequency <: EnergyMap end
+
+@doc raw"""
+    ProbabilityDensity <: EnergyMap
+
+An energy map based on time frequencies, a measure based on the differences 
+among the pdfs of ``Z_i``.
+
+**See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref)
+"""
 struct ProbabilityDensity <: EnergyMap end
 
 """
     energy_map(coef, method)
 
 Returns the Time Frequency Energy map or the Probability Density Energy map
-depending on the input `method` (`TimeFrequency()` or `ProbabilityDensity()`).  
+depending on the input `method` (`TimeFrequency()` or `ProbabilityDensity()`).
+
+**See also:** [`EnergyMap`](@ref). [`TimeFrequency`](@ref), 
+    [`ProbabilityDensity`](@ref)
 """
 function energy_map(coef::AbstractArray{<:Number,3}, method::TimeFrequency)
     n = size(coef, 1)
@@ -102,13 +129,62 @@ function energy_map(coef::AbstractArray{T,3}, method::ProbabilityDensity) where
 end
 
 ## DISCRIMINANT MEASURES
+"""
+Discriminant measure for Local Discriminant Basis. Current available types are:
+- Compatible with [`TimeFrequency`](@ref)
+    - [`AsymmetricRelativeEntropy`](@ref)
+    - [`SymmetricRelativeEntropy`](@ref)
+    - [`LpEntropy`](@ref)
+- Compatible with [`ProbabilityDensity`](@ref)
+    - [`HellingerDistance`](@ref)
+"""
 abstract type DiscriminantMeasure end
+
+@doc raw"""
+    AsymmetricRelativeEntropy <: DiscriminantMeasure
+
+Asymmetric Relative Entropy discriminant measure for the Time Frequency energy 
+map. This measure is also known as cross entropy and Kullback-Leibler 
+divergence.
+
+Equation: ``D(p,q) = \sum p(x) \log \frac{p(x)}{q(x)}``
+"""
 struct AsymmetricRelativeEntropy <: DiscriminantMeasure end
+
+@doc raw"""
+    SymmetricRelativeEntropy <: DiscriminantMeasure
+
+Symmetric Relative Entropy discriminant measure for the Time Frequency energy 
+map. Similar idea to the Asymmetric Relative Entropy, but this aims to make 
+the measure more symmetric.
+
+Equation: Denote the Asymmetric Relative Entropy as ``D_A(p,q)``, then 
+``D(p,q) = D_A(p,q) + D_A(q,p) = \sum p(x) \log \frac{p(x)}{q(x)} + q(x) \log \frac{q(x)}{p(x)}``
+"""
 struct SymmetricRelativeEntropy <: DiscriminantMeasure end
-struct HellingerDistance <: DiscriminantMeasure end
+
+@doc raw"""
+    LpEntropy <: DiscriminantMeasure
+
+``\ell^p`` Entropy discriminant measure for the Time Frequency energy 
+map. 
+
+Equation: ``W(p,q) = ||p-q||^2``
+"""
 @with_kw struct LpEntropy <: DiscriminantMeasure 
     p::Number = 2
 end
+
+@doc raw"""
+    HellingerDistance <: DiscriminantMeasure
+
+Hellinger Distance discriminant measure for the Probability Density energy 
+map.
+
+Equation: ``H(p,q) = \sum (\sqrt{p} - \sqrt{q})^2``
+"""
+struct HellingerDistance <: DiscriminantMeasure end
+
 
 """
     discriminant_measure(Γ, dm)
@@ -175,9 +251,41 @@ function discriminant_measure(p::T, q::T, dm::LpEntropy) where T<:Number
 end
 
 ## DISCRIMINATION POWER
+"""
+Discriminant Power measure for the Local Discriminant Basis. Current available
+measures are
+- [`BasisDiscriminantMeasure`](@ref)
+- [`FishersClassSeparability`](@ref)
+- [`RobustFishersClassSeparability`](@ref)
+"""
 abstract type DiscriminantPower end
+
+"""
+    BasisDiscriminantMeasure <: DiscriminantPower
+
+This is the discriminant measure of a single basis function computed in a 
+previous step to construct the energy maps.
+"""
 struct BasisDiscriminantMeasure <: DiscriminantPower end
+
+@doc raw"""
+    FishersClassSeparability <: DiscriminantPower
+
+The Fisher's class separability of the expansion coefficients in the basis 
+function.
+
+Equation: ``\frac{\sum_{c=1}^C \pi_c({\rm mean}_i(\alpha_{\lambda,i}^{(c)}) - {\rm mean}_c({\rm mean}_i(\alpha_{\lambda,i}^{(c)})))^2}{\sum_{c=1}^C \pi_c {\rm var}_i(\alpha_{\lambda,i}^{(c)})}``
+"""
 struct FishersClassSeparability <: DiscriminantPower end
+
+@doc raw"""
+    RobustFishersClassSeparability <: DiscriminantPower
+
+The robust version of Fisher's class separability of the expansion coefficients 
+in the basis function.
+
+Equation: ``\frac{\sum_{c=1}^C \pi_c({\rm med}_i(\alpha_{\lambda,i}^{(c)}) - {\rm med}_c({\rm med}_i(\alpha_{\lambda,i}^{(c)})))^2}{\sum_{c=1}^C \pi_c {\rm mad}_i(\alpha_{\lambda,i}^{(c)})}``
+"""
 struct RobustFishersClassSeparability <: DiscriminantPower end
 
 """
@@ -312,10 +420,13 @@ mutable struct LocalDiscriminantBasis
 end
 
 """
-    LocalDiscriminantBasis(wt[; max_dec_level=nothing,
+    LocalDiscriminantBasis([; 
+        wt=wavelet(WT.haar),
+        max_dec_level=nothing,
         dm=AsymmetricRelativeEntropy(), em=TimeFrequency(), 
         dp=BasisDiscriminantMeasure(), top_k=nothing,
-        n_features=nothing])
+        n_features=nothing]
+    )
 
 Class constructor for `LocalDiscriminantBasis`. 
 
@@ -363,6 +474,9 @@ end
 
 Fits the Local Discriminant Basis feature selection algorithm `f` onto the 
 signals `X` (or the decomposed signals `Xw`) with labels `y`.
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit_transform`](@ref),
+    [`transform`](@ref), [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
 """
 function fit!(f::LocalDiscriminantBasis, X::AbstractArray{S,2}, 
         y::AbstractVector{T}) where {S<:Number, T}
@@ -455,6 +569,9 @@ end
     transform(f, X)
 
 Extract the LDB features on signals `X`.
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref), 
+    [`fit_transform`](@ref), [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
 """
 function transform(f::LocalDiscriminantBasis, X::AbstractArray{T,2}) where T
     # check necessary measurements
@@ -488,6 +605,9 @@ end
     fit_transform(f, X, y)
 
 Fit and transform the signals `X` with labels `y` based on the LDB class `f`.
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref),
+    [`transform`](@ref), [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
 """
 function fit_transform(f::LocalDiscriminantBasis, X::AbstractArray{S,2},
         y::AbstractVector{T}) where {S<:Number, T}
@@ -517,6 +637,9 @@ end
 
 Compute the inverse transform on the feature matrix `x` to form the original
 signal based on the LDB class `f`.
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref),
+    [`fit_transform`](@ref), [`transform`](@ref), [`change_nfeatures`](@ref)
 """
 function inverse_transform(f::LocalDiscriminantBasis, 
         x::AbstractArray{T,2}) where T<:Number
@@ -548,6 +671,9 @@ Note that if the input `n_features` is larger than `f.n_features`, it results in
 the regeneration of signals based on the current `f.n_features` before 
 reselecting the features. This will cause additional features to be less 
 accurate and effective.
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit`](@ref), [`fit_transform`](@ref),
+    [`transform`](@ref), [`inverse_transform`](@ref)
 """
 function change_nfeatures(f::LocalDiscriminantBasis, x::AbstractArray{T,2},
         n_features::Integer) where T<:Number

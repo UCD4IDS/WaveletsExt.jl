@@ -21,14 +21,25 @@ using
     ..Utils
 
 # DENOISING
-"Relative Error Shrink"
+"""
+    RelErroShrink(th, t) <: DNFT
+
+Relative Error Shrink method used in their paper "Efficient Approximation and 
+Denoising of Graph Signals using the Multiscale Basis Dictionary" for IEEE 
+Transactions on Signal and Information Processing over Networks, Vol 0, No. 0, 
+2016.
+"""
 struct RelErrorShrink <: DNFT
     th::Wavelets.Threshold.THType
     t::AbstractFloat
     RelErrorShrink(th, t) = new(th, t)
 end
 
-"Stein's Unbiased Risk Estimate (SURE) Shrink"
+"""
+    SureShrink(th, t) <: DNFT
+
+Stein's Unbiased Risk Estimate (SURE) Shrink
+"""
 struct SureShrink <: DNFT 
     th::Wavelets.Threshold.THType
     t::AbstractFloat
@@ -58,6 +69,8 @@ end
     SureShrink(x[, tree=nothing, th=SteinTH()])
 
 Struct constructor for `SureShrink` based on the signal coefficients `x`.
+
+**See also:** [`surethreshold`](@ref)
 """
 function SureShrink(x::AbstractArray{<:Number}, 
         tree::Union{BitVector, Nothing}=nothing,
@@ -114,7 +127,8 @@ input type `inputtype`.
     the lowest frequency subspace node of the wavelet transform. Default is set
     to be `:regular`.
 
-**See also:** `denoiseall`
+**See also:** [`denoiseall`](@ref), [`noisest`](@ref), 
+    [`relerrorthreshold`](@ref)
 """
 function Wavelets.Threshold.denoise(x::AbstractArray{T}, 
         inputtype::Symbol,
@@ -282,7 +296,7 @@ Denoise multiple signals of input type `inputtype`.
     the lowest frequency subspace node of the wavelet transform. Default is set
     to be `:regular`.
 
-**See alse:** `denoise`, `noisest`
+**See alse:** [`denoise`](@ref), [`noisest`](@ref), [`relerrorthreshold`](@ref)
 """
 function denoiseall(x::AbstractArray{T1}, 
         inputtype::Symbol,
@@ -377,7 +391,8 @@ y = swpd(x, wt)
 noise = noisest(y, true, tree)
 ```
 
-**See also:** `relerrorthreshold`
+**See also:** [`relerrorthreshold`](@ref), [`VisuShrink`](@ref), 
+    [`SureShrink`](@ref)
 """
 function Wavelets.Threshold.noisest(x::AbstractArray{T}, redundant::Bool,
         tree::Union{BitVector,Nothing}=nothing) where T<:Number
@@ -401,7 +416,7 @@ end
 
 Determination of the `t` value used for `SureShrink`.
 
-**See also:** `SureShrink`
+**See also:** [`SureShrink`](@ref)
 """
 function surethreshold(coef::AbstractArray{T}, redundant::Bool,
         tree::Union{BitVector,Nothing}=nothing) where T<:Number
@@ -429,7 +444,9 @@ end
     relerrorthreshold(coef, redundant[, tree, elbows=2; makeplot=false])
 
 Takes in a set of expansion coefficients, 'plot' the threshold vs relative error 
-curve and select the best threshold value based on the elbow method.
+curve and select the best threshold value based on the elbow method. If one 
+wants to see the resulting plot from this computation, simply set 
+`makeplot=true`.
 
 # Examples
 ```julia
@@ -454,7 +471,7 @@ y = swpd(x, wt)
 noise = relerrorthreshold(y, true, tree)
 ```
 
-**See also:** `noisest`, `RelErrorShrink`
+**See also:** [`noisest`](@ref), [`RelErrorShrink`](@ref)
 """
 function relerrorthreshold(coef::AbstractArray{T}, redundant::Bool,
         tree::Union{BitVector,Nothing}=nothing, elbows::Integer=2;
@@ -504,7 +521,10 @@ end
 
 Given a vector 'orth' of orthonormal expansion coefficients, return a 
 vector of relative approximation errors when retaining the 1,2,...,N 
-largest coefficients in magnitude.  
+largest coefficients in magnitude.
+
+**See also:** [`RelErrorShrink`](@ref), [`relerrorthreshold`](@ref), 
+    [`findelbow`](@ref)
 """
 function orth2relerror(orth::AbstractVector{T}) where T<:Number
     # sort the coefficients
@@ -516,7 +536,10 @@ end
 """
     findelbow(x, y)
 
-Given the x and y coordinates of a curve, return the elbow.  
+Given the x and y coordinates of a curve, return the elbow.
+
+**See also:** [`RelErrorShrink`](@ref), [`relerrorthreshold`](@ref),
+    [`orth2relerror`](@ref)
 """
 function findelbow(x::AbstractVector{T}, y::AbstractVector{T}) where T<:Number
     # a unit vector pointing from (x1,y1) to (xN,yN)
@@ -548,17 +571,17 @@ function relerrorplot(x::Vector{<:Number},
     p = plot(x, y, lw = 2, color = :blue, legend = false)
     plot!(p, xlims = (0, 1.004*xmax), ylims = (0, 1.004*ymax))
     for i in 1:elbows
-        color = i + 1
+        col = i + 1
         # diagonal line
         endpoint = i > 1 ? ix[i-1] : length(x)
         plot!([x[1], 1.004*x[endpoint]], [y[1], 1.004*y[endpoint]], lw = 2, 
-            color = color)
+            color = col)
         # perpendicular line
         dropto = [x[1], y[1]] + A[i][ix[i]]*(v[i].*[xmax, ymax])
         plot!(p, [x[ix[i]], dropto[1]], [y[ix[i]], dropto[2]], lw = 2, 
-            color = color)
+            color = col)
         # highlight point
-        scatter!(p, [x[ix[i]]], [y[ix[i]]], color = color)
+        scatter!(p, [x[ix[i]]], [y[ix[i]]], color = col)
     end
     # add plot labels
     plot!(p, xlabel = "Threshold", ylabel = "Relative Error")

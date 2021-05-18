@@ -8,7 +8,7 @@ export
 using ..Utils
 using LinearAlgebra, Wavelets
 
-"""@docs
+"""
 	acwt(x, wt[, L=maxtransformlevels(x)])
 
     acwt(x, wt[, Lrow=maxtransformlevels(x[1,:]), Lcol=maxtransformlevels(x[:,1])])
@@ -28,7 +28,7 @@ acwt(x, wavelet(WT.db4), 4) # level 4 decomposition
 """
 function acwt end
 
-"""@docs
+"""
     acwt_step(v, j, h, g)
 
 Performs one level of the autocorrelation discrete wavelet transform (ACWT) on the 
@@ -42,7 +42,7 @@ Returns a tuple `(v, w)` of the scaling and detail coefficients at level `j+1`.
 """
 function acwt_step end
 
-"""@docs
+"""
     acwpt(x, wt[, L=maxtransformlevels(x)])
 
 Performs a discrete autocorrelation wavelet packet transform for a given signal `x`.
@@ -59,7 +59,18 @@ acwpt(x, wavelet(WT.db4), 4)
 """
 function acwpt end
 
-"""@docs
+"""
+    acwpt_step(W, i, d, Qmf, Pmf)
+
+Performs one level of the autocorrelation discrete wavelet packet transform 
+(ACWPT) on the `i`-th node at depth `d` in the array `W`. The vectors `Qmf` and 
+`Pmf` are the detail and scaling filters.
+
+**See also:** [`acwpt`](@ref), [`iacwpt`](@ref)
+"""
+function acwpt_step end
+
+"""
 	iacwt(xw::AbstractArray{<:Number,2})
 
     iacwt(xw::AbstractArray{<:Number,4})
@@ -67,11 +78,20 @@ function acwpt end
 Performs the inverse autocorrelation discrete wavelet transform. 
 Can be used for both the 1D and 2D case.
 
-**See also:** `iacwt!`, [`acwt`](@ref)
+**See also:** [`iacwt!`](@ref), [`acwt`](@ref)
 """
 function iacwt end
 
-"""@docs
+"""
+	iacwt!(xw::AbstractArray{<:Number,2})
+
+Same as `iacwt` but performs the inverse autocorrelation discrete wavelet transform in place.
+
+**See also:** [`iacwt`](@ref), [`acwt`](@ref)
+"""
+function iacwt! end
+
+"""
     iacwpt(xw, tree, i)
 
 Performs the inverse autocorrelation discrete wavelet packet transform,
@@ -79,9 +99,10 @@ with respect to a decomposition tree.
 
 **See also:** [`acwpt`](@ref)
 """
+function iacwpt end
 
 ### ACWT Base methods ###
-"""@docs
+"""
     autocorr(f::OrthoFilter)
 
 Generates the autocorrelation filter for a given wavelet filter.
@@ -99,7 +120,7 @@ function autocorr(f::OrthoFilter)
     return result
 end
 
-"""@docs
+"""
     pfilter(f::OrthoFilter)
 
 Generates the high-pass autocorrelation filter
@@ -114,7 +135,7 @@ function pfilter(f::OrthoFilter)
     return vcat(reverse(b), c1, b)
 end
 
-"""@docs
+"""
     qfilter(f::OrthoFilter)
 
 Generates the low-pass autocorrelation filter

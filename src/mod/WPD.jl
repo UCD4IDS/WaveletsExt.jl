@@ -16,6 +16,8 @@ using
 
 Returns the wavelet packet decomposition WPD) for L levels for input signal(s) 
 x.
+
+**See also:** [`wpd!`](@ref)
 """
 function wpd(x::AbstractVector{<:Number}, wt::OrthoFilter, 
         L::Integer=maxtransformlevels(x))
@@ -46,6 +48,8 @@ end
     wpd!(y, x, wt, hqf, gqf[, L=maxtransformlevels(x)])
 
 Same as `wpd` but without array allocation.
+
+**See also:** [`wpd`](@ref)
 """
 function wpd!(y::AbstractArray{T,2}, x::AbstractArray{T,1},
         wt::DiscreteWavelet, L::Integer=maxtransformlevels(x)) where

@@ -26,6 +26,8 @@ using
     left(i)
 
 Given the node index `i`, returns the index of its left node.
+
+**See also:** [`right`](@ref)
 """
 left(i::Integer) = i<<1
 
@@ -33,6 +35,8 @@ left(i::Integer) = i<<1
     right(i)
 
 Given the node index `i`, returns the index of its right node.
+
+**See also:** [`left`](@ref)
 """
 right(i::Integer) = i<<1 + 1
 
@@ -143,6 +147,8 @@ end
 
 Returns the relative norm of base p between original signal x₀ and noisy signal
 x.
+
+**See also:** [`psnr`](@ref), [`snr`](@ref), [`ssim`](@ref)
 """
 function relativenorm(x::AbstractVector{T}, x₀::AbstractVector{T}, 
         p::Real=2) where T<:Number
@@ -156,6 +162,8 @@ end
 
 Returns the peak signal to noise ratio (PSNR) between original signal x₀ and
 noisy signal x.
+
+**See also:** [`relativenorm`](@ref), [`snr`](@ref), [`ssim`](@ref)
 """
 function psnr(x::AbstractVector{T}, x₀::AbstractVector{T}) where T<:Number
     @assert length(x) == length(x₀)              # ensure same lengths
@@ -172,6 +180,8 @@ end
 
 Returns the signal to noise ratio (SNR) between original signal x₀ and noisy 
 signal x.
+
+**See also:** [`relativenorm`](@ref), [`psnr`](@ref), [`ssim`](@ref)
 """
 function snr(x::AbstractVector{T}, x₀::AbstractVector{T}) where T<:Number
     @assert length(x) == length(x₀)             # ensure same lengths
@@ -184,7 +194,9 @@ end
 Wrapper for `assess_ssim` function from ImageQualityIndex.jl.
 
 Returns the Structural Similarity Index Measure (SSIM) between the original 
-signal/image x₀ and noisy signal/image x. 
+signal/image x₀ and noisy signal/image x.
+
+**See also:** [`relativenorm`](@ref), [`psnr`](@ref), [`snr`](@ref)
 """
 function ssim(x::AbstractArray{T}, x₀::AbstractArray{T}) where T<:Number
     return assess_ssim(x, x₀)
@@ -228,6 +240,11 @@ Shrinkage" Preprint Stanford, January 93, p 27-28.
 
 The code for this function is adapted and translated based on MATLAB's Wavelet Toolbox's 
 `wnoise` function.
+
+# Examples
+```julia
+generatesignals(:bumps, 8)
+```
 """
 function generatesignals(fn::Symbol, L::Integer)
     @assert L >= 1
@@ -281,6 +298,8 @@ Based on the input `type`, generates 3 classes of signals with sample sizes
 
 Based on N. Saito and R. Coifman in "Local Discriminant Basis and their Applications" in the
 Journal of Mathematical Imaging and Vision, Vol. 5, 337-358 (1995).
+
+**See also:** [`generateclassdata`](@ref)
 """
 struct ClassData
     "Signal type, accepted inputs are `:tri` and `:cbf`"
@@ -303,6 +322,8 @@ containing the 3 classes of signals and a vector containing their corresponding 
 
 Based on N. Saito and R. Coifman in "Local Discriminant Basis and their Applications" in the
 Journal of Mathematical Imaging and Vision, Vol. 5, 337-358 (1995).
+
+**See also:** [`ClassData`](@ref)
 """
 function generateclassdata(c::ClassData, shuffle::Bool=false)
     @assert c.s₁ >= 0

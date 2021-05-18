@@ -21,7 +21,7 @@ and scaling filters.
 
 Returns a tuple `(v, w)` of the scaling and detail coefficients at level `j+1`.
 
-**See also:** `sdwt_step!`
+**See also:** [`sdwt_step!`](@ref)
 """
 function sdwt_step end
 
@@ -29,6 +29,8 @@ function sdwt_step end
     sdwt_step!(v1, w1, v, j, h, g)
 
 Same as `sdwt_step` but without array allocation.
+
+**See also:** [`sdwt_step`](@ref)
 """
 function sdwt_step! end
 
@@ -46,7 +48,12 @@ Returns the `n × (L+1)` matrix (where `n` is the length of `x`) with the detail
 coefficients for level j in column (L-j+2). The scaling coefficients are in the
 1st column.
 
-**See also:** `swpd`, `swpt`, `isdwt`
+# Examples
+```julia
+xw = sdwt(x, wt, 5)
+```
+
+**See also:** [`swpd`](@ref), [`swpt`](@ref), [`isdwt`](@ref)
 """
 function sdwt end
 
@@ -63,7 +70,13 @@ Default value is set to `maxtransformlevels(x)`.
 Returns the `n × (2⁽ᴸ⁺¹⁾-1)` matrix (where `n` is the length of `x`) with each 
 column representing the nodes in the binary tree.
 
-**See also:** `swpt`, `sdwt`, `iswpt`
+# Examples
+```julia
+xw = swpd(x, wt, 5)
+```
+
+
+**See also:** [`swpt`](@ref), [`sdwt`](@ref), [`iswpt`](@ref)
 """
 function swpd end
 
@@ -87,7 +100,11 @@ Returns the expansion coefficients of the SWPT of the size `N × k`. Each column
 represents a leaf node from `tree`. Number of returned columns can vary between 
 1 ≤ k ≤ N depending on the input `tree`.
 
-**See also:** `sdwt`, `swpd`
+*Note:* If one wants to compute the stationary wavelet packet transform on a 
+signal, yet hopes to reconstruct the original signal later on, please use the 
+`swpd` function instead.
+
+**See also:** [`sdwt`](@ref), [`swpd`](@ref)
 """
 function swpt end
 
@@ -101,7 +118,7 @@ are the detail and scaling filters.
 
 Returns a vector `v0` of the scaling and detail coefficients at level `j-1`.
 
-**See also:** `isdwt_step!`
+**See also:** [`isdwt_step!`](@ref)
 """
 function isdwt_step end
 
@@ -109,6 +126,8 @@ function isdwt_step end
     isdwt_step!(v0, v1, w1, j, s0, s1, g, h)
 
 Same as `isdwt_step` but without array allocation.
+
+**See also:** [`isdwt_step`](@ref)
 """
 function isdwt_step! end
 
@@ -120,7 +139,19 @@ transform coefficients with respect to the Boolean Vector `ε` which represents
 the shifts to be used. If `ε` is not provided, the average-basis ISDWT will be 
 computed instead.
 
-**See also:** `iswpt`, `sdwt`
+# Examples
+```julia
+# decompose signal
+xw = sdwt(x, wt, 5)
+
+# ε-based reconstruction
+y = isdwt(xw, wt, BitVector([0,1,0,0,0]))
+
+# average-based reconstruction
+y = isdwt(xw, wt)
+```
+
+**See also:** [`iswpt`](@ref), [`sdwt`](@ref)
 """
 function isdwt end
 
@@ -136,9 +167,26 @@ function isdwt end
 Performs the inverse stationary wavelet packet transform (ISWPT) on the `swpd`
 transform coefficients with respect to a given Boolean Vector that represents a
 binary `tree` and the BitVector `ε` which represents the shifts to be used. If
-`ε` is not provided, the average-basis ISWPT will be computed instead. 
+`ε` is not provided, the average-basis ISWPT will be computed instead.
 
-**See also:** `isdwt`, `swpd`
+# Examples
+```julia
+# decompose signal
+xw = swpd(x, wt, 5)
+
+# best basis tree
+bt = bestbasistree(xw, BB(redundant=true))
+
+# ε-based reconstruction
+y = iswpt(xw, wt, BitVector([0,0,0,1,0]), 5)
+y = iswpt(xw, wt, BitVector([0,0,0,1,0]), bt)
+
+# average-based reconstruction
+y = iswpt(xw, wt, 5)
+y = iswpt(xw, wt, bt)
+```
+
+**See also:** [`isdwt`](@ref), [`swpd`](@ref)
 """
 function iswpt end
 

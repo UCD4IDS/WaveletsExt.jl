@@ -101,11 +101,13 @@ Plot a set of shaded wiggles.
     - `:normal`  - First signal at bottom (default)
     - `:reverse` - First signal at top.
 
-Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito
-The previous MATLAB version contributors are:
-    Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)
-Revised by Naoki Saito, Feb. 05, 2018
-Further changes were made by Zeng Fung Liew for Julia v1.6 compatibility.
+Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito  
+The previous MATLAB version contributors are:  
+    Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)  
+Revised by Naoki Saito, Feb. 05, 2018  
+Maintained by Zeng Fung Liew for newest Julia version compatibility.
+
+**See also:** [`wiggle`](@ref)
 """
 function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1), 
         zaxis::AbstractVector=1:size(wav,2), sc::Real=1, 
@@ -226,11 +228,13 @@ Plot a set of shaded wiggles on the current displayed graphics
     - `:normal`  - First signal at bottom (default)
     - `:reverse` - First signal at top.
 
-Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito
-The previous MATLAB version contributors are:
-    Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)
-Revised by Naoki Saito, Feb. 05, 2018
-Further changes were made by Zeng Fung Liew for Julia v1.6 compatibility.
+Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito  
+The previous MATLAB version contributors are:  
+    Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)  
+Revised by Naoki Saito, Feb. 05, 2018  
+Maintained by Zeng Fung Liew for newest Julia version compatibility.
+
+**See also:** [`wiggle`](@ref)
 """
 function wiggle!(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1), 
         zaxis::AbstractVector=1:size(wav,2), sc::Real=1, 

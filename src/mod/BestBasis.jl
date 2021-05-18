@@ -40,14 +40,14 @@ using
 
 
 ## COST COMPUTATION
-"""@docs
+"""
 Cost function abstract type.
 
 **See also:** [`LSDBCost`](@ref), [`JBBCost`](@ref), [`BBCost`](@ref)
 """
 abstract type CostFunction end
 
-"""@docs
+"""
     LSDBCost <: CostFunction
 
 Cost function abstract type specifically for LSDB.
@@ -56,7 +56,7 @@ Cost function abstract type specifically for LSDB.
 """
 abstract type LSDBCost <: CostFunction end
 
-"""@docs
+"""
     JBBCost <: CostFunction
     
 Cost function abstract type specifically for JBB.
@@ -65,7 +65,7 @@ Cost function abstract type specifically for JBB.
 """
 abstract type JBBCost <: CostFunction end
 
-"""@docs
+"""
     BBCost <: CostFunction
     
 Cost function abstract type specifically for BB.
@@ -97,7 +97,7 @@ end
     p::Number = 1
 end
 
-"""@docs
+"""
     DifferentialEntropyCost <: LSDBCost
 
 Differential entropy cost used for LSDB.
@@ -106,7 +106,7 @@ Differential entropy cost used for LSDB.
 """
 struct DifferentialEntropyCost <: LSDBCost end
 
-"""@docs
+"""
     ShannonEntropyCost <: LSDBCost
 
 Shannon entropy cost used for BB.
@@ -116,7 +116,7 @@ Shannon entropy cost used for BB.
 """
 struct ShannonEntropyCost <: BBCost end
 
-"""@docs
+"""
     LogEnergyEntropyCost <: LSDBCost
 
 Log energy entropy cost used for BB.
@@ -203,7 +203,7 @@ end
 
 
 ## BEST BASIS TYPES
-"""@docs
+"""
 Abstract type for best basis. Current available types are:
 - [`LSDB`](@ref)
 - [`JBB`](@ref)
@@ -212,7 +212,7 @@ Abstract type for best basis. Current available types are:
 """
 abstract type BestBasisType end
 
-"""@docs
+"""
     LSDB([; cost=DifferentialEntropyCost(), redundant=false])
 
 Least Statistically Dependent Basis (LSDB). Set `redundant=true` when running
@@ -226,7 +226,7 @@ LSDB with redundant wavelet transforms such as SWT or ACWT.
     redundant::Bool = false
 end
 
-"""@docs
+"""
     JBB([; cost=LoglpCost(2), redundant=false])
 
 Joint Best Basis (JBB). Set `redundant=true` when running JBB with redundant 
@@ -240,7 +240,7 @@ wavelet transforms such as SWT or ACWT.
     redundant::Bool = false
 end
 
-"""@docs
+"""
     BB([; cost=LoglpCost(2), redundant=false])
 
 Best Basis (BB). Set `redundant=true` when running BB with redundant wavelet 
@@ -254,7 +254,7 @@ transforms such as SWT or ACWT.
     redundant::Bool = false
 end
 
-"""@docs
+"""
     SIBB([; cost=ShannonEntropyCost()])
 
 Shift Invariant Best Basis (SIBB).
@@ -268,7 +268,7 @@ end
 
 
 ## TREE COST
-"""@docs
+"""
     tree_costs(X, method)
 
 Returns the cost of each node in a binary tree in order to find the best basis.
@@ -387,7 +387,7 @@ end
 
 
 ## BEST TREE SELECTION
-"""@docs
+"""
     bestbasis_treeselection(costs, n[, type=:min])
 
 Computes the best tree based on the given cost vector.
@@ -515,7 +515,7 @@ end
 
 
 ## BEST BASIS TREES
-"""@docs
+"""
     bestbasistree(X[, method])
 
 Extension to the best basis tree function from Wavelets.jl. Given a set of 
@@ -590,7 +590,7 @@ end
 
 
 ## BEST BASIS EXPANSION COEFFICIENTS
-"""@docs
+"""
     bestbasiscoef(X, tree)
 
     bestbasiscoef(X, wt, tree)

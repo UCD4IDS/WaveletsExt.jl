@@ -1,3 +1,13 @@
+```@raw html
+<div style="width:100%; height:150px;border-width:4px;border-style:solid;padding-top:25px;
+        border-color:#000;border-radius:10px;text-align:center;background-color:#B3D8FF;
+        color:#000">
+    <h3 style="color: black;">Star us on GitHub!</h3>
+    <a class="github-button" href="https://github.com/UCD4IDS/WaveletsExt.jl.git" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star UCD4IDS/WaveletsExt.jl on GitHub" style="margin:auto">Star</a>
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+</div>
+```
+
 # WaveletsExt.jl
 
 This package is a [Julia](https://github.com/JuliaLang/julia) extension package to [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl) (WaveletsExt is short for Wavelets Extension). It contains additional functionalities that complement Wavelets.jl, which include multiple best basis algorithms, denoising methods, [Local Discriminant Basis (LDB)](https://www.math.ucdavis.edu/~saito/publications/saito_ldb_jmiv.pdf), [Stationary Wavelet Transform](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.49.2662&rep=rep1&type=pdf), and the [Shift Invariant Wavelet Decomposition](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf).
@@ -27,7 +37,7 @@ y = wpd(x, wavelet(WT.db4))
 ```
 
 ## Stationary Wavelet Transform
-The redundant and non-orthogonal transform by Nason-Silverman can be implemented using either `sdwt` (for stationary discrete wavelet transform) or `iswpd` (for stationary wavelet packet decomposition). Similarly, the reconstruction of signals can be computed using `isdwt` and `iswpt`.
+The redundant and non-orthogonal transform by Nason-Silverman can be implemented using either [`sdwt`](@ref WaveletsExt.SWT.sdwt) (for stationary discrete wavelet transform) or [`swpd`](@ref WaveletsExt.SWT.swpd) (for stationary wavelet packet decomposition). Similarly, the reconstruction of signals can be computed using [`isdwt`](@ref WaveletsExt.SWT.isdwt) and [`iswpt`](@ref WaveletsExt.SWT.iswpt).
 ```julia
 # stationary discrete wavelet transform
 y = sdwt(x, wavelet(WT.db4))
@@ -50,18 +60,18 @@ bbt = bestbasistree(y, JBB())
 # least statistically dependent basis
 bbt = bestbasistree(y, LSDB())
 ```
-Given a `BitVector` representing a best basis tree, one can obtain the corresponding expansion coefficients using `bestbasiscoef`.
+Given a `BitVector` representing a best basis tree, one can obtain the corresponding expansion coefficients using [`bestbasiscoef`](@ref WaveletsExt.BestBasis.bestbasiscoef).
 ```julia
 coef = bestbasiscoef(y, bbt)
 ```
 For more information on the different wavelet transforms and best basis algorithms, please refer to its [manual](@ref transforms_manual).
 
 ## Signal Denoising
-WaveletsExt.jl includes additional signal denoising and thresholding methods that complement those written in Wavelets.jl. One can denoise a signal as follows:
+WaveletsExt.jl includes additional signal denoising and thresholding methods that complement those written in Wavelets.jl. One can denoise a signal as using the [`denoise`](@ref Wavelets.Threshold.denoise) Wavelets.jl extension function as follows:
 ```julia
 x̂ = denoise(y, :wpt, wt, tree=bt)
 ```
-Additionally, for cases where there are multiple signals to be denoised, one can use the `denoiseall` function as below.
+Additionally, for cases where there are multiple signals to be denoised, one can use the [`denoiseall`](@ref WaveletsExt.Denoising.denoiseall) function as below.
 ```julia
 X̂ = denoiseall(Y, :wpt, wt, tree=bt)
 ```
