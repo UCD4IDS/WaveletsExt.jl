@@ -11,7 +11,7 @@ Local Discriminant Basis is a feature extraction technique developed by N. Saito
 A more in-depth tutorial can be found in the Pluto notebook [here](https://github.com/ShozenD/LDBExperiments). For more information on LDB, please refer to the original paper "Local Discriminant Basis and their Applications" by Saito and Coifman [here](https://www.math.ucdavis.edu/~saito/publications/saito_ldb_jmiv.pdf).
 
 ## Example
-We first generate a multi-class dataset. `WaveletsExt` has 2 built-in multi-class signals dataset, namely the triangular signals (`:tri`) and the cylinder-bell-funnel signals (`:cbf`).
+We first generate a multi-class dataset. WaveletsExt.jl has 2 built-in multi-class signals dataset, namely the triangular signals (`:tri`) and the cylinder-bell-funnel signals (`:cbf`).
 ```@example ldb_tutorial
 using Wavelets, WaveletsExt, Plots
 

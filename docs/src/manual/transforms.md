@@ -32,7 +32,7 @@ trees = bestbasistree(xw, BB());
 nothing # hide
 ```
 
-Additionally, one can view the selected nodes from the best basis trees using the `plot_tfbdry` function as shown below.
+Additionally, one can view the selected nodes from the best basis trees using the [`plot_tfbdry`](@ref WaveletsExt.Visualizations.plot_tfbdry) function as shown below.
 ```@example wt
 plot_tfbdry(trees[:,1])
 ```

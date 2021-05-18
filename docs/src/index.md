@@ -67,7 +67,7 @@ coef = bestbasiscoef(y, bbt)
 For more information on the different wavelet transforms and best basis algorithms, please refer to its [manual](@ref transforms_manual).
 
 ## Signal Denoising
-WaveletsExt.jl includes additional signal denoising and thresholding methods that complement those written in Wavelets.jl. One can denoise a signal as using the [`denoise`](@ref Wavelets.Threshold.denoise) Wavelets.jl extension function as follows:
+WaveletsExt.jl includes additional signal denoising and thresholding methods that complement those written in Wavelets.jl. One can denoise a signal as using the [`denoise`](@ref WaveletsExt.Denoising.denoise) Wavelets.jl extension function as follows:
 ```julia
 x̂ = denoise(y, :wpt, wt, tree=bt)
 ```

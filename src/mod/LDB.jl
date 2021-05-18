@@ -158,7 +158,8 @@ Symmetric Relative Entropy discriminant measure for the Time Frequency energy
 map. Similar idea to the Asymmetric Relative Entropy, but this aims to make 
 the measure more symmetric.
 
-Equation: Denote the Asymmetric Relative Entropy as ``D_A(p,q)``, then 
+Equation: Denote the Asymmetric Relative Entropy as ``D_A(p,q)``, then
+
 ``D(p,q) = D_A(p,q) + D_A(q,p) = \sum p(x) \log \frac{p(x)}{q(x)} + q(x) \log \frac{q(x)}{p(x)}``
 """
 struct SymmetricRelativeEntropy <: DiscriminantMeasure end
@@ -167,9 +168,9 @@ struct SymmetricRelativeEntropy <: DiscriminantMeasure end
     LpEntropy <: DiscriminantMeasure
 
 ``\ell^p`` Entropy discriminant measure for the Time Frequency energy 
-map. 
+map. The default ``p`` value is set to 2.
 
-Equation: ``W(p,q) = ||p-q||^2``
+Equation: ``W(q,r) = ||q-r||^p``
 """
 @with_kw struct LpEntropy <: DiscriminantMeasure 
     p::Number = 2
@@ -189,7 +190,7 @@ struct HellingerDistance <: DiscriminantMeasure end
 """
     discriminant_measure(Γ, dm)
 
-Returns the discriminant measure calculated from the energy maps.
+Returns the discriminant measure of each node calculated from the energy maps.
 """
 function discriminant_measure(Γ::AbstractArray{T,3}, 
         dm::DiscriminantMeasure) where T<:Number
