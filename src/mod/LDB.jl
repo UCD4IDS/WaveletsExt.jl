@@ -189,8 +189,7 @@ Returns the discriminant power of each leaf from the local discriminant basis
 function discriminant_power(D::AbstractArray{T,2}, tree::BitVector, 
         dp::BasisDiscriminantMeasure) where T<:Number
 
-    L = size(D,2)-1
-    @assert length(tree) == 1<<L-1
+    @assert length(tree) == size(D,1) - 1
 
     power = bestbasiscoef(D, tree)
     order = sortperm(power, rev = true)
@@ -440,7 +439,7 @@ function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3},
     end
 
     # select best tree and best set of expansion coefficients
-    f.tree = bestbasis_treeselection(f.cost, f.max_dec_level, :max)
+    f.tree = bestbasis_treeselection(f.cost, f.n, :max)
     Xc = bestbasiscoef(Xw, f.tree)
 
     # obtain and order basis functions by power of discrimination
@@ -476,11 +475,9 @@ function transform(f::LocalDiscriminantBasis, X::AbstractArray{T,2}) where T
 
     # wpt on X based on given f.tree
     Xc = Array{T, 2}(undef, (n,N))
-    tree = falses(f.n-1)            # construct a tree for wpt
-    tree[1:length(f.tree)] = f.tree
     @inbounds begin
         for i in axes(Xc,2)
-            Xc[:,i] = wpt(X[:,i], f.wt, tree)
+            Xc[:,i] = wpt(X[:,i], f.wt, f.tree)
         end
     end
     return Xc[f.order[1:f.n_features],:]
@@ -533,11 +530,9 @@ function inverse_transform(f::LocalDiscriminantBasis,
 
     # iwpt on X
     X = Array{T,2}(undef, (f.n, N))
-    tree = falses(f.n-1)            # constructing a tree for iwpt
-    tree[1:length(f.tree)] = f.tree
     @inbounds begin
         for i in axes(Xc, 2)
-            X[:,i] = iwpt(Xc[:,i], f.wt, tree)
+            X[:,i] = iwpt(Xc[:,i], f.wt, f.tree)
         end
     end
     return X

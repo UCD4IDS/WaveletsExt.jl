@@ -44,5 +44,5 @@ tr = BitArray(ones(15,5))
 @test bestbasiscoef(x, wt, tr) == hcat([wpt(x[:,i], wt) for i in axes(x,2)]...)
 
 # misc
-@test_throws ArgumentError bestbasis_treeselection(randn(15), 3, :fail)
-@test_throws AssertionError bestbasis_treeselection(randn(8), 3, :fail) # number of nodes = 2^(L+1)-1
+@test_throws ArgumentError bestbasis_treeselection(randn(15), 8, :fail)
+@test_throws AssertionError bestbasis_treeselection(randn(7), 3, :fail) # true n=4

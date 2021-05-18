@@ -268,18 +268,19 @@ end
 
 ## BEST TREE SELECTION
 """
-    bestbasis_treeselection(costs, L[, type=:min])
+    bestbasis_treeselection(costs, n[, type=:min])
 
 Computes the best tree based on the given cost vector.
 """
-function bestbasis_treeselection(costs::AbstractVector{T}, L::Integer,
+function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer,
         type::Symbol=:min) where T<:AbstractFloat
 
-    @assert length(costs) == 1<<(L+1) - 1
-    bt = trues(1<<L - 1)
+    @assert length(costs) <= 2*n - 1
+    L = floor(Int, log2(length(costs)))
+    bt = maketree(n, L, :full)
     if type == :min
         @inbounds begin
-            for i in reverse(eachindex(bt))
+            for i in reverse(1:(1<<L-1))
                 childcost = costs[left(i)] + costs[right(i)]
                 if childcost < costs[i]     # child cost < parent cost
                     costs[i] = childcost
@@ -290,7 +291,7 @@ function bestbasis_treeselection(costs::AbstractVector{T}, L::Integer,
         end
     elseif type == :max
         @inbounds begin
-            for i in reverse(eachindex(bt))
+            for i in reverse(1:(1<<L-1))
                 childcost = costs[left(i)] + costs[right(i)]
                 if childcost > costs[i]     # child cost < parent cost
                     costs[i] = childcost
@@ -404,30 +405,28 @@ statistically dependent basis (`LSDB()`), and individual regular best basis
 function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                
         method::LSDB) where T<:AbstractFloat
     
-    L = method.redundant ? floor(Int, log2(size(X,1))) : size(X,2)-1
     costs = tree_costs(X, method)
-    besttree = bestbasis_treeselection(costs, L)
+    besttree = bestbasis_treeselection(costs, size(X,1))
     return besttree
 end
 
 function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3}, 
         method::JBB) where T<:AbstractFloat
 
-    L = method.redundant ? floor(Int, log2(size(X,1))) : size(X,2)-1
     costs = tree_costs(X, method)
-    besttree = bestbasis_treeselection(costs, L)
+    besttree = bestbasis_treeselection(costs, size(X,1))
     return besttree
 end
 
 function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                
         method::BB) where T<:AbstractFloat
     
-    L = method.redundant ? floor(Int, log2(size(X,1))) : size(X,2)-1
-    besttree = falses(1<<L-1, size(X,3))
+    n = size(X,1)
+    besttree = falses(n-1, size(X,3))
     @inbounds begin
         for i in axes(besttree,2)
             costs = tree_costs(X[:,:,i], method)
-            besttree[:,i] = bestbasis_treeselection(costs, L)
+            besttree[:,i] = bestbasis_treeselection(costs, n)
         end
     end
     return besttree
@@ -436,9 +435,8 @@ end
 function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,2}, 
         method::BB) where T<:AbstractFloat
 
-    L = method.redundant ? floor(Int, log2(size(X,1))) : size(X,2)-1
     costs = tree_costs(X, method)
-    besttree = bestbasis_treeselection(costs, L)
+    besttree = bestbasis_treeselection(costs, size(X,1))
     return besttree
 end
 
@@ -472,8 +470,8 @@ signals and wavelet.
 """
 function bestbasiscoef(X::AbstractArray{T, 2}, tree::BitVector) where 
         T<:AbstractFloat
-    L = size(X,2)-1
-    @assert length(tree) == 1<<L-1
+
+    @assert size(X,1) == length(tree) + 1
     
     (n,L) = size(X)
     return reshape(bestbasiscoef(reshape(X, (n,L,1)), tree), :)
@@ -482,8 +480,7 @@ end
 function bestbasiscoef(X::AbstractArray{T,3}, tree::BitVector) where 
         T<:AbstractFloat
 
-    L = size(X,2)-1
-    @assert length(tree) == 1<<L-1
+    @assert size(X,1) == length(tree) + 1
     
     n = size(X, 1)
     leaf = getleaf(tree)
