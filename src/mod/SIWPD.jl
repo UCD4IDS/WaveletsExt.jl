@@ -41,7 +41,6 @@ function siwpd(x::AbstractVector{Tx}, wt::OrthoFilter, h::Vector{T},
     for node in axes(y,2)
         level = floor(Int, log2(node)) # current node level (starts from 0)
         nodelen = nodelength(n, level)
-        numnode = n ÷ nodelen          # number of nodes at current level
         # decomposition depth of current node
         dₗ = (0 <= level <= L-d) ? d : L-level  
         decompose!(y, wt, h, g, si, node, nodelen, 

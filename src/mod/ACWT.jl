@@ -263,7 +263,7 @@ end
 
 ## ACW Packet Transform ##
 function acwpt_step(W::AbstractArray{T,2}, i::Integer, d::Integer, Qmf::Vector{T}, Pmf::Vector{T}) where T <: Number
-    n,m = size(W)
+    _,m = size(W)
     if i<<1+1 <= m
         W[:,i<<1], W[:,i<<1+1] = acwt_step(W[:,i],d,Qmf,Pmf)
         acwpt_step(W,i<<1,d+1,Qmf,Pmf) # left
@@ -281,7 +281,7 @@ end
 
 ### Inverse Transforms ###
 function iacwt!(xw::AbstractArray{<:Number,2})
-    n,m = size(xw)
+    _,m = size(xw)
     @inbounds begin
         for i = 2:m
             xw[:,1] = (xw[:,1] + xw[:,i]) / √2
@@ -296,7 +296,7 @@ function iacwt(xw::AbstractArray{<:Number,2})
 end
 
 function iacwt(xw::AbstractArray{<:Number,4})
-    nrow, ncol, Lrow, Lcol = size(xw)
+    nrow, ncol, _, Lcol = size(xw)
     W4d = permutedims(xw,[4,2,3,1])
     W3d = Array{Number,3}(undef, nrow, Lcol, ncol)
     for i in 1:Lcol

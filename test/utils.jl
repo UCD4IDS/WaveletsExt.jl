@@ -46,7 +46,7 @@ end
     @test typeof(ClassData(:cbf, 5, 5, 5)) == ClassData
     @test_throws ArgumentError ClassData(:fail, 5, 5, 5)
 
-    @test size(generateclassdata(ClassData(:tri, 5, 5, 5))[1]) == (32,15)
+    @test size(generateclassdata(ClassData(:tri, 5, 5, 6))[1]) == (32,16)
     @test size(generateclassdata(ClassData(:cbf, 5, 5, 5))[1]) == (128,15)
     @test_nowarn generateclassdata(ClassData(:tri, 5, 5, 5), true)
 end

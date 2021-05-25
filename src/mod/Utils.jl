@@ -342,8 +342,8 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
         h₃ = max.(6 .- abs.(i.-11), 0)
 
         H₁ = repeat(u*h₁ + (1-u)*h₂, outer=c.s₁) |> y -> reshape(y, (n, c.s₁))
-        H₂ = repeat(u*h₁ + (1-u)*h₃, outer=c.s₁) |> y -> reshape(y, (n, c.s₂))
-        H₃ = repeat(u*h₂ + (1-u)*h₃, outer=c.s₁) |> y -> reshape(y, (n, c.s₃))
+        H₂ = repeat(u*h₁ + (1-u)*h₃, outer=c.s₂) |> y -> reshape(y, (n, c.s₂))
+        H₃ = repeat(u*h₂ + (1-u)*h₃, outer=c.s₃) |> y -> reshape(y, (n, c.s₃))
         
         H = hcat(H₁, H₂, H₃) + ϵ
     elseif c.type == :cbf

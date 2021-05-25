@@ -370,7 +370,7 @@ end
 function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter,
         ε::AbstractVector{Bool}) where T<:Number
 
-    N, K = size(xw)
+    _, K = size(xw)
     L = K - 1
     @assert length(ε) == L
 

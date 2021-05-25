@@ -136,7 +136,6 @@ function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
     
     # Scale the data for plotting
     wamp = deepcopy(wav)
-    dt = mean(diff(taxis))
     dz = mean(diff(zaxis))
     if Overlap
         wamp *= 2 * dz * (sc/maximum(maxrow-minrow))
@@ -263,7 +262,6 @@ function wiggle!(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
     
     # Scale the data for plotting
     wamp = deepcopy(wav)
-    dt = mean(diff(taxis))
     dz = mean(diff(zaxis))
     if Overlap
         wamp *= 2 * dz * (sc/maximum(maxrow-minrow))
