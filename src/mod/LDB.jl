@@ -28,6 +28,7 @@ export
 
 using
     AverageShiftedHistograms,
+    LinearAlgebra,
     Wavelets,
     Parameters,
     Statistics,
@@ -62,15 +63,17 @@ struct TimeFrequency <: EnergyMap end
 @doc raw"""
     ProbabilityDensity <: EnergyMap
 
-An energy map based on time frequencies, a measure based on the differences 
-among the pdfs of ``Z_i``.
+An energy map based on probability density, a measure based on the differences 
+among the pdfs of ``Z_i``. Since we do not know the true density functions of
+the coefficients, the PDFs are estimated using the Average Shifted Histogram
+(ASH).
 
 **See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref)
 """
 struct ProbabilityDensity <: EnergyMap end
 
 """
-    energy_map(coef, method)
+    energy_map(Xw, y, method)
 
 Returns the Time Frequency Energy map or the Probability Density Energy map
 depending on the input `method` (`TimeFrequency()` or `ProbabilityDensity()`).
@@ -78,53 +81,78 @@ depending on the input `method` (`TimeFrequency()` or `ProbabilityDensity()`).
 **See also:** [`EnergyMap`](@ref). [`TimeFrequency`](@ref), 
     [`ProbabilityDensity`](@ref)
 """
-function energy_map(coef::AbstractArray{<:Number,3}, method::TimeFrequency)
-    n = size(coef, 1)
-    L = size(coef, 2) - 1
+function energy_map(Xw::AbstractArray{S,3}, y::AbstractVector{T}, 
+        method::TimeFrequency) where {S<:Number, T}
+
+    # basic summary of data
+    c = unique(y)       # unique classes
+    nc = length(c)      # number of classes
+    Ny = length(y)
+    n, L, Nx = size(Xw)
+    
+    # parameter checking
+    @assert Nx == Ny
+    @assert nc > 1
     @assert isdyadic(n)
-    @assert 1 <= L <= maxtransformlevels(n)
+    @assert 1 <= L-1 <= maxtransformlevels(n)
 
-    x = coef[:,1,:]
-    normalization = sum(mapslices(xᵢ -> sum(xᵢ.^2), x, dims = 1))
-    sumsquare_coef = sum(coef.^2, dims = 3)
-
-    return sumsquare_coef / normalization
+    # construct normalized energy map for each class
+    Γ = Array{Float64, 3}(undef, (n,L,nc))
+    @inbounds begin
+        for (i,cᵢ) in enumerate(c)
+            idx = findall(yᵢ -> yᵢ==cᵢ, y)
+            x = Xw[:,1,idx]
+            norm_sum = sum(mapslices(xᵢ -> norm(xᵢ,2)^2, x, dims = 1))
+            en = sum(Xw[:,:,idx].^2, dims=3)
+            Γ[:,:,i] = en / norm_sum
+        end
+    end
+    
+    return Γ
 end
 
-function energy_map(coef::AbstractArray{T,3}, method::ProbabilityDensity) where 
-        T<:Number
+function energy_map(Xw::AbstractArray{S,3}, y::AbstractVector{T},
+        method::ProbabilityDensity) where {S<:Number, T}
 
-    n = size(coef, 1)
-    L = size(coef, 2) - 1
-    N = size(coef, 3)
+    # basic summary of data
+    c = unique(y)       # unique classes
+    nc = length(c)      # number of classes
+    Ny = length(y)
+    n, L, Nx = size(Xw)
+    
+    # parameter checking
+    @assert Nx == Ny
+    @assert nc > 1
     @assert isdyadic(n)
-    @assert 1 <= L <= maxtransformlevels(n)
+    @assert 1 <= L-1 <= maxtransformlevels(n)
 
-    Γ = Array{T,2}(undef, (n,L+1))
-    for j in axes(coef, 2)
-        γᵢ = Vector{T}(undef, n)
-        for i in eachindex(γᵢ)
-            x = coef[i,j,:]                      # segment of coef
-            nbins = ceil(Integer, (30*N)^(1/5))  # number of bins per histogram
-            # number of histograms using M/nbins, where M=100 is arbitrary
-            mbins = ceil(Integer, 100/nbins)     
-
-            σ = std(x)                           # standard deviation of x
-            s = 0.5                              
-            δ = (maximum(x) - minimum(x) + σ)/((nbins+1) * mbins - 1)               
-            rng = (minimum(x) - s*σ):δ:(maximum(x) + s*σ)   
-            # compute EPDF using ASH                        
-            epdf = ash(x, rng = rng, m = mbins, kernel = Kernels.triangular)   
-
-            # calculate expectation E[Zᵢ²|Y=y] = ∫ z² q̂ᵢ(z) dz ≈ ∑ zₖ² q̂ᵢ(zₖ) δ
-            E = 0                                                                   
-            for k in 1:N
-                E += (x[k]^2) * AverageShiftedHistograms.pdf(epdf, x[k]) * δ
+    # construct empirical probability density for each coefficent of each class
+    nbins = ceil(Int, (30*Nx)^(1/5)) # number of bins/histogram
+    mbins = ceil(Int, 100/nbins)     # number of histograms M/nbins, M=100 is arbitrary
+    Γ = Array{Float64,4}(undef, (n, L, (nbins+1)*mbins, nc))
+    @inbounds begin
+        for (i,cᵢ) in enumerate(c)      # iterate over each class
+            idx = findall(yᵢ -> yᵢ==cᵢ, y)
+            xw = Xw[:,:,idx]            # wavelet packet for class cᵢ
+            for j in axes(xw,1)
+                for k in axes(xw,2)
+                    z = @view Xw[j,k,:] # coefficients at (j,k) for all signals
+                    zᵢ = xw[j,k,:]      # coefficients at (j,k) for cᵢ signals
+                    
+                    # ash parameter setup
+                    σ = std(z)
+                    s = 0.5
+                    δ = (maximum(z)-minimum(z)+σ)/((nbins+1)*mbins-1)
+                    rng = range(minimum(z)-s*σ, step=δ, length=(nbins+1)*mbins)
+                
+                    # empirical pdf
+                    epdf = ash(zᵢ, rng=rng, m=mbins, kernel=Kernels.triangular)
+                    _, Γ[j,k,:,i] = xy(epdf)
+                end
             end
-            γᵢ[i] = E
         end
-        Γ[:,j] = γᵢ/sum(γᵢ)
     end
+
     return Γ
 end
 
@@ -192,17 +220,25 @@ struct HellingerDistance <: DiscriminantMeasure end
 
 Returns the discriminant measure of each node calculated from the energy maps.
 """
-function discriminant_measure(Γ::AbstractArray{T,3}, 
+function discriminant_measure(Γ::AbstractArray{T}, 
         dm::DiscriminantMeasure) where T<:Number
 
-    (n, levels, C) = size(Γ)
+    # basic summary of data
+    @assert 3 <= ndims(Γ) <= 4
+    n = size(Γ,1)
+    L = size(Γ,2)
+    C = size(Γ)[end]
     @assert C > 1       # ensure more than 1 class
 
-    D = zeros(T, (n,levels))
+    D = zeros(Float64, (n,L))
     @inbounds begin
         for i in 1:(C-1)
             for j in (i+1):C
-                D += discriminant_measure(Γ[:,:,i], Γ[:,:,j], dm)
+                if ndims(Γ) == 3
+                    D += discriminant_measure(Γ[:,:,i], Γ[:,:,j], dm)
+                else
+                    D += discriminant_measure(Γ[:,:,:,i], Γ[:,:,:,j], dm)
+                end
             end
         end
     end
@@ -210,15 +246,28 @@ function discriminant_measure(Γ::AbstractArray{T,3},
     return D
 end
 
-function discriminant_measure(Γ₁::AbstractArray{T,2}, Γ₂::AbstractArray{T,2}, 
+# discriminant measure between 2 energy maps
+function discriminant_measure(Γ₁::AbstractArray{T}, Γ₂::AbstractArray{T}, 
         dm::DiscriminantMeasure) where T<:Number
 
+    # parameter checking and basic summary
+    @assert 2 <= ndims(Γ₁) <= 3
     @assert size(Γ₁) == size(Γ₂)
+    n = size(Γ₁,1)
+    L = size(Γ₁,2)
 
-    D = Array{T, 2}(undef, size(Γ₁))
+    D = Array{T, 2}(undef, (n,L))
     @inbounds begin
-        for i in eachindex(Γ₁, Γ₂)
-            D[i] = discriminant_measure(Γ₁[i], Γ₂[i], dm)
+        for i in axes(D,1)
+            for j in axes(D,2)
+                if ndims(Γ₁) == 2       # time frequency energy map case
+                    D[i,j] = discriminant_measure(Γ₁[i,j], Γ₂[i,j], dm)
+                else                    # probability density energy map case
+                    for k in axes(Γ₁,3)
+                        D[i,j] += discriminant_measure(Γ₁[i,j,k], Γ₂[i,j,k], dm)
+                    end
+                end
+            end
         end
     end
 
@@ -229,8 +278,14 @@ end
 function discriminant_measure(p::T, q::T, dm::AsymmetricRelativeEntropy) where 
         T<:Number
 
-    @assert p > 0 && q > 0
-    return p * log(p/q)
+    # parameter checking
+    @assert p >= 0 && q >= 0
+
+    if p == 0 || q == 0
+        return 0
+    else
+        return p * log(p/q)
+    end
 end
 
 # Symmetric Relative Entropy
@@ -527,13 +582,7 @@ function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3},
     @assert isdyadic(f.n)
 
     # construct energy map for each class
-    f.Γ = Array{Float64, 3}(undef, (f.n, L, nc))
-    @inbounds begin
-        for (i,cᵢ) in enumerate(c)
-            idx = findall(yᵢ -> yᵢ==cᵢ, y)
-            f.Γ[:,:,i] = energy_map(Xw[:,:,idx], f.en)
-        end
-    end
+    f.Γ = energy_map(Xw, y, f.en)
 
     # compute discriminant measure D and obtain tree cost
     f.DM = discriminant_measure(f.Γ, f.dm)
