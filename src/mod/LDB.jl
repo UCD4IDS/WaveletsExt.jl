@@ -56,7 +56,8 @@ An energy map based on time frequencies, a measure based on the differences of
 derived quantities from projection ``Z_i``, such as mean class energies or 
 cumulants.
 
-**See also:** [`EnergyMap`](@ref), [`ProbabilityDensity`](@ref)
+**See also:** [`EnergyMap`](@ref), [`ProbabilityDensity`](@ref),
+    [`Signatures`](@ref)
 """
 struct TimeFrequency <: EnergyMap end
 
@@ -68,9 +69,23 @@ among the pdfs of ``Z_i``. Since we do not know the true density functions of
 the coefficients, the PDFs are estimated using the Average Shifted Histogram
 (ASH).
 
-**See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref)
+**See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref), [`Signatures`](@ref)
 """
 struct ProbabilityDensity <: EnergyMap end
+
+"""
+    Signatures <: EnergyMap
+
+An energy map based on signatures, a measure that uses the Earth Mover's
+Distance (EMD) to compute the discriminating  power of a coordinate. Signatures
+provide us with a fully data-driven representation, which can be efficiently
+used with EMD. This representation is more efficient than a histogram and is
+able to represent complext data structure with fewer samples.
+
+**See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref),
+    [`ProbabilityDensity`](@ref)
+"""
+struct Signatures <: EnergyMap end
 
 """
     energy_map(Xw, y, method)
@@ -156,20 +171,62 @@ function energy_map(Xw::AbstractArray{S,3}, y::AbstractVector{T},
     return Γ
 end
 
+function energy_map(Xw::AbstractArray{S,3}, y::AbstractVector{T},
+        method::Signatures) where {S<:Number, T}
+
+    # basic summary of data
+    c = unique(y)       # unique classes
+    nc = length(c)      # number of classes
+    Ny = length(y)
+    n, L, Nx = size(Xw)
+    
+    # parameter checking
+    @assert Nx == Ny
+    @assert nc > 1
+    @assert isdyadic(n)
+    @assert 1 <= L-1 <= maxtransformlevels(n)
+end
+
 ## DISCRIMINANT MEASURES
 """
-Discriminant measure for Local Discriminant Basis. Current available types are:
-- Compatible with [`TimeFrequency`](@ref)
-    - [`AsymmetricRelativeEntropy`](@ref)
-    - [`SymmetricRelativeEntropy`](@ref)
-    - [`LpEntropy`](@ref)
-- Compatible with [`ProbabilityDensity`](@ref)
-    - [`HellingerDistance`](@ref)
+Discriminant measure for Local Discriminant Basis. Current available subtypes
+are:
+- [`ProbabilityDensityDM`](@ref)
+- [`TimeFrequencyDM`](@ref)
+- [`SignaturesDM`](@ref)
 """
 abstract type DiscriminantMeasure end
 
+"""
+Discriminant measure for Time Frequency based energy maps. Current available
+measures are:
+- [`AsymmetricRelativeEntropy`](@ref)
+- [`SymmetricRelativeEntropy`](@ref)
+- [`LpEntropy`](@ref)
+"""
+abstract type TimeFrequencyDM <: DiscriminantMeasure end
+
+"""
+Discriminant measure for Probability Density based energy maps. It is 
+implemented as a subtype of [`TimeFrequencyDM`](@ref) due to the mutual
+discriminant measures applicable for both types of energy maps. Current
+available measures are:
+- [`AsymmetricRelativeEntropy`](@ref)
+- [`SymmetricRelativeEntropy`](@ref)
+- [`LpEntropy`](@ref)
+- [`HellingerDistance`](@ref)
+"""
+abstract type ProbabilityDensityDM <: TimeFrequencyDM end
+
+"""
+Discriminant measure for Signatures based energy maps. Current available
+measures are:
+- [`EarthMoverDistance`](@ref)
+"""
+abstract type SignaturesDM <: DiscriminantMeasure end
+
 @doc raw"""
-    AsymmetricRelativeEntropy <: DiscriminantMeasure
+    AsymmetricRelativeEntropy <: TimeFrequencyDM
 
 Asymmetric Relative Entropy discriminant measure for the Time Frequency energy 
 map. This measure is also known as cross entropy and Kullback-Leibler 
@@ -177,10 +234,10 @@ divergence.
 
 Equation: ``D(p,q) = \sum p(x) \log \frac{p(x)}{q(x)}``
 """
-struct AsymmetricRelativeEntropy <: DiscriminantMeasure end
+struct AsymmetricRelativeEntropy <: TimeFrequencyDM end
 
 @doc raw"""
-    SymmetricRelativeEntropy <: DiscriminantMeasure
+    SymmetricRelativeEntropy <: TimeFrequencyDM
 
 Symmetric Relative Entropy discriminant measure for the Time Frequency energy 
 map. Similar idea to the Asymmetric Relative Entropy, but this aims to make 
@@ -190,30 +247,34 @@ Equation: Denote the Asymmetric Relative Entropy as ``D_A(p,q)``, then
 
 ``D(p,q) = D_A(p,q) + D_A(q,p) = \sum p(x) \log \frac{p(x)}{q(x)} + q(x) \log \frac{q(x)}{p(x)}``
 """
-struct SymmetricRelativeEntropy <: DiscriminantMeasure end
+struct SymmetricRelativeEntropy <: TimeFrequencyDM end
 
 @doc raw"""
-    LpEntropy <: DiscriminantMeasure
+    LpEntropy <: TimeFrequencyDM
 
 ``\ell^p`` Entropy discriminant measure for the Time Frequency energy 
 map. The default ``p`` value is set to 2.
 
 Equation: ``W(q,r) = ||q-r||^p``
 """
-@with_kw struct LpEntropy <: DiscriminantMeasure 
+@with_kw struct LpEntropy <: TimeFrequencyDM 
     p::Number = 2
 end
 
 @doc raw"""
-    HellingerDistance <: DiscriminantMeasure
+    HellingerDistance <: ProbabilityDensityDM
 
 Hellinger Distance discriminant measure for the Probability Density energy 
 map.
 
 Equation: ``H(p,q) = \sum (\sqrt{p} - \sqrt{q})^2``
 """
-struct HellingerDistance <: DiscriminantMeasure end
+struct HellingerDistance <: ProbabilityDensityDM end
 
+"""
+    EarthMoverDistance <: SignaturesDM
+"""
+struct EarthMoverDistance <: SignaturesDM end
 
 """
     discriminant_measure(Γ, dm)
