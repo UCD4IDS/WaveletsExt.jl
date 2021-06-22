@@ -79,30 +79,34 @@ the coefficients, the PDFs are estimated using the Average Shifted Histogram
 """
 struct ProbabilityDensity <: EnergyMap end
 
-"""
-    Signatures(weight) <: EnergyMap
+@doc raw"""
+    Signatures <: EnergyMap
 
 An energy map based on signatures, a measure that uses the Earth Mover's
 Distance (EMD) to compute the discriminating  power of a coordinate. Signatures
 provide us with a fully data-driven representation, which can be efficiently
 used with EMD. This representation is more efficient than a histogram and is
-able to represent complext data structure with fewer samples.
+able to represent complex data structure with fewer samples.
 
 Here, a signature for the coefficients in the ``j``-th level, ``k``-th node,
 ``l``-th index of class ``c`` is defined as
 
-\$s_{j,k,l}^{(c)} = \\{(\\alpha_{i;j,k,l}^{(c)}, w_{i;j,k,l}^{(c)})\\}_{i=1}^{N_c}\$
+``s_{j,k,l}^{(c)} = \{(\alpha_{i;j,k,l}^{(c)}, w_{i;j,k,l}^{(c)})\}_{i=1}^{N_c}``
 
 where ``\alpha_{i;j,k,l}^{(c)}`` and ``w_{i;j,k,l}^{(c)}`` are the expansion 
 coefficients and weights at location ``(j,k,l)`` for signal ``i`` of class ``c``
 respectively. Currently, the two valid types of weights are `:equal` and `:pdf`.
+
+# Argumemts
+- `weight::Symbol`: Type of weight to be used to compute ``w_{i;j,k,l}^{(c)}``.
+    Available methods are `:equal` and `pdf`. Default is set to `:equal`.
 
 **See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref),
     [`ProbabilityDensity`](@ref)
 """
 struct Signatures <: EnergyMap 
     weight::Symbol
-    Signatures(weight) = weight ∈ [:equal, :pdf] ? new(weight) : 
+    Signatures(weight=:equal) = weight ∈ [:equal, :pdf] ? new(weight) : 
         error("Invalid weight type. Valid weight types are :equal and :pdf.")
 end
 
@@ -329,8 +333,17 @@ Equation: ``H(p,q) = \sum (\sqrt{p} - \sqrt{q})^2``
 """
 struct HellingerDistance <: ProbabilityDensityDM end
 
-"""
+@doc raw"""
     EarthMoverDistance <: SignaturesDM
+
+Earth Mover Distance discriminant measure for the Signatures energy map.
+
+Equation: 
+``E(P,Q) = \frac{\sum_{k=1}^{m+n+1} |\hat p_k - \hat q_k| (r_{k+1} - r_k)}{w_\Sigma}``
+
+where ``r_1, r_2, \ldots, r_{m+n}`` is the sorted list of ``p_1, \ldots, p_m, 
+q_1, \ldots, q_n`` and ``\hat p_k = \sum_{p_i \leq r_k} w_{p_i}``, 
+``\hat q_k = \sum_{q)i \leq r_k} w_{q_i}``.
 """
 struct EarthMoverDistance <: SignaturesDM end
 
@@ -656,7 +669,10 @@ Applications" in the Journal of Mathematical Imaging and Vision, Vol 5, 337-358
 - `n_features::Union{Integer, Nothing}`: the dimension of output after 
     undergoing feature selection and transformation.
 - `n::Union{Integer, Nothing}`: length of signal
-- `Γ::Union{AbstractArray{<:AbstractFloat}, Nothing}`: computed energy map
+- `Γ::Union{AbstractArray{<:AbstractFloat}, 
+AbstractArray{NamedTuple{(:coef, :weight), Tuple{S1, S2}}} where {S1<:Array{T} 
+    where T<:AbstractFloat, S2<:Union{AbstractFloat, Array{<:AbstractFloat}}},
+    Nothing}`: computed energy map
 - `DM::Union{AbstractArray{<:AbstractFloat}, Nothing}`: computed discriminant
     measure
 - `cost::Union{AbstractVector{<:AbstractFloat}, Nothing}`: computed wavelet

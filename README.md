@@ -86,8 +86,8 @@ Xt = fit_transform(f, X, y)
 ```
 
 ## TODO(By v0.2.0):
-* Add EMD energy map version in LDB
+* 2D transforms
+* Improve tutorial/manual sections in documentation.
 
 ## TODO(long term):
 * Inverse Transforms for Shift-Invariant WPT
-* Better documentation.
