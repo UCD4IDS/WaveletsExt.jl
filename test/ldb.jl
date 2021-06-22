@@ -52,6 +52,32 @@ Xc = transform(f, X)
 X̂ = inverse_transform(f, Xc)
 @test size(X̂) == (32, 15) 
 
+# EarthMoverDistance + Signatures(equal weight) + BasisDiscriminantMeasure
+f = LocalDiscriminantBasis(wt=wt, max_dec_level=4, dm=EarthMoverDistance(), 
+    en=Signatures(:equal), top_k=5, n_features=5)
+@test typeof(f) == LocalDiscriminantBasis
+@test_nowarn fit_transform(f, X, y)
+@test_nowarn fit!(f, X, y)
+@test_nowarn transform(f, X)
+Xc = transform(f, X)
+@test size(Xc) == (5,15)
+@test_nowarn inverse_transform(f, Xc)
+X̂ = inverse_transform(f, Xc)
+@test size(X̂) == (32, 15) 
+
+# EarthMoverDistance + Signatures(pdf weight) + BasisDiscriminantMeasure
+f = LocalDiscriminantBasis(wt=wt, max_dec_level=4, dm=EarthMoverDistance(), 
+    en=Signatures(:pdf), top_k=5, n_features=5)
+@test typeof(f) == LocalDiscriminantBasis
+@test_nowarn fit_transform(f, X, y)
+@test_nowarn fit!(f, X, y)
+@test_nowarn transform(f, X)
+Xc = transform(f, X)
+@test size(Xc) == (5,15)
+@test_nowarn inverse_transform(f, Xc)
+X̂ = inverse_transform(f, Xc)
+@test size(X̂) == (32, 15) 
+
 # change number of features
 @test_nowarn change_nfeatures(f, Xc, 5)
 x = change_nfeatures(f, Xc, 5)

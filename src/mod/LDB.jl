@@ -1,16 +1,22 @@
 module LDB
+using Base: AbstractFloat
 export 
     # energy map
     EnergyMap,
     TimeFrequency,
     ProbabilityDensity,
+    Signatures,
     energy_map,
     # discriminant measures
     DiscriminantMeasure,
+    TimeFrequencyDM,
+    ProbabilityDensityDM,
+    SignaturesDM,
     AsymmetricRelativeEntropy,
     SymmetricRelativeEntropy,
     HellingerDistance,
     LpEntropy,
+    EarthMoverDistance,
     discriminant_measure,
     # discriminant power
     DiscriminantPower,
@@ -74,7 +80,7 @@ the coefficients, the PDFs are estimated using the Average Shifted Histogram
 struct ProbabilityDensity <: EnergyMap end
 
 """
-    Signatures <: EnergyMap
+    Signatures(weight) <: EnergyMap
 
 An energy map based on signatures, a measure that uses the Earth Mover's
 Distance (EMD) to compute the discriminating  power of a coordinate. Signatures
@@ -82,10 +88,23 @@ provide us with a fully data-driven representation, which can be efficiently
 used with EMD. This representation is more efficient than a histogram and is
 able to represent complext data structure with fewer samples.
 
+Here, a signature for the coefficients in the ``j``-th level, ``k``-th node,
+``l``-th index of class ``c`` is defined as
+
+\$s_{j,k,l}^{(c)} = \\{(\\alpha_{i;j,k,l}^{(c)}, w_{i;j,k,l}^{(c)})\\}_{i=1}^{N_c}\$
+
+where ``\alpha_{i;j,k,l}^{(c)}`` and ``w_{i;j,k,l}^{(c)}`` are the expansion 
+coefficients and weights at location ``(j,k,l)`` for signal ``i`` of class ``c``
+respectively. Currently, the two valid types of weights are `:equal` and `:pdf`.
+
 **See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref),
     [`ProbabilityDensity`](@ref)
 """
-struct Signatures <: EnergyMap end
+struct Signatures <: EnergyMap 
+    weight::Symbol
+    Signatures(weight) = weight ∈ [:equal, :pdf] ? new(weight) : 
+        error("Invalid weight type. Valid weight types are :equal and :pdf.")
+end
 
 """
     energy_map(Xw, y, method)
@@ -185,6 +204,45 @@ function energy_map(Xw::AbstractArray{S,3}, y::AbstractVector{T},
     @assert nc > 1
     @assert isdyadic(n)
     @assert 1 <= L-1 <= maxtransformlevels(n)
+
+    # form signatures in a structure of a named tuple
+    Γ = method.weight==:equal ? 
+        Array{NamedTuple{(:coef, :weight), Tuple{Array{S}, Float64}},1}(undef, nc) :      # equal weights
+        Array{NamedTuple{(:coef, :weight), Tuple{Array{S}, Array{Float64}}},1}(undef, nc) # pdf-based weights
+    for (i, cᵢ) in enumerate(c)
+        idx = findall(yᵢ -> yᵢ==cᵢ, y)
+        xw = Xw[:,:,idx]            # wavelet packet for class cᵢ
+        if method.weight == :equal
+            Nc = length(idx)
+            w = 1/Nc
+        else
+            Nc = length(idx)
+            nbins = ceil(Int, (30*Nx)^(1/5)) # number of bins/histogram
+            mbins = ceil(Int, 100/nbins)     # number of histograms M/nbins, M=100 is arbitrary
+
+            # compute weights
+            w = Array{Float64,3}(undef, (n,L,Nc))
+            for j in axes(xw,1)
+                for k in axes(xw,2)
+                    z = @view xw[j,k,:] # coefficients at (j,k) for cᵢ signals
+                    
+                    # ash parameter setup
+                    σ = std(z)
+                    s = 0.5
+                    δ = (maximum(z)-minimum(z)+σ)/((nbins+1)*mbins-1)
+                    rng = range(minimum(z)-s*σ, step=δ, length=(nbins+1)*mbins)
+                
+                    # empirical pdf
+                    epdf = ash(z, rng=rng, m=mbins, kernel=Kernels.triangular)
+                    for l in 1:Nc
+                        w[j,k,l] = AverageShiftedHistograms.pdf(epdf, z[l])
+                    end
+                end
+            end
+        end
+        Γ[i] = (coef = xw, weight = w)
+    end
+    return Γ
 end
 
 ## DISCRIMINANT MEASURES
@@ -282,7 +340,7 @@ struct EarthMoverDistance <: SignaturesDM end
 Returns the discriminant measure of each node calculated from the energy maps.
 """
 function discriminant_measure(Γ::AbstractArray{T}, 
-        dm::DiscriminantMeasure) where T<:Number
+        dm::TimeFrequencyDM) where T<:Number
 
     # basic summary of data
     @assert 3 <= ndims(Γ) <= 4
@@ -307,9 +365,33 @@ function discriminant_measure(Γ::AbstractArray{T},
     return D
 end
 
+# discriminant measure for EMD
+function discriminant_measure(
+        Γ::AbstractArray{NamedTuple{(:coef, :weight), Tuple{S1,S2}},1},
+        dm::SignaturesDM) where {S1<:Array{<:Number,3}, 
+        S2<:Union{AbstractFloat,Array{AbstractFloat,3}}}
+
+    # basic summary of data
+    C = length(Γ)
+    @assert C > 1
+    n = size(Γ[1][:coef], 1)
+    L = size(Γ[1][:coef], 2)
+
+    D = zeros(Float64, (n,L))
+    @inbounds begin
+        for i in 1:(C-1)
+            for j in (i+1):C
+                D += discriminant_measure(Γ[i], Γ[j], dm)
+            end
+        end
+    end
+
+    return D
+end
+
 # discriminant measure between 2 energy maps
 function discriminant_measure(Γ₁::AbstractArray{T}, Γ₂::AbstractArray{T}, 
-        dm::DiscriminantMeasure) where T<:Number
+        dm::TimeFrequencyDM) where T<:Number
 
     # parameter checking and basic summary
     @assert 2 <= ndims(Γ₁) <= 3
@@ -333,6 +415,35 @@ function discriminant_measure(Γ₁::AbstractArray{T}, Γ₂::AbstractArray{T},
     end
 
     return D
+end
+
+# discriminant measure between 2 nergy maps for EMD
+function discriminant_measure(Γ₁::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
+        Γ₂::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
+        dm::SignaturesDM) where
+        {S1<:Array{T,3} where T<:Number, 
+        S2<:Union{AbstractFloat,Array{AbstractFloat,3}}}
+
+    # parameter checking and basic summary
+    n = size(Γ₁,1)
+    L = size(Γ₁,2)
+    @assert n == size(Γ₁,1) == size(Γ₂,1)
+    @assert L == size(Γ₁,2) == size(Γ₂,2)
+
+    D = Array{T,2}(undef, (n,L))
+    for i in 1:n
+        for j in 1:L
+            # signatures
+            if typeof(Γ₁[:weight]) <: AbstractFloat # equal weight
+                P = (coef=Γ₁[:coef][i,j,:], weight=Γ₁[:weight])
+                Q = (coef=Γ₂[:coef][i,j,:], weight=Γ₂[:weight])
+            else                                    # probability density weight
+                P = (coef=Γ₁[:coef][i,j,:], weight=Γ₁[:weight][i,j,:])
+                Q = (coef=Γ₂[:coef][i,j,:], weight=Γ₂[:weight][i,j,:])
+            end
+            D[i,j] = discriminant_measure(P, Q, dm)
+        end
+    end
 end
 
 # Asymmetric Relative Entropy
@@ -365,6 +476,45 @@ end
 # Lᵖ Entropy
 function discriminant_measure(p::T, q::T, dm::LpEntropy) where T<:Number
     return (p - q)^dm.p
+end
+
+# Earth Mover Distance
+function discriminant_measure(P::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
+        Q::NamedTuple{(:coef, :weight), Tuple{S1, S2}}, 
+        dm::EarthMoverDistance) where
+        {S1<:Array{T,1} where T<:Number, 
+        S2<:Union{AbstractFloat,Array{AbstractFloat,1}}}
+
+    # assigning tuple signatures into coef and weight
+    p, w_p = P
+    q, w_q = Q
+
+    # sort signature values
+    p_order = sortperm(p)
+    p = p[p_order]
+    w_p = typeof(w_p)<:AbstractFloat ? repeat([w_p], length(p)) : w_p[p_order]
+    q_order = sortperm(q)
+    q = q[q_order]
+    w_q = typeof(w_q)<:AbstractFloat ? repeat([w_q], length(q)) : w_q[q_order]
+
+    # concatenate p and q, then sort them
+    r = [p; q]
+    sort!(r)
+
+    # compute emd
+    n = length(r)
+    emd = 0
+    for i in 1:(n-1)
+        # get total weight of p and q less than or equal to r[i]
+        p_less = p .<= r[i]
+        ∑w_p = sum(w_p[p_less])
+        q_less = q .<= r[i]
+        ∑w_q = sum(w_q[q_less])
+        # add into emd
+        emd += abs(∑w_p - ∑w_q) * (r[i+1] - r[i])
+    end
+    emd /= (sum(w_p) + sum(w_q))
+    return emd
 end
 
 ## DISCRIMINATION POWER
@@ -528,7 +678,18 @@ mutable struct LocalDiscriminantBasis
     n_features::Union{Integer, Nothing}
     # to be computed in fit!
     n::Union{Integer, Nothing}
-    Γ::Union{AbstractArray{<:AbstractFloat}, Nothing}
+    Γ::Any
+    # Γ::Union{AbstractArray{<:AbstractFloat}, 
+    #          AbstractArray{
+    #              NamedTuple{
+    #                 (:coef, :weight), 
+    #                 Tuple{
+    #                     Array{<:AbstractFloat}, 
+    #                     Union{AbstractFloat,Array{<:AbstractFloat,1}}
+    #                 }
+    #              }
+    #          }, 
+    #          Nothing}
     DM::Union{AbstractArray{<:AbstractFloat}, Nothing}
     cost::Union{AbstractVector{<:AbstractFloat}, Nothing}
     tree::Union{BitVector, Nothing}
