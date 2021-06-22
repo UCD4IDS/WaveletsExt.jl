@@ -368,8 +368,8 @@ end
 # discriminant measure for EMD
 function discriminant_measure(
         Γ::AbstractArray{NamedTuple{(:coef, :weight), Tuple{S1,S2}},1},
-        dm::SignaturesDM) where {S1<:Array{<:Number,3}, 
-        S2<:Union{AbstractFloat,Array{AbstractFloat,3}}}
+        dm::SignaturesDM) where {S1<:Array{<:Number}, 
+        S2<:Union{AbstractFloat,Array{<:AbstractFloat}}}
 
     # basic summary of data
     C = length(Γ)
@@ -421,16 +421,16 @@ end
 function discriminant_measure(Γ₁::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
         Γ₂::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
         dm::SignaturesDM) where
-        {S1<:Array{T,3} where T<:Number, 
-        S2<:Union{AbstractFloat,Array{AbstractFloat,3}}}
+        {S1<:Array{T} where T<:Number, 
+        S2<:Union{AbstractFloat,Array{<:AbstractFloat}}}
 
     # parameter checking and basic summary
-    n = size(Γ₁,1)
-    L = size(Γ₁,2)
-    @assert n == size(Γ₁,1) == size(Γ₂,1)
-    @assert L == size(Γ₁,2) == size(Γ₂,2)
+    n = size(Γ₁[:coef],1)
+    L = size(Γ₁[:coef],2)
+    @assert n == size(Γ₁[:coef],1) == size(Γ₂[:coef],1)
+    @assert L == size(Γ₁[:coef],2) == size(Γ₂[:coef],2)
 
-    D = Array{T,2}(undef, (n,L))
+    D = Array{Float64,2}(undef, (n,L))
     for i in 1:n
         for j in 1:L
             # signatures
@@ -444,6 +444,7 @@ function discriminant_measure(Γ₁::NamedTuple{(:coef, :weight), Tuple{S1,S2}},
             D[i,j] = discriminant_measure(P, Q, dm)
         end
     end
+    return D
 end
 
 # Asymmetric Relative Entropy
@@ -482,8 +483,8 @@ end
 function discriminant_measure(P::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
         Q::NamedTuple{(:coef, :weight), Tuple{S1, S2}}, 
         dm::EarthMoverDistance) where
-        {S1<:Array{T,1} where T<:Number, 
-        S2<:Union{AbstractFloat,Array{AbstractFloat,1}}}
+        {S1<:Vector{T} where T<:Number, 
+        S2<:Union{AbstractFloat,Vector{<:AbstractFloat}}}
 
     # assigning tuple signatures into coef and weight
     p, w_p = P
@@ -678,18 +679,11 @@ mutable struct LocalDiscriminantBasis
     n_features::Union{Integer, Nothing}
     # to be computed in fit!
     n::Union{Integer, Nothing}
-    Γ::Any
-    # Γ::Union{AbstractArray{<:AbstractFloat}, 
-    #          AbstractArray{
-    #              NamedTuple{
-    #                 (:coef, :weight), 
-    #                 Tuple{
-    #                     Array{<:AbstractFloat}, 
-    #                     Union{AbstractFloat,Array{<:AbstractFloat,1}}
-    #                 }
-    #              }
-    #          }, 
-    #          Nothing}
+    Γ::Union{AbstractArray{<:AbstractFloat}, 
+             AbstractArray{NamedTuple{(:coef, :weight), Tuple{S1, S2}}} where
+                {S1<:Array{T} where T<:AbstractFloat,
+                 S2<:Union{AbstractFloat, Array{<:AbstractFloat}}},
+             Nothing}
     DM::Union{AbstractArray{<:AbstractFloat}, Nothing}
     cost::Union{AbstractVector{<:AbstractFloat}, Nothing}
     tree::Union{BitVector, Nothing}
