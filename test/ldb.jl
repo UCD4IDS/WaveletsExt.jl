@@ -26,8 +26,8 @@ Xc = transform(f, X)
 X̂ = inverse_transform(f, Xc)
 @test size(X̂) == (32, 15) 
 
-# LpEntropy + TimeFrequency + RobustFishersClassSeparability
-f = LocalDiscriminantBasis(wt=wt, max_dec_level=4, dm=LpEntropy(), 
+# LpDistance + TimeFrequency + RobustFishersClassSeparability
+f = LocalDiscriminantBasis(wt=wt, max_dec_level=4, dm=LpDistance(), 
     dp=RobustFishersClassSeparability(), top_k=5, n_features=5)
 @test typeof(f) == LocalDiscriminantBasis
 @test_nowarn fit_transform(f, X, y)

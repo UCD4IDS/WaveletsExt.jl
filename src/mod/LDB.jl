@@ -9,13 +9,12 @@ export
     energy_map,
     # discriminant measures
     DiscriminantMeasure,
-    TimeFrequencyDM,
     ProbabilityDensityDM,
     SignaturesDM,
     AsymmetricRelativeEntropy,
     SymmetricRelativeEntropy,
     HellingerDistance,
-    LpEntropy,
+    LpDistance,
     EarthMoverDistance,
     discriminant_measure,
     # discriminant power
@@ -254,31 +253,19 @@ end
 Discriminant measure for Local Discriminant Basis. Current available subtypes
 are:
 - [`ProbabilityDensityDM`](@ref)
-- [`TimeFrequencyDM`](@ref)
 - [`SignaturesDM`](@ref)
 """
 abstract type DiscriminantMeasure end
 
 """
-Discriminant measure for Time Frequency based energy maps. Current available
-measures are:
+Discriminant measure for Probability Density and Time Frequency based energy 
+maps. Current available measures are:
 - [`AsymmetricRelativeEntropy`](@ref)
 - [`SymmetricRelativeEntropy`](@ref)
-- [`LpEntropy`](@ref)
-"""
-abstract type TimeFrequencyDM <: DiscriminantMeasure end
-
-"""
-Discriminant measure for Probability Density based energy maps. It is 
-implemented as a subtype of [`TimeFrequencyDM`](@ref) due to the mutual
-discriminant measures applicable for both types of energy maps. Current
-available measures are:
-- [`AsymmetricRelativeEntropy`](@ref)
-- [`SymmetricRelativeEntropy`](@ref)
-- [`LpEntropy`](@ref)
+- [`LpDistance`](@ref)
 - [`HellingerDistance`](@ref)
 """
-abstract type ProbabilityDensityDM <: TimeFrequencyDM end
+abstract type ProbabilityDensityDM <: DiscriminantMeasure end
 
 """
 Discriminant measure for Signatures based energy maps. Current available
@@ -288,38 +275,38 @@ measures are:
 abstract type SignaturesDM <: DiscriminantMeasure end
 
 @doc raw"""
-    AsymmetricRelativeEntropy <: TimeFrequencyDM
+    AsymmetricRelativeEntropy <: ProbabilityDensityDM
 
-Asymmetric Relative Entropy discriminant measure for the Time Frequency energy 
-map. This measure is also known as cross entropy and Kullback-Leibler 
-divergence.
+Asymmetric Relative Entropy discriminant measure for the Probability Density and
+Time Frequency based energy maps. This measure is also known as cross entropy 
+and Kullback-Leibler divergence.
 
 Equation: ``D(p,q) = \sum p(x) \log \frac{p(x)}{q(x)}``
 """
-struct AsymmetricRelativeEntropy <: TimeFrequencyDM end
+struct AsymmetricRelativeEntropy <: ProbabilityDensityDM end
 
 @doc raw"""
-    SymmetricRelativeEntropy <: TimeFrequencyDM
+    SymmetricRelativeEntropy <: ProbabilityDensityDM
 
-Symmetric Relative Entropy discriminant measure for the Time Frequency energy 
-map. Similar idea to the Asymmetric Relative Entropy, but this aims to make 
-the measure more symmetric.
+Symmetric Relative Entropy discriminant measure for the Probability Density and 
+Time Frequency energy maps. Similar idea to the Asymmetric Relative Entropy, but 
+this aims to make the measure more symmetric.
 
 Equation: Denote the Asymmetric Relative Entropy as ``D_A(p,q)``, then
 
 ``D(p,q) = D_A(p,q) + D_A(q,p) = \sum p(x) \log \frac{p(x)}{q(x)} + q(x) \log \frac{q(x)}{p(x)}``
 """
-struct SymmetricRelativeEntropy <: TimeFrequencyDM end
+struct SymmetricRelativeEntropy <: ProbabilityDensityDM end
 
 @doc raw"""
-    LpEntropy <: TimeFrequencyDM
+    LpDistance <: ProbabilityDensityDM
 
-``\ell^p`` Entropy discriminant measure for the Time Frequency energy 
-map. The default ``p`` value is set to 2.
+``\ell^p`` Distance discriminant measure for the Probability Density and Time 
+Frequency based energy maps. The default ``p`` value is set to 2.
 
-Equation: ``W(q,r) = ||q-r||^p``
+Equation: ``W(q,r) = ||q-r||_p^p = \sum_{i=1}^n (q_i - r_i)^p``
 """
-@with_kw struct LpEntropy <: TimeFrequencyDM 
+@with_kw struct LpDistance <: ProbabilityDensityDM 
     p::Number = 2
 end
 
@@ -329,7 +316,7 @@ end
 Hellinger Distance discriminant measure for the Probability Density energy 
 map.
 
-Equation: ``H(p,q) = \sum (\sqrt{p} - \sqrt{q})^2``
+Equation: ``H(p,q) = \sum_{i=1}^n (\sqrt{p_i} - \sqrt{q_i})^2``
 """
 struct HellingerDistance <: ProbabilityDensityDM end
 
@@ -353,7 +340,7 @@ struct EarthMoverDistance <: SignaturesDM end
 Returns the discriminant measure of each node calculated from the energy maps.
 """
 function discriminant_measure(Γ::AbstractArray{T}, 
-        dm::TimeFrequencyDM) where T<:Number
+        dm::ProbabilityDensityDM) where T<:Number
 
     # basic summary of data
     @assert 3 <= ndims(Γ) <= 4
@@ -404,7 +391,7 @@ end
 
 # discriminant measure between 2 energy maps
 function discriminant_measure(Γ₁::AbstractArray{T}, Γ₂::AbstractArray{T}, 
-        dm::TimeFrequencyDM) where T<:Number
+        dm::ProbabilityDensityDM) where T<:Number
 
     # parameter checking and basic summary
     @assert 2 <= ndims(Γ₁) <= 3
@@ -487,8 +474,8 @@ function discriminant_measure(p::T, q::T, dm::HellingerDistance) where T<:Number
     return (sqrt(p) - sqrt(q))^2
 end
 
-# Lᵖ Entropy
-function discriminant_measure(p::T, q::T, dm::LpEntropy) where T<:Number
+# Lᵖ Distance
+function discriminant_measure(p::T, q::T, dm::LpDistance) where T<:Number
     return (p - q)^dm.p
 end
 
@@ -657,10 +644,10 @@ Applications" in the Journal of Mathematical Imaging and Vision, Vol 5, 337-358
 - `max_dec_level::Union{Integer, Nothing}`: max level of wavelet packet
     decomposition to be computed.
 - `dm::DiscriminantMeasure`: the discriminant measure for the LDB algorithm. 
-    Supported measures are the `AsymmetricRelativeEntropy()`, `LpEntropy()`,
+    Supported measures are the `AsymmetricRelativeEntropy()`, `LpDistance()`,
     `SymmetricRelativeEntropy()`, and `HellingerDistance()`
 - `en::EnergyMap`: the type of energy map used. Supported maps are 
-    `TimeFrequency()` and `ProbabilityDensity()`.
+    `TimeFrequency()`, `ProbabilityDensity()`, and `Signatures()`.
 - `dp::DiscriminantPower()`: the measure of discriminant power among expansion
     coefficients. Supported measures are `BasisDiscriminantMeasure()`,
     `FishersClassSeparability()`, and `RobustFishersClassSeparability()`. 
@@ -725,7 +712,7 @@ Class constructor for `LocalDiscriminantBasis`.
     decomposition to be computed. When `max_dec_level=nothing`, the maximum
     transform levels will be used. Default is set to be `nothing`.
 - `dm::DiscriminantMeasure`: the discriminant measure for the LDB algorithm. 
-    Supported measures are the `AsymmetricRelativeEntropy()`, `LpEntropy()`, 
+    Supported measures are the `AsymmetricRelativeEntropy()`, `LpDistance()`, 
     `SymmetricRelativeEntropy()`, and `HellingerDistance()`. Default is set to
     be `AsymmetricRelativeEntropy()`.
 - `en::EnergyMap`: the type of energy map used. Supported maps are 
