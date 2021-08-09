@@ -520,7 +520,7 @@ end
 
 Extension to the best basis tree function from Wavelets.jl. Given a set of 
 decomposed signals, returns different types of best basis trees based on the 
-methods specified. Available methods are the joint best basis ([`JBB`](ref)), 
+methods specified. Available methods are the joint best basis ([`JBB`](@ref)), 
 least statistically dependent basis ([`LSDB`](@ref)), individual regular 
 best basis ([`BB`](@ref)), and shift-invariant best basis ([`SIBB`](@ref)).
 

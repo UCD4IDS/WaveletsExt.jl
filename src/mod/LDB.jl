@@ -941,7 +941,7 @@ the regeneration of signals based on the current `f.n_features` before
 reselecting the features. This will cause additional features to be less 
 accurate and effective.
 
-**See also:** [`LocalDiscriminantBasis`](@ref), [`fit`](@ref), [`fit_transform`](@ref),
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref), [`fit_transform`](@ref),
     [`transform`](@ref), [`inverse_transform`](@ref)
 """
 function change_nfeatures(f::LocalDiscriminantBasis, x::AbstractArray{T,2},

@@ -125,7 +125,7 @@ end
 
 Generates the high-pass autocorrelation filter
 
-**See also:** [`qfliter`](@ref)
+**See also:** [`qfilter`](@ref)
 """
 function pfilter(f::OrthoFilter)
     a = autocorr(f)
@@ -138,9 +138,9 @@ end
 """
     qfilter(f::OrthoFilter)
 
-Generates the low-pass autocorrelation filter
+Generates the low-pass autocorrelation filter.
 
-**See also:** [`pfliter`](@ref)
+**See also:** [`pfilter`](@ref)
 """
 function qfilter(f::OrthoFilter)
     a = autocorr(f)
