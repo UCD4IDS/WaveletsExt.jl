@@ -15,27 +15,7 @@ x̂ = denoise(y, :wpt, wt, tree=bt)
 
 # plot results
 # plot([x₀ x x̂], title=&quot;Denoising Example&quot;, label=[&quot;original&quot; &quot;noisy&quot; &quot;denoised&quot;],
-#     lw=[3 1 2], lc=[:black :grey :red])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">256-element Vector{Float64}:
- -0.32128950947275087
- -0.35824240098265786
-  1.2020572928074087
- -0.08764892498006371
-  0.9931591252691722
-  1.8383107170977684
-  1.078173202488805
-  2.286596973014096
-  2.317704403268651
-  1.452048003775697
-  ⋮
- -1.465200788632738
- -2.408765995326751
- -0.9956296426966763
- -1.8225934082894715
- -0.9452151211484484
-  0.24283764696352256
- -0.25018066902964475
-  0.4252208198974451
- -1.0847684812968665</code></pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><p>Similar to the <code>denoise</code> function we saw previously, for denoising a group of signals, one can use the <code>denoiseall</code> function. The parameters used are the same, with the following addition:</p><ul><li><code>bestTH</code>: Method to determine the best threshold value for a group of signals. One can choose each signal&#39;s individual best threshold value, or use a function such as <code>mean</code> or <code>median</code> to generalize an overall best threshold value.</li></ul><p>For more detailed information, visit the <a href="../../api/denoising/#denoising_api">denoising API</a> page.</p><pre><code class="language-julia hljs">using Wavelets, WaveletsExt, Random, Plots
+#     lw=[3 1 2], lc=[:black :grey :red])</code></pre><h2 id="Denoising-a-group-of-signals"><a class="docs-heading-anchor" href="#Denoising-a-group-of-signals">Denoising a group of signals</a><a id="Denoising-a-group-of-signals-1"></a><a class="docs-heading-anchor-permalink" href="#Denoising-a-group-of-signals" title="Permalink"></a></h2><p>Similar to the <code>denoise</code> function we saw previously, for denoising a group of signals, one can use the <code>denoiseall</code> function. The parameters used are the same, with the following addition:</p><ul><li><code>bestTH</code>: Method to determine the best threshold value for a group of signals. One can choose each signal&#39;s individual best threshold value, or use a function such as <code>mean</code> or <code>median</code> to generalize an overall best threshold value.</li></ul><p>For more detailed information, visit the <a href="../../api/denoising/#denoising_api">denoising API</a> page.</p><pre><code class="language-julia hljs">using Wavelets, WaveletsExt, Random, Plots
 
 # define function and wavelet
 x = generatesignals(:heavysine, 8)
@@ -57,24 +37,4 @@ X̂ = denoiseall(Y, :wpt, wt, tree=bt)
 # wiggle(X₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
 # wiggle!(X, sc=0.7, EdgeColor=:grey, FaceColor=:white, ZDir=:reverse)
 # wiggle!(X̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
-# plot!(title=&quot;Group Denoising Example&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">256×6 Matrix{Float64}:
- -0.280156  -0.938192  -0.454424     -1.20533    -1.64733    -1.087
- -0.598515   0.681834  -0.444217     -1.03146    -1.02256    -0.886225
-  0.375551  -0.177203  -0.187308     -0.853775   -0.312046   -0.701677
-  0.889445  -0.130865  -0.000899881  -0.670801   -0.0947363  -0.547306
- -0.510304   0.689164   0.780492     -0.479757    0.0329547  -0.391024
-  1.53525    0.192393   0.0346207    -0.281147    0.0534211  -0.231744
-  0.57258    0.821112   0.115747     -0.0749842  -0.38745    -0.0980584
-  0.990821   0.446127   1.0066        0.13929    -0.209269    0.0160768
-  2.53158    1.20579    0.634279      0.351681   -1.36493     0.141805
-  1.30227    1.65118    0.175739      0.561451   -0.227703    0.277801
-  ⋮                                                           ⋮
- -1.41637   -2.60354   -2.53856      -2.51307    -2.95695    -3.07733
- -1.48368   -1.18699   -1.50215      -2.40594    -2.36424    -2.92309
- -1.0841    -1.30729   -2.2927       -2.27468    -1.7745     -2.7411
- -0.65392   -0.591044  -1.52051      -2.13288    -1.79734    -2.54176
- -1.23315   -1.0448    -1.39465      -1.97204    -2.47469    -2.31882
- -0.476886  -1.12225   -1.00115      -1.81971    -3.26601    -2.08876
- -0.711759  -0.654931  -1.10679      -1.67772    -2.02657    -1.85261
- -0.62757   -1.29187   -1.18744      -1.52545    -1.64944    -1.59685
- -0.798077  -0.692845   0.173878     -1.36916    -1.97332    -1.32501</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transforms/">« Transforms</a><a class="docs-footer-nextpage" href="../localdiscriminantbasis/">Local Discriminant Basis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Sunday 29 August 2021 23:56">Sunday 29 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+# plot!(title=&quot;Group Denoising Example&quot;)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../transforms/">« Transforms</a><a class="docs-footer-nextpage" href="../localdiscriminantbasis/">Local Discriminant Basis »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Monday 30 August 2021 00:07">Monday 30 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

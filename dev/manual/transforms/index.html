@@ -18,143 +18,23 @@ xw = cat([wpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
 # best basis trees, each column corresponds to 1 tree
 trees = bestbasistree(xw, BB());</code></pre><p>Additionally, one can view the selected nodes from the best basis trees using the <a href="../../api/visualizations/#WaveletsExt.Visualizations.plot_tfbdry-Tuple{BitVector}"><code>plot_tfbdry</code></a> function as shown below.</p><pre><code class="language-julia hljs"># plot_tfbdry(trees[:,1])</code></pre><p>We can also view the JBB and LSDB trees using a similar syntax. Unlike the previous best basis algorithm, JBB and LSDB do not generate a tree for each individual signal, as they search for the best tree that generalizes the group of signal as a whole.</p><ul><li>Joint Best Basis (JBB)</li></ul><pre><code class="language-julia hljs"># joint best basis
 tree = bestbasistree(xw, JBB())
-# plot_tfbdry(tree)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">255-element BitVector:
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- ⋮
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0</code></pre><ul><li>Least Statistically Dependent Basis (LSDB)</li></ul><pre><code class="language-julia hljs"># least statistically dependent basis
+# plot_tfbdry(tree)</code></pre><ul><li>Least Statistically Dependent Basis (LSDB)</li></ul><pre><code class="language-julia hljs"># least statistically dependent basis
 tree = bestbasistree(xw, LSDB())
-# plot_tfbdry(tree)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">255-element BitVector:
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- ⋮
- 0
- 0
- 0
- 0
- 0
- 1
- 1
- 1
- 0</code></pre><h2 id="Stationary-and-Autocorrelation-Wavelet-Transforms"><a class="docs-heading-anchor" href="#Stationary-and-Autocorrelation-Wavelet-Transforms">Stationary and Autocorrelation Wavelet Transforms</a><a id="Stationary-and-Autocorrelation-Wavelet-Transforms-1"></a><a class="docs-heading-anchor-permalink" href="#Stationary-and-Autocorrelation-Wavelet-Transforms" title="Permalink"></a></h2><p>The <a href="https://link.springer.com/chapter/10.1007/978-1-4612-2544-7_17">Stationary Wavelet Transform (SWT)</a> was developed by G.P. Nason and B.W. Silverman in the 1990s. One can use the discrete SWT as shown below, or the SWT decomposition shown after.</p><h3 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h3><pre><code class="language-julia hljs"># discrete swt
+# plot_tfbdry(tree)</code></pre><h2 id="Stationary-and-Autocorrelation-Wavelet-Transforms"><a class="docs-heading-anchor" href="#Stationary-and-Autocorrelation-Wavelet-Transforms">Stationary and Autocorrelation Wavelet Transforms</a><a id="Stationary-and-Autocorrelation-Wavelet-Transforms-1"></a><a class="docs-heading-anchor-permalink" href="#Stationary-and-Autocorrelation-Wavelet-Transforms" title="Permalink"></a></h2><p>The <a href="https://link.springer.com/chapter/10.1007/978-1-4612-2544-7_17">Stationary Wavelet Transform (SWT)</a> was developed by G.P. Nason and B.W. Silverman in the 1990s. One can use the discrete SWT as shown below, or the SWT decomposition shown after.</p><h3 id="Example"><a class="docs-heading-anchor" href="#Example">Example</a><a id="Example-1"></a><a class="docs-heading-anchor-permalink" href="#Example" title="Permalink"></a></h3><pre><code class="language-julia hljs"># discrete swt
 y = sdwt(x, wt)
 
 # view the transform
-# wiggle(y, sc=0.7)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">256×9 Matrix{Float64}:
- -13.375  10.7414   12.8607   16.9141   …   0.000125617   2.56555e-6
- -13.375  10.5468   13.8866   16.2666       0.000137673   3.15611e-6
- -13.375  10.3459   14.8706   15.5745       0.000149396   3.739e-6
- -13.375  10.1388   15.8092   14.8405       0.000160755   4.31281e-6
- -13.375   9.92572  16.6993   14.067        0.000171724   4.87616e-6
- -13.375   9.7069   17.5381   13.2567   …   0.000182277   5.42766e-6
- -13.375   9.48262  18.3235   12.4125       0.000192386   5.96599e-6
- -13.375   9.25337  19.053    11.537        0.000202029   6.48983e-6
- -13.375   9.01906  19.7238   10.6328       0.000211181   6.99791e-6
- -13.375   8.77973  20.3328    9.70307      0.00021982    7.489e-6
-   ⋮                                    ⋱                
- -13.375  12.205     2.26446  20.3381      -0.053173     -2.26042e-6
- -13.375  12.0705    3.52326  20.1868      -0.0325385    -1.661e-6
- -13.375  11.929     4.76896  19.9775      -0.00645848   -0.0453946
- -13.375  11.7799    5.99939  19.7082   …   0.00710777    0.0955694
- -13.375  11.6233    7.21085  19.3809       0.0116506    -0.0288604
- -13.375  11.4597    8.39992  18.9966       0.00940697   -0.0344255
- -13.375  11.2893    9.56272  18.5568       0.00486437    0.00246022
- -13.375  11.1127   10.6958   18.0621       0.00207318    0.00856367
- -13.375  10.93     11.7962   17.5136   …   0.000594309   0.00209008</code></pre><p>The SWT decomposition and its best basis search is highly similar with that of the regular wavelet transforms.</p><ul><li>Regular best basis algorithm</li></ul><pre><code class="language-julia hljs"># decomposition of all signals
+# wiggle(y, sc=0.7)</code></pre><p>The SWT decomposition and its best basis search is highly similar with that of the regular wavelet transforms.</p><ul><li>Regular best basis algorithm</li></ul><pre><code class="language-julia hljs"># decomposition of all signals
 xw = cat([swpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
 
 # best basis trees, each column corresponds to 1 tree
 trees = bestbasistree(xw, BB(redundant=true));
-# plot_tfbdry(trees[:,1])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">255×10 BitMatrix:
- 1  1  1  1  1  1  1  1  1  1
- 1  1  1  1  1  1  1  1  1  1
- 1  1  1  1  1  1  1  1  0  1
- 1  1  1  1  1  1  1  1  1  1
- 1  1  1  1  1  1  1  1  1  1
- 1  1  1  1  1  1  1  1  0  1
- 1  1  1  1  1  1  1  1  0  1
- 1  1  1  1  1  1  1  1  1  1
- 1  0  1  0  1  1  0  1  0  1
- 1  1  1  1  1  1  1  1  1  1
- ⋮              ⋮           
- 0  0  0  0  1  1  0  0  0  0
- 1  1  1  0  0  0  1  0  0  0
- 1  1  0  0  0  0  0  0  0  1
- 0  0  0  0  1  0  0  0  0  0
- 1  0  0  0  0  0  0  0  0  1
- 0  0  0  0  0  0  0  0  0  1
- 0  0  1  0  0  0  1  0  0  1
- 0  0  0  0  1  0  1  0  0  0
- 0  0  0  0  1  0  1  0  0  1</code></pre><ul><li>Joint Best Basis (JBB)</li></ul><pre><code class="language-julia hljs"># best basis trees, each column corresponds to 1 tree
+# plot_tfbdry(trees[:,1])</code></pre><ul><li>Joint Best Basis (JBB)</li></ul><pre><code class="language-julia hljs"># best basis trees, each column corresponds to 1 tree
 tree = bestbasistree(xw, JBB(redundant=true));
-# plot_tfbdry(tree)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">255-element BitVector:
- 1
- 1
- 1
- 1
- 1
- 0
- 1
- 1
- 1
- 1
- ⋮
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0</code></pre><ul><li>Least Statistically Dependent Basis (LSDB)</li></ul><pre><code class="language-julia hljs"># best basis trees, each column corresponds to 1 tree
+# plot_tfbdry(tree)</code></pre><ul><li>Least Statistically Dependent Basis (LSDB)</li></ul><pre><code class="language-julia hljs"># best basis trees, each column corresponds to 1 tree
 tree = bestbasistree(xw, LSDB(redundant=true));
-# plot_tfbdry(tree)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">255-element BitVector:
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 0
- 1
- ⋮
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0
- 0</code></pre><p>In fact, this same exact procedures can be implemented with the <a href="https://www.math.ucdavis.edu/~saito/publications/saito_acs_spie.pdf">Autocorrelation wavelet transforms</a>, since they&#39;re both redundant types of transform. To implement the autocorrelation transforms, simply change <code>sdwt</code> to <code>acwt</code>, and <code>swpd</code> to <code>acwpt</code>.</p><h2 id="Shift-Invariant-Wavelet-Packet-Decomposition"><a class="docs-heading-anchor" href="#Shift-Invariant-Wavelet-Packet-Decomposition">Shift-Invariant Wavelet Packet Decomposition</a><a id="Shift-Invariant-Wavelet-Packet-Decomposition-1"></a><a class="docs-heading-anchor-permalink" href="#Shift-Invariant-Wavelet-Packet-Decomposition" title="Permalink"></a></h2><p>The <a href="https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf">Shift-Invariant Wavelet Decomposition (SIWPD)</a> is developed by I. Cohen. While it is also a type of redundant transform, it does not follow the same methodology as the SWT and the ACWT. One can compute the SIWPD of a single signal as follows.</p><h3 id="Example-2"><a class="docs-heading-anchor" href="#Example-2">Example</a><a class="docs-heading-anchor-permalink" href="#Example-2" title="Permalink"></a></h3><pre><code class="language-julia hljs"># decomposition
+# plot_tfbdry(tree)</code></pre><p>In fact, this same exact procedures can be implemented with the <a href="https://www.math.ucdavis.edu/~saito/publications/saito_acs_spie.pdf">Autocorrelation wavelet transforms</a>, since they&#39;re both redundant types of transform. To implement the autocorrelation transforms, simply change <code>sdwt</code> to <code>acwt</code>, and <code>swpd</code> to <code>acwpt</code>.</p><h2 id="Shift-Invariant-Wavelet-Packet-Decomposition"><a class="docs-heading-anchor" href="#Shift-Invariant-Wavelet-Packet-Decomposition">Shift-Invariant Wavelet Packet Decomposition</a><a id="Shift-Invariant-Wavelet-Packet-Decomposition-1"></a><a class="docs-heading-anchor-permalink" href="#Shift-Invariant-Wavelet-Packet-Decomposition" title="Permalink"></a></h2><p>The <a href="https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf">Shift-Invariant Wavelet Decomposition (SIWPD)</a> is developed by I. Cohen. While it is also a type of redundant transform, it does not follow the same methodology as the SWT and the ACWT. One can compute the SIWPD of a single signal as follows.</p><h3 id="Example-2"><a class="docs-heading-anchor" href="#Example-2">Example</a><a class="docs-heading-anchor-permalink" href="#Example-2" title="Permalink"></a></h3><pre><code class="language-julia hljs"># decomposition
 xw = siwpd(x, wt)
 
 # best basis tree
-tree = bestbasistree(xw, 8, SIBB());</code></pre><p>As of right now, there is not too many functions written based on the SIWPD, as it does not follow the conventional style of wavelet transforms. There is a lot of ongoing work to develop more functions catered for the SIWPD such as it&#39;s inverse transforms and group-implementations.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../denoising/">Denoising »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Sunday 29 August 2021 23:56">Sunday 29 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+tree = bestbasistree(xw, 8, SIBB());</code></pre><p>As of right now, there is not too many functions written based on the SIWPD, as it does not follow the conventional style of wavelet transforms. There is a lot of ongoing work to develop more functions catered for the SIWPD such as it&#39;s inverse transforms and group-implementations.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../">« Home</a><a class="docs-footer-nextpage" href="../denoising/">Denoising »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Monday 30 August 2021 00:07">Monday 30 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

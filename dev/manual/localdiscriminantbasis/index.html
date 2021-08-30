@@ -11,7 +11,7 @@ X, y = generateclassdata(ClassData(:cbf, 100, 100, 100));
 # plot!(bell, title=&quot;Bell signals&quot;)
 # funnel = wiggle(X[:,201:205], sc=0.3)
 # plot!(funnel, title=&quot;Funnel signals&quot;)
-# plot(cylinder, bell, funnel, layout=(3,1))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">([-0.20061266075080084 -1.4265006240045652 … -0.4288376721007641 -1.6884691959284506; 0.062286627806458064 0.4816839522504076 … 0.4426851801062346 1.70137876884703; … ; 0.735133174056453 -0.2839552591116926 … -1.1542563506684302 -0.2570522256087396; 0.515223947230517 0.5323644462463665 … -0.8558637575563136 0.45290858460301686], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1  …  3, 3, 3, 3, 3, 3, 3, 3, 3, 3])</code></pre><p>Next, we define the parameters for our Local Discriminant Basis object. Here are a few key parameters to note:</p><ul><li><code>wt</code>: Type of wavelet used. Default is <code>wavelet(WT.haar)</code>.</li><li><code>max_dec_level</code>: Maximum decomposition level. Default is to decompose each signal all the way to its maximum possible depth.</li><li><code>dm</code>: Type of discriminant measure. Available choices are:<ul><li><code>AsymmetricRelativeEntropy()</code> (default)</li><li><code>SymmetricRelativeEntropy()</code></li><li><code>LpEntropy()</code></li><li><code>HellingerDistance()</code></li></ul></li><li><code>en</code>: Type of energy map. Available choices are:<ul><li><code>TimeFrequency()</code> (default)</li><li><code>ProbabilityDensity()</code></li></ul></li><li><code>dp</code>: Type of discriminant power. Available choices are:<ul><li><code>BasisDiscriminantMeasure()</code> (default)</li><li><code>FishersClassSeparability()</code></li><li><code>RobustFishersClassSeparability()</code></li></ul></li><li><code>top_k</code>: Max number of coefficients used in each node for the computation of discriminant power. The default setting uses all available coefficients for the computation.</li><li><code>n_features</code>: Number of features to be returned. All features/coefficients will be returned by default.</li></ul><pre><code class="language-julia hljs">wt = wavelet(WT.coif4);
+# plot(cylinder, bell, funnel, layout=(3,1))</code></pre><p>Next, we define the parameters for our Local Discriminant Basis object. Here are a few key parameters to note:</p><ul><li><code>wt</code>: Type of wavelet used. Default is <code>wavelet(WT.haar)</code>.</li><li><code>max_dec_level</code>: Maximum decomposition level. Default is to decompose each signal all the way to its maximum possible depth.</li><li><code>dm</code>: Type of discriminant measure. Available choices are:<ul><li><code>AsymmetricRelativeEntropy()</code> (default)</li><li><code>SymmetricRelativeEntropy()</code></li><li><code>LpEntropy()</code></li><li><code>HellingerDistance()</code></li></ul></li><li><code>en</code>: Type of energy map. Available choices are:<ul><li><code>TimeFrequency()</code> (default)</li><li><code>ProbabilityDensity()</code></li></ul></li><li><code>dp</code>: Type of discriminant power. Available choices are:<ul><li><code>BasisDiscriminantMeasure()</code> (default)</li><li><code>FishersClassSeparability()</code></li><li><code>RobustFishersClassSeparability()</code></li></ul></li><li><code>top_k</code>: Max number of coefficients used in each node for the computation of discriminant power. The default setting uses all available coefficients for the computation.</li><li><code>n_features</code>: Number of features to be returned. All features/coefficients will be returned by default.</li></ul><pre><code class="language-julia hljs">wt = wavelet(WT.coif4);
 ldb = LocalDiscriminantBasis(
     wt=wt,
     max_dec_level=7,
@@ -40,27 +40,7 @@ end
 
 bases = get_basisvectors(128, ldb.wt, ldb.tree, ldb.order[1:10]);
 # wiggle(bases, sc=0.3, ZDir=:reverse);
-# plot!(title=&quot;Top 10 LDB vectors&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">128×10 Matrix{Float64}:
- -0.00411137   -0.000615203   0.00721395   …   0.0025861     0.0286302
- -0.0058216    -0.000515554   0.00561137       0.00349027    0.0208147
- -0.0073103    -0.000397494   0.00402048       0.00439079    0.00778706
- -0.00877658   -0.000263106   0.00203655       0.00529647   -0.00169728
- -0.010781     -0.000142225   0.000321852      0.00656196   -0.0108753
- -0.0159249    -0.000113431  -4.72512e-5   …   0.00945594   -0.0157508
- -0.0216421    -0.000110879  -5.97259e-6       0.0127163    -0.0164547
- -0.025602     -0.000106267   7.20934e-5       0.015554     -0.0275102
- -0.0291148    -0.000104436   0.000218603      0.0181763    -0.0285568
- -0.0336976    -7.4486e-5    -3.3013e-5        0.0203605     0.0212186
-  ⋮                                        ⋱                
-  0.00258242    7.20934e-5   -0.00841984      -0.0015601     0.00857394
-  0.00388023    0.000218603  -0.00582421   …  -0.00192918    0.0114881
-  0.00539189   -3.3013e-5    -0.001156        -0.0023301     0.00349159
-  0.00664647   -0.000338704   0.00364651      -0.00260964   -0.00641724
-  0.00794147   -0.000502416   0.00810343      -0.00286164   -0.0176931
-  0.00842802   -0.000628323   0.0115922       -0.00280957   -0.0254743
-  0.006182     -0.000669615   0.0116052    …  -0.00183735   -0.0144629
-  0.00303059   -0.000662776   0.0103418       -0.000528046   0.00071388
- -0.000542284  -0.000654531   0.00898865       0.00101058    0.016301</code></pre><p>Since we have decided that 6 features are optimum for classification purposes, we can use the <code>change_nfeatures</code> function as below.</p><pre><code class="language-julia hljs">X̂ = change_nfeatures(ldb, X̂, 6);</code></pre><p>If we are curious, we can use the <code>inverse_transform</code> function to observe how the signals look like if they&#39;re generated from these 6 features.</p><pre><code class="language-julia hljs">X̃  = inverse_transform(ldb, X̂);
+# plot!(title=&quot;Top 10 LDB vectors&quot;)</code></pre><p>Since we have decided that 6 features are optimum for classification purposes, we can use the <code>change_nfeatures</code> function as below.</p><pre><code class="language-julia hljs">X̂ = change_nfeatures(ldb, X̂, 6);</code></pre><p>If we are curious, we can use the <code>inverse_transform</code> function to observe how the signals look like if they&#39;re generated from these 6 features.</p><pre><code class="language-julia hljs">X̃  = inverse_transform(ldb, X̂);
 
 # view sample signals and how each class differs from one another
 # cylinder = wiggle(X̃[:,1:5], sc=0.3)
@@ -69,24 +49,4 @@ bases = get_basisvectors(128, ldb.wt, ldb.tree, ldb.order[1:10]);
 # plot!(bell, title=&quot;Bell signals&quot;)
 # funnel = wiggle(X̃[:,201:205], sc=0.3)
 # plot!(funnel, title=&quot;Funnel signals&quot;)
-# plot(cylinder, bell, funnel, layout=(3,1))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">128×300 Matrix{Float64}:
- -0.0231458  -0.0799828  -0.0807948   …  -0.0940828  -0.0366844  -0.0977098
- -0.0543774  -0.141424   -0.122113       -0.134389   -0.0951135  -0.141417
- -0.0824947  -0.196336   -0.158486       -0.169426   -0.147732   -0.17946
- -0.111951   -0.253478   -0.195125       -0.203806   -0.203488   -0.216846
- -0.138132   -0.323298   -0.243177       -0.24458    -0.264892   -0.261405
- -0.160172   -0.470725   -0.358461    …  -0.331833   -0.369427   -0.357157
- -0.177227   -0.630478   -0.485599       -0.425346   -0.478274   -0.459999
- -0.183388   -0.739353   -0.573315       -0.486743   -0.550149   -0.527926
- -0.183647   -0.834196   -0.650768       -0.538151   -0.610319   -0.585169
- -0.189495   -0.961956   -0.752794       -0.607277   -0.694519   -0.661962
-  ⋮                                   ⋱                          
- -0.0197643  -0.0322196   0.030197        0.0610596  -0.0320487   0.0739415
-  0.0066214   0.0409328   0.0681718   …   0.0853712   0.0268882   0.0971788
-  0.0404001   0.123552    0.112373        0.113504    0.105455    0.127436
-  0.0712327   0.196149    0.15025         0.136395    0.178247    0.152773
-  0.10143     0.268607    0.188501        0.160546    0.249875    0.179063
-  0.119498    0.309665    0.206556        0.168319    0.293625    0.187675
-  0.0960902   0.246678    0.156927    …   0.119943    0.241369    0.135024
-  0.0583807   0.147904    0.0845074       0.0531281   0.156167    0.0622963
-  0.018843    0.0356336   0.00227409     -0.0204021   0.0618627  -0.0176307</code></pre><p>With that said, we are essentially done with the LDB step, and we can move on to the model fitting step using packages such as <a href="https://alan-turing-institute.github.io/MLJ.jl/stable/">MLJ.jl</a> and <a href="https://multivariatestatsjl.readthedocs.io/en/latest/">MultivariateStats.jl</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../denoising/">« Denoising</a><a class="docs-footer-nextpage" href="../../api/acwt/">ACWT »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Sunday 29 August 2021 23:56">Sunday 29 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+# plot(cylinder, bell, funnel, layout=(3,1))</code></pre><p>With that said, we are essentially done with the LDB step, and we can move on to the model fitting step using packages such as <a href="https://alan-turing-institute.github.io/MLJ.jl/stable/">MLJ.jl</a> and <a href="https://multivariatestatsjl.readthedocs.io/en/latest/">MultivariateStats.jl</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../denoising/">« Denoising</a><a class="docs-footer-nextpage" href="../../api/acwt/">ACWT »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.5 on <span class="colophon-date" title="Monday 30 August 2021 00:07">Monday 30 August 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
