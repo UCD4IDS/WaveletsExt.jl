@@ -7,3 +7,7 @@ WaveletsExt = "8f464e1e-25db-479f-b0a5-b7680379e03f"
 
 [compat]
 WaveletsExt = "0.1"
+GR = "0.58"
+Documenter = "0.27"
+Plots = "1"
+Wavelets = "0.9"
