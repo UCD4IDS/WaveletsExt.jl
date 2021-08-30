@@ -4,3 +4,6 @@ GR = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
 WaveletsExt = "8f464e1e-25db-479f-b0a5-b7680379e03f"
+
+[compat]
+Wavelets = "0.9"
