@@ -19,6 +19,7 @@ using Wavelets, WaveletsExt, Plots
 X, y = generateclassdata(ClassData(:cbf, 100, 100, 100));
 
 # view sample signals and how each class differs from one another
+nothing # hide
 # cylinder = wiggle(X[:,1:5], sc=0.3)
 # plot!(cylinder, title="Cylinder signals")
 # bell = wiggle(X[:,101:105], sc=0.3)
@@ -95,6 +96,7 @@ function get_basisvectors(n::Integer, wt::DiscreteWavelet, tree::BitVector,
 end
 
 bases = get_basisvectors(128, ldb.wt, ldb.tree, ldb.order[1:10]);
+nothing # hide
 # wiggle(bases, sc=0.3, ZDir=:reverse);
 # plot!(title="Top 10 LDB vectors")
 ```
@@ -110,6 +112,7 @@ If we are curious, we can use the `inverse_transform` function to observe how th
 X̃  = inverse_transform(ldb, X̂);
 
 # view sample signals and how each class differs from one another
+nothing # hide
 # cylinder = wiggle(X̃[:,1:5], sc=0.3)
 # plot!(cylinder, title="Cylinder signals")
 # bell = wiggle(X̃[:,101:105], sc=0.3)

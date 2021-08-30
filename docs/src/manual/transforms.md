@@ -43,6 +43,7 @@ We can also view the JBB and LSDB trees using a similar syntax. Unlike the previ
 ```@example wt
 # joint best basis
 tree = bestbasistree(xw, JBB())
+nothing # hide
 # plot_tfbdry(tree)
 ```
 
@@ -50,6 +51,7 @@ tree = bestbasistree(xw, JBB())
 ```@example wt
 # least statistically dependent basis
 tree = bestbasistree(xw, LSDB())
+nothing # hide
 # plot_tfbdry(tree)
 ```
 
@@ -61,6 +63,7 @@ The [Stationary Wavelet Transform (SWT)](https://link.springer.com/chapter/10.10
 y = sdwt(x, wt)
 
 # view the transform
+nothing # hide
 # wiggle(y, sc=0.7)
 ```
 
@@ -72,6 +75,7 @@ xw = cat([swpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
 
 # best basis trees, each column corresponds to 1 tree
 trees = bestbasistree(xw, BB(redundant=true)); 
+nothing # hide
 # plot_tfbdry(trees[:,1])
 ```
 
@@ -79,6 +83,7 @@ trees = bestbasistree(xw, BB(redundant=true));
 ```@example wt
 # best basis trees, each column corresponds to 1 tree
 tree = bestbasistree(xw, JBB(redundant=true)); 
+nothing # hide
 # plot_tfbdry(tree)
 ```
 
@@ -86,6 +91,7 @@ tree = bestbasistree(xw, JBB(redundant=true));
 ```@example wt
 # best basis trees, each column corresponds to 1 tree
 tree = bestbasistree(xw, LSDB(redundant=true)); 
+nothing # hide
 # plot_tfbdry(tree)
 ```
 
