@@ -37,7 +37,7 @@ x̂ = denoise(y, :wpt, wt, tree=bt)
 # plot results
 nothing # hide
 # plot([x₀ x x̂], title="Denoising Example", label=["original" "noisy" "denoised"],
-#     lw=[3 1 2], lc=[:black :grey :red])
+#      lw=[3 1 2], lc=[:black :grey :red])
 ```
 
 ## Denoising a group of signals
