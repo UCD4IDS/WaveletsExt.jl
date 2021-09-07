@@ -6,8 +6,8 @@ Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
 WaveletsExt = "8f464e1e-25db-479f-b0a5-b7680379e03f"
 
 [compat]
-WaveletsExt = "0.1"
-GR = "0.58"
 Documenter = "0.27"
+GR = "0.58, 0.59"
 Plots = "1"
 Wavelets = "0.9"
+WaveletsExt = "0.1"
