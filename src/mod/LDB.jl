@@ -340,7 +340,7 @@ struct EarthMoverDistance <: SignaturesDM end
 Returns the discriminant measure of each node calculated from the energy maps.
 """
 function discriminant_measure(Γ::AbstractArray{T}, 
-        dm::ProbabilityDensityDM) where T<:Number
+                              dm::ProbabilityDensityDM) where T<:Number
 
     # basic summary of data
     @assert 3 <= ndims(Γ) <= 4
@@ -366,12 +366,11 @@ function discriminant_measure(Γ::AbstractArray{T},
 end
 
 # discriminant measure for EMD
-function discriminant_measure(
-        Γ::AbstractArray{NamedTuple{(:coef, :weight), Tuple{S1,S2}},1},
-        dm::SignaturesDM) where {S1<:Array{<:Number}, 
-        S2<:Union{AbstractFloat,Array{<:AbstractFloat}}}
-
-    # basic summary of data
+function discriminant_measure(Γ::AbstractArray{NamedTuple{(:coef, :weight), Tuple{S1,S2}},1},
+                              dm::SignaturesDM) where 
+                             {S1<:Array{<:Number}, 
+                              S2<:Union{AbstractFloat,Array{<:AbstractFloat}}}
+    # Basic summary of data
     C = length(Γ)
     @assert C > 1
     n = size(Γ[1][:coef], 1)
@@ -573,8 +572,9 @@ function discriminant_power(D::AbstractArray{T,2}, tree::BitVector,
     return (power, order)
 end
 
-function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S}, 
-        dp::FishersClassSeparability) where {T<:Number, S}
+function discriminant_power(coefs::AbstractArray{T,2}, 
+                            y::AbstractVector{S}, 
+                            dp::FishersClassSeparability) where {T<:Number, S}
 
     n = size(coefs,1)                             # signal length
     
@@ -601,8 +601,9 @@ function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S},
     return (power, order)
 end
 
-function discriminant_power(coefs::AbstractArray{T,2}, y::AbstractVector{S},
-        dp::RobustFishersClassSeparability) where {T<:Number,S}
+function discriminant_power(coefs::AbstractArray{T,2}, 
+                            y::AbstractVector{S},
+                            dp::RobustFishersClassSeparability) where {T<:Number,S}
 
     n = size(coefs,1)                            # signal length
     

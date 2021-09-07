@@ -35,8 +35,9 @@ y = bestbasiscoef(x, wt, bt)
 x̂ = denoise(y, :wpt, wt, tree=bt)
 
 # plot results
-plot([x₀ x x̂], title="Denoising Example", label=["original" "noisy" "denoised"],
-    lw=[3 1 2], lc=[:black :grey :red])
+nothing # hide
+# plot([x₀ x x̂], title="Denoising Example", label=["original" "noisy" "denoised"],
+#      lw=[3 1 2], lc=[:black :grey :red])
 ```
 
 ## Denoising a group of signals
@@ -64,8 +65,9 @@ Y = bestbasiscoef(coef, bt)
 X̂ = denoiseall(Y, :wpt, wt, tree=bt)
 
 # plot results
-wiggle(X₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
-wiggle!(X, sc=0.7, EdgeColor=:grey, FaceColor=:white, ZDir=:reverse)
-wiggle!(X̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
-plot!(title="Group Denoising Example")
+nothing # hide
+# wiggle(X₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
+# wiggle!(X, sc=0.7, EdgeColor=:grey, FaceColor=:white, ZDir=:reverse)
+# wiggle!(X̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
+# plot!(title="Group Denoising Example")
 ```

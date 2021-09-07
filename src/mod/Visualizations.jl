@@ -36,10 +36,29 @@ function treenodes_matrix(x::BitVector)
 end
 
 """
-    plot_tfbdry(tree[; start=0, nodecolor:white])
+    plot_tfbdry(tree[; start, nodecolor])
 
-Given a tree, output a visual representation of the leaf nodes, user will 
-have the option to start the node count of each level with 0 or 1.
+Given a tree, output a visual representation of the leaf nodes, user will have the option to
+start the node count of each level with 0 or 1.
+
+# Arguments
+- `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
+- `start::Integer`: (Default: `0`) Whether to zero-index or one-index the root of the tree.
+- `nodecolor::Symbol`: (Default: `:white`) Color of the leaf nodes.
+
+# Returns
+`::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
+
+# Examples
+```
+using Wavelets, WaveletsExt
+
+# Build a tree using Wavelets `maketree`
+tree = maketree(128, 7, :dwt)
+
+# Plot the leaf nodes
+plot_tfbdry(tree)
+```
 """
 function plot_tfbdry(tree::BitVector; start::Integer=0, 
         nodecolor::Symbol=:white)
@@ -78,178 +97,216 @@ function plot_tfbdry(tree::BitVector; start::Integer=0,
 end
 
 """
-    wiggle(wav; taxis=1:size(wav,1), zaxis=1:size(wav,2), sc=1, 
-        EdgeColor=:black, FaceColor=:black, Orient=:across, Overlap=true, 
-        ZDir=:normal)
+    wiggle(wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
 
-Plot a set of shaded wiggles.
+Plots a set of shaded wiggles.
 
 # Arguments
-- `wav::AbstractArray{<:Number, 2}`: matrix of waveform columns.
-- `taxis::AbstractVector=1:size(wav,1)`: time axis vector
-- `zaxis::AbstractVector=1:size(wav,2)`: space axis vector
-- `sc::Real=1`: scale factor/magnification.
-- `EdgeColor::Symbol=:black`: Sets edge of wiggles color.
-- `FaceColor::Symbol=:black`: Sets shading color of wiggles.
-- `Overlap::Bool=true`: How signals are scaled.
+- `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+- `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
+- `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
+- `sc::Real`: (Default: `1`) Scale factor/magnification.
+- `EdgeColor::Symbol`: (Default: `:black`) Sets edge of wiggles color.
+- `FaceColor::Symbol`: (Default: `:black`) Sets shading color of wiggles.
+- `Overlap::Bool`: (Default: `true`) How signals are scaled.
     - `true`  - Signals overlap (default);
     - `false` - Signals are scaled so they do not overlap.
-- `Orient::Symbol=:across`: Controls orientation of wiggles.
+- `Orient::Symbol`: (Default: `:across`) Controls orientation of wiggles.
     - `:across` - from left to right
     - `:down`   - from top to down
-- `ZDir::Symbol=:normal`: Direction of space axis.
+- `ZDir::Symbol`: (Default: `:normal`) Direction of space axis.
     - `:normal`  - First signal at bottom (default)
     - `:reverse` - First signal at top.
 
-Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito  
+# Returns
+`::Plots.Plot`: Shaded wiggles on top of current plot object.
 
-The previous MATLAB version contributors are:  
-    Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)  
+# Examples
+```
+using Plots, WaveletsExt
 
-Revised by Naoki Saito, Feb. 05, 2018  
+# Generate random signals
+x = randn(16, 5)
 
-Maintained by Zeng Fung Liew for newest Julia version compatibility.
+# Build wiggles
+wiggle(x)
+
+Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito. The previous MATLAB
+version contributors are Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC).  
+
+Revised by Naoki Saito, Feb. 05, 2018. Maintained by Zeng Fung Liew for newest Julia version
+compatibility. 
+
+**See also:** [`wiggle!`](@ref)
+```
+"""
+wiggle(args...; kwargs...) = wiggle!(Plots.Plot(), args...; kwargs...)
+
+"""
+    wiggle(plt, wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
+
+Plots a set of shaded wiggles on top of the existing plot `plt` and return the output in a
+newly generated plot object.
+
+# Arguments
+- `plt::Plots.Plot`: Input plot to plot shaded wiggles.
+- `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+- `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
+- `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
+- `sc::Real`: (Default: `1`) Scale factor/magnification.
+- `EdgeColor::Symbol`: (Default: `:black`) Sets edge of wiggles color.
+- `FaceColor::Symbol`: (Default: `:black`) Sets shading color of wiggles.
+- `Overlap::Bool`: (Default: `true`) How signals are scaled.
+    - `true`  - Signals overlap (default);
+    - `false` - Signals are scaled so they do not overlap.
+- `Orient::Symbol`: (Default: `:across`) Controls orientation of wiggles.
+    - `:across` - from left to right
+    - `:down`   - from top to down
+- `ZDir::Symbol`: (Default: `:normal`) Direction of space axis.
+    - `:normal`  - First signal at bottom (default)
+    - `:reverse` - First signal at top.
+
+# Returns
+`::Plots.Plot`: Same plot object with shaded wiggles.
+
+# Examples
+```
+using Plots, WaveletsExt
+
+# Generate random signals
+x = randn(16, 5)
+
+# Build wiggles on top of `plt`
+plt = plot()
+plt_new = wiggle(plt, x)    # plt remains the way it is
+```
+
+Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito. The previous MATLAB
+version contributors are Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC).
+
+Revised by Naoki Saito, Feb. 05, 2018. Maintained by Zeng Fung Liew for newest Julia version
+compatibility. 
 
 **See also:** [`wiggle!`](@ref)
 """
-function wiggle(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1), 
-        zaxis::AbstractVector=1:size(wav,2), sc::Real=1, 
-        EdgeColor::Symbol=:black, FaceColor::Symbol=:black, 
-        Overlap::Bool=true, Orient::Symbol=:across, ZDir::Symbol=:normal) where
-        T<:Number
-    
-    # Set axes
-    (n,m) = size(wav)
-    
-    # Sanity check
-    @assert Orient ∈ [:across, :down]
-    @assert ZDir ∈ [:normal, :reverse]
-    if length(taxis) != n
-        error("Inconsistent taxis dimension!")
-    end
-    if length(zaxis) != m
-        error("Inconsistent zaxis dimension!")
-    end
-    
-    # For calculation purposes
-    maxrow = zeros(m); minrow = zeros(m)
-    for k = 1:m
-        maxrow[k] = maximum(wav[:,k]); minrow[k] = minimum(wav[:,k])
-    end
-    
-    # Scale the data for plotting
-    wamp = deepcopy(wav)
-    dz = mean(diff(zaxis))
-    if Overlap
-        wamp *= 2 * dz * (sc/maximum(maxrow-minrow))
-    else
-        wmax = maximum(maxrow); wmin = minimum(minrow);
-        if wmax<=0
-            wmax = 0
-      end
-        if wmin>=0
-            wmin = 0
-      end
-          wamp = sc*wav/(wmax-wmin)
-    end
-    
-    # Set initial plot
-    t0 = minimum(taxis)
-    t1 = maximum(taxis)
-    z0 = minimum(zaxis)
-    z1 = maximum(zaxis)
-    if Orient == :down
-        plot(xlims=(z0-dz,z1+dz), ylims=(t0,t1), yflip=true, legend=:none)
-    else
-        plot(xlims=(t0,t1), ylims=(z0-dz,z1+dz), legend=:none)
-    end
-    if ZDir == :reverse
-        wamp = reverse(wamp, dims=2)
-    end
-    
-    # Plot each wavelet
-    for k = 1:m
-        sig = wamp[:,k]
-        t = deepcopy(taxis)
-        w_sign = sign.(sig)
-        for j=1:n-1
-            if (w_sign[j]!=w_sign[j+1] && w_sign[j]!=0 && w_sign[j+1]!=0)
-            sig = [sig; 0]
-            t = [t; t[j]-sig[j]*(t[j+1]-t[j])/(sig[j+1]-sig[j])]
-            end
-        end
-        IX = sortperm(t)
-        t = t[IX]
-        sig = sig[IX]
-        len = length(t)
-        len1 = collect(len:-1:1)
-        indperm = [1:len;len1]
-        inputx = t[indperm]
-        inputy = zaxis[k] .+ [sig;min.(sig[len1],0)]
-        # In the plot! functions below, theoretically speaking, either
-        # fillrange = zaxis[k] or fillrange=[zaxis[k], zaxis[k]+dz] should be 
-        # used. However, those do not generate the desired plots as of 
-        # O3/19/2018. Somehow, the relative value of 0, i.e., fillrange=0, works 
-        # well, which is used temporarily.
-        if Orient == :down
-            plot!(
-                inputy, inputx, fillrange=0, fillalpha=0.75, 
-                fillcolor=FaceColor, linecolor=EdgeColor, orientation=:v
-            )
-        else
-            plot!(
-                inputx, inputy, fillrange=0, fillalpha=0.75, 
-                fillcolor=FaceColor, linecolor=EdgeColor
-            )
-        end
-    end
-    plot!() # flushing the display.
-end
+wiggle(plt::Plots.Plot, args...; kwargs...) = wiggle!(deepcopy(plt), args...; kwargs...)
 
 """
-    wiggle!(wav; taxis=1:size(wav,1), zaxis=1:size(wav,2), sc=1, 
-        EdgeColor=:black, FaceColor=:black, Orient=:across, Overlap=true, 
-        ZDir=:normal)
+    wiggle!(wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
 
-Plot a set of shaded wiggles on the current displayed graphics
+Plot a set of shaded wiggles on the current displayed graphics. If there are no displayed
+graphics currently available, a new `Plots.Plot` object is generated to plot the shaded wiggles.
 
 # Arguments
-- `wav::AbstractArray{<:Number,2}`: matrix of waveform columns.
-- `taxis::AbstractVector=1:size(wav,1)`: time axis vector
-- `zaxis::AbstractVector=1:size(wav,2)`: space axis vector
-- `sc::Real=1`: scale factor/magnification.
-- `EdgeColor::Symbol=:black`: Sets edge of wiggles color.
-- `FaceColor::Symbol=:black`: Sets shading color of wiggles.
-- `Overlap::Bool=true`: How signals are scaled.
+- `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+- `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
+- `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
+- `sc::Real`: (Default: `1`) Scale factor/magnification.
+- `EdgeColor::Symbol`: (Default: `:black`) Sets edge of wiggles color.
+- `FaceColor::Symbol`: (Default: `:black`) Sets shading color of wiggles.
+- `Overlap::Bool`: (Default: `true`) How signals are scaled.
     - `true`  - Signals overlap (default);
     - `false` - Signals are scaled so they do not overlap.
-- `Orient::Symbol=:across`: Controls orientation of wiggles.
+- `Orient::Symbol`: (Default: `:across`) Controls orientation of wiggles.
     - `:across` - from left to right
     - `:down`   - from top to down
-- `ZDir::Symbol=:normal`: Direction of space axis.
+- `ZDir::Symbol`: (Default: `:normal`) Direction of space axis.
     - `:normal`  - First signal at bottom (default)
     - `:reverse` - First signal at top.
 
-Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito  
+# Returns
+`::Plots.Plot`: Shaded wiggles on top of current plot object.
 
-The previous MATLAB version contributors are:  
-    Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC)  
+# Examples
+```
+using Plots, WaveletsExt
 
-Revised by Naoki Saito, Feb. 05, 2018  
+# Generate random signals
+x = randn(16, 5)
 
-Maintained by Zeng Fung Liew for newest Julia version compatibility.
+# Build wiggles on `plt`
+plt = plot()
+wiggle!(x)
+```
+
+Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito. The previous MATLAB
+version contributors are Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC).  
+
+Revised by Naoki Saito, Feb. 05, 2018. Maintained by Zeng Fung Liew for newest Julia version
+compatibility. 
 
 **See also:** [`wiggle`](@ref)
 """
-function wiggle!(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1), 
-        zaxis::AbstractVector=1:size(wav,2), sc::Real=1, 
-        EdgeColor::Symbol=:black, FaceColor::Symbol=:black, 
-        Overlap::Bool=true, Orient::Symbol=:across, ZDir::Symbol=:normal) where
-        T<:Number
+function wiggle!(args...; kwargs...)
+    @nospecialize
+    local plt
+    try
+        plt = current()
+    catch
+        return wiggle(args..., kwargs...)
+    end
+    wiggle!(current(), args...; kwargs...)
+end
 
+"""
+    wiggle!(plt, wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
+
+Plot a set of shaded wiggles onto `plt`.
+
+# Arguments
+- `plt::Plots.Plot`: Input plot to plot shaded wiggles.
+- `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+- `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
+- `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
+- `sc::Real`: (Default: `1`) Scale factor/magnification.
+- `EdgeColor::Symbol`: (Default: `:black`) Sets edge of wiggles color.
+- `FaceColor::Symbol`: (Default: `:black`) Sets shading color of wiggles.
+- `Overlap::Bool`: (Default: `true`) How signals are scaled.
+    - `true`  - Signals overlap (default);
+    - `false` - Signals are scaled so they do not overlap.
+- `Orient::Symbol`: (Default: `:across`) Controls orientation of wiggles.
+    - `:across` - from left to right
+    - `:down`   - from top to down
+- `ZDir::Symbol`: (Default: `:normal`) Direction of space axis.
+    - `:normal`  - First signal at bottom (default)
+    - `:reverse` - First signal at top.
+
+# Returns
+`plt::Plots.Plot`: Same plot object with shaded wiggles.
+
+# Examples
+```
+using Plots, WaveletsExt
+
+# Generate random signals
+x = randn(16, 5)
+
+# Build wiggles on `plt`
+plt = plot()
+wiggle!(plt, x)
+```
+
+Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito. The previous MATLAB
+version contributors are Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC).  
+
+Revised by Naoki Saito, Feb. 05, 2018. Maintained by Zeng Fung Liew for newest Julia version
+compatibility. 
+
+**See also:** [`wiggle`](@ref)
+"""
+function wiggle!(plt::Plots.Plot,
+                 wav::AbstractArray{T,2};
+                 taxis::AbstractVector=1:size(wav,1),
+                 zaxis::AbstractVector=1:size(wav,2),
+                 sc::Real=1,
+                 EdgeColor::Symbol=:black,
+                 FaceColor::Symbol=:black,
+                 Overlap::Bool=true,
+                 Orient::Symbol=:across,
+                 ZDir::Symbol=:normal) where T<:Number
     # Set axes
-    (n,m) = size(wav)
-    
+    (n, m) = size(wav)
+
     # Sanity check
     @assert Orient ∈ [:across, :down]
     @assert ZDir ∈ [:normal, :reverse]
@@ -259,80 +316,69 @@ function wiggle!(wav::AbstractArray{T,2}; taxis::AbstractVector=1:size(wav,1),
     if length(zaxis) != m
         error("Inconsistent zaxis dimension!")
     end
-    
+
     # For calculation purposes
-    maxrow = zeros(m); minrow = zeros(m)
-    for k = 1:m
-        maxrow[k] = maximum(wav[:,k]); minrow[k] = minimum(wav[:,k])
+    maxrow = zeros(m)
+    minrow = zeros(m)
+    for (i, wavᵢ) in enumerate(eachcol(wav))
+        maxrow[i] = maximum(wavᵢ)
+        minrow[i] = minimum(wavᵢ)
     end
-    
+
     # Scale the data for plotting
-    wamp = deepcopy(wav)
     dz = mean(diff(zaxis))
     if Overlap
-        wamp *= 2 * dz * (sc/maximum(maxrow-minrow))
+        wamp = 2 * dz * (sc/maximum(maxrow-minrow)) * wav
     else
-        wmax = maximum(maxrow); wmin = minimum(minrow);
-        if wmax<=0
-            wmax = 0
-        end
-        if wmin>=0
-            wmin = 0
-        end
-            wamp = sc*wav/(wmax-wmin)
+        wmax = maximum(maxrow) <= 0 ? 0 : maximum(maxrow)
+        wmin = minimum(minrow) >= 0 ? 0 : minimum(minrow)
+        wamp = sc*wav/(wmax-wmin)
     end
-    
+
     # Set initial plot
     t0 = minimum(taxis)
     t1 = maximum(taxis)
     z0 = minimum(zaxis)
     z1 = maximum(zaxis)
     if Orient == :down
-        plot!(xlims=(z0-dz,z1+dz), ylims=(t0,t1), yflip=true, legend=:none)
+        plot!(plt, xlims=(z0-dz,z1+dz), ylims=(t0,t1), yflip=true, legend=:none)
     else
-        plot!(xlims=(t0,t1), ylims=(z0-dz,z1+dz), legend=:none)
+        plot!(plt, xlims=(t0,t1), ylims=(z0-dz,z1+dz), legend=:none)
     end
     if ZDir == :reverse
         wamp = reverse(wamp, dims=2)
     end
-    
+
     # Plot each wavelet
-    for k = 1:m
-        sig = wamp[:,k]
+    for (i, wampᵢ) in enumerate(eachcol(wamp))
         t = deepcopy(taxis)
-        w_sign = sign.(sig)
-        for j=1:n-1
+        w_sign = sign.(wampᵢ)
+        for j in 1:(n-1)
             if (w_sign[j]!=w_sign[j+1] && w_sign[j]!=0 && w_sign[j+1]!=0)
-                sig = [sig; 0]
-                t = [t; t[j]-sig[j]*(t[j+1]-t[j])/(sig[j+1]-sig[j])]
+                wampᵢ = [wampᵢ; 0]
+                t = [t; t[j]-wampᵢ[j]*(t[j+1]-t[j])/(wampᵢ[j+1]-wampᵢ[j])]
             end
         end
-        IX = sortperm(t)
-        t = t[IX]
-        sig = sig[IX]
+        ix = sortperm(t)
+        t = t[ix]
+        wampᵢ = wampᵢ[ix]
         len = length(t)
-        len1 = collect(len:-1:1)
-        indperm = [1:len;len1]
+        indperm = [1:len; len:-1:1]
         inputx = t[indperm]
-        inputy = zaxis[k] .+ [sig;min.(sig[len1],0)]
-        # In the plot! functions below, theoretically speaking, either
-        # fillrange = zaxis[k] or fillrange=[zaxis[k], zaxis[k]+dz] should be 
-        # used. However, those do not generate the desired plots as of 
-        # O3/19/2018. Somehow, the relative value of 0, i.e., fillrange=0, works 
-        # well, which is used temporarily.
+        inputy = zaxis[i] .+ [wampᵢ; min.(wampᵢ[len:-1:1],0)]
+        # In the plot! functions below, theoretically speaking, either fillrange = zaxis[k]
+        # or fillrange=[zaxis[k], zaxis[k]+dz] should be used. However, those do not
+        # generate the desired plots as of O3/19/2018. Somehow, the relative value of 0,
+        # i.e., fillrange=0, works well, which is used temporarily.
         if Orient == :down
-            plot!(
-                inputy, inputx, fillrange=0, fillalpha=0.75, 
-                fillcolor=FaceColor, linecolor=EdgeColor, orientation=:v
-            )
+            plot!(plt, inputy, inputx, fillrange=0, fillalpha=0.75, 
+                  fillcolor=FaceColor, linecolor=EdgeColor, orientation=:v)
         else
-            plot!(
-                inputx, inputy, fillrange=0, fillalpha=0.75, 
-                fillcolor=FaceColor, linecolor=EdgeColor
-            )
+            plot!(plt, inputx, inputy, fillrange=0, fillalpha=0.75,
+                  fillcolor=FaceColor, linecolor=EdgeColor)
         end
     end
-    plot!() # flushing the display.
+    return plt
 end
 
 end # end module

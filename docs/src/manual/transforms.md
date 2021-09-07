@@ -34,7 +34,7 @@ nothing # hide
 
 Additionally, one can view the selected nodes from the best basis trees using the [`plot_tfbdry`](@ref WaveletsExt.Visualizations.plot_tfbdry) function as shown below.
 ```@example wt
-plot_tfbdry(trees[:,1])
+# plot_tfbdry(trees[:,1])
 ```
 
 We can also view the JBB and LSDB trees using a similar syntax. Unlike the previous best basis algorithm, JBB and LSDB do not generate a tree for each individual signal, as they search for the best tree that generalizes the group of signal as a whole.
@@ -43,14 +43,16 @@ We can also view the JBB and LSDB trees using a similar syntax. Unlike the previ
 ```@example wt
 # joint best basis
 tree = bestbasistree(xw, JBB())
-plot_tfbdry(tree)
+nothing # hide
+# plot_tfbdry(tree)
 ```
 
 * Least Statistically Dependent Basis (LSDB)
 ```@example wt
 # least statistically dependent basis
 tree = bestbasistree(xw, LSDB())
-plot_tfbdry(tree)
+nothing # hide
+# plot_tfbdry(tree)
 ```
 
 ## Stationary and Autocorrelation Wavelet Transforms
@@ -61,7 +63,8 @@ The [Stationary Wavelet Transform (SWT)](https://link.springer.com/chapter/10.10
 y = sdwt(x, wt)
 
 # view the transform
-wiggle(y, sc=0.7)
+nothing # hide
+# wiggle(y, sc=0.7)
 ```
 
 The SWT decomposition and its best basis search is highly similar with that of the regular wavelet transforms.
@@ -72,21 +75,24 @@ xw = cat([swpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
 
 # best basis trees, each column corresponds to 1 tree
 trees = bestbasistree(xw, BB(redundant=true)); 
-plot_tfbdry(trees[:,1])
+nothing # hide
+# plot_tfbdry(trees[:,1])
 ```
 
 * Joint Best Basis (JBB)
 ```@example wt
 # best basis trees, each column corresponds to 1 tree
 tree = bestbasistree(xw, JBB(redundant=true)); 
-plot_tfbdry(tree)
+nothing # hide
+# plot_tfbdry(tree)
 ```
 
 * Least Statistically Dependent Basis (LSDB)
 ```@example wt
 # best basis trees, each column corresponds to 1 tree
 tree = bestbasistree(xw, LSDB(redundant=true)); 
-plot_tfbdry(tree)
+nothing # hide
+# plot_tfbdry(tree)
 ```
 
 In fact, this same exact procedures can be implemented with the [Autocorrelation wavelet transforms](https://www.math.ucdavis.edu/~saito/publications/saito_acs_spie.pdf), since they're both redundant types of transform. To implement the autocorrelation transforms, simply change `sdwt` to `acwt`, and `swpd` to `acwpt`.

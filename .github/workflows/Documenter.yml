@@ -4,6 +4,9 @@ on:
     branches:
       - master
     tags: '*'
+    paths: # Specifying which files to run CI/CD for
+      - src/**
+      - docs/**
   pull_request:
 jobs:
   build:
