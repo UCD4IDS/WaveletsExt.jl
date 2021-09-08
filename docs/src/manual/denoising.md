@@ -36,8 +36,8 @@ x̂ = denoise(y, :wpt, wt, tree=bt)
 
 # plot results
 nothing # hide
-# plot([x₀ x x̂], title="Denoising Example", label=["original" "noisy" "denoised"],
-#      lw=[3 1 2], lc=[:black :grey :red])
+plot([x₀ x x̂], title="Denoising Example", label=["original" "noisy" "denoised"],
+     lw=[3 1 2], lc=[:black :grey :red])
 ```
 
 ## Denoising a group of signals
@@ -66,8 +66,8 @@ X̂ = denoiseall(Y, :wpt, wt, tree=bt)
 
 # plot results
 nothing # hide
-# wiggle(X₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
-# wiggle!(X, sc=0.7, EdgeColor=:grey, FaceColor=:white, ZDir=:reverse)
-# wiggle!(X̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
-# plot!(title="Group Denoising Example")
+wiggle(X₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
+wiggle!(X, sc=0.7, EdgeColor=:grey, FaceColor=:white, ZDir=:reverse)
+wiggle!(X̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
+plot!(title="Group Denoising Example")
 ```
