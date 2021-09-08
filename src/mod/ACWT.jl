@@ -176,7 +176,10 @@ end
 
 ### ACWT Transforms ### 
 ## 1D ##
-function acwt_step(v::AbstractVector{T}, j::Integer, h::Array{T,1}, g::Array{T,1}) where {T <: Number}
+function acwt_step(v::AbstractVector{T}, 
+                   j::Integer, 
+                   h::Array{T,1}, 
+                   g::Array{T,1}) where {T<:Number}
     N = length(v)
     L = length(h)
     v1 = zeros(T, N)
@@ -197,7 +200,9 @@ function acwt_step(v::AbstractVector{T}, j::Integer, h::Array{T,1}, g::Array{T,1
     return v1, w1 
 end
 
-function acwt(x::AbstractVector{<:Number}, wt::OrthoFilter, L::Integer=maxtransformlevels(x))
+function acwt(x::AbstractVector{<:Number}, 
+              wt::OrthoFilter, 
+              L::Integer=maxtransformlevels(x))
 
     @assert L <= maxtransformlevels(x) || throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
     @assert L >= 1 || throw(ArgumentError("L must be >= 1"))
@@ -217,15 +222,17 @@ end
 
 ## 2D ##
 """
-    hacwt(x, wt[, L=maxtransformlevels(x)])
+    hacwt(x, wt[, L=maxtransformlevels(x,2)])
 
 Computes the column-wise discrete autocorrelation transform coeficients for 2D signals.
 
 **See also:** [`vacwt`](@ref)
 """
-function hacwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter, L::Integer=maxtransformlevels(x[:,1]))
+function hacwt(x::AbstractArray{T,2}, 
+               wt::OrthoFilter, 
+               L::Integer=maxtransformlevels(x,2)) where T<:Number
     nrow, ncol = size(x)
-    W = Array{Float64,3}(undef,nrow,L+1,ncol)
+    W = Array{T,3}(undef,nrow,L+1,ncol)
     for i in 1:ncol
         @inbounds W[:,:,i] = acwt(x[:,i],wt,L)
     end
@@ -239,21 +246,23 @@ Computes the row-wise discrete autocorrelation transform coeficients for 2D sign
 
 **See also:** [`hacwt`](@ref)
 """
-function vacwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter, L::Integer=maxtransformlevels(x[1,:]))
+function vacwt(x::AbstractArray{T,2}, 
+               wt::OrthoFilter, 
+               L::Integer=maxtransformlevels(x,1)) where T<:Number
     nrow, ncol = size(x)
-    W = Array{Number,3}(undef,ncol,L+1,nrow)
+    W = Array{T,3}(undef,ncol,L+1,nrow)
     for i in 1:nrow
         W[:,:,i] = acwt(x[i,:],wt,L)
     end
     return W
 end
 
-function acwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter,
+function acwt(x::AbstractArray{T,2}, wt::OrthoFilter,
               Lrow::Integer=maxtransformlevels(x,1),
-              Lcol::Integer=maxtransformlevels(x,2))
+              Lcol::Integer=maxtransformlevels(x,2)) where T<:Number
     nrow, ncol = size(x)
     W3d = hacwt(x,wt,Lcol)
-    W4d = Array{Number,4}(undef,Lcol+1,ncol,Lrow+1,nrow)
+    W4d = Array{T,4}(undef,Lcol+1,ncol,Lrow+1,nrow)
     for i in 1:Lcol+1
         @inbounds W4d[i,:,:,:] = vacwt(W3d[:,i,:],wt,Lrow)
     end
@@ -262,7 +271,11 @@ function acwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter,
 end
 
 ## ACW Packet Transform ##
-function acwpt_step(W::AbstractArray{T,2}, i::Integer, d::Integer, Qmf::Vector{T}, Pmf::Vector{T}) where T <: Number
+function acwpt_step(W::AbstractArray{T,2}, 
+                    i::Integer, 
+                    d::Integer, 
+                    Qmf::Vector{T}, 
+                    Pmf::Vector{T}) where T<:Number
     _,m = size(W)
     if i<<1+1 <= m
         W[:,i<<1], W[:,i<<1+1] = acwt_step(W[:,i],d,Qmf,Pmf)
@@ -271,7 +284,9 @@ function acwpt_step(W::AbstractArray{T,2}, i::Integer, d::Integer, Qmf::Vector{T
     end
 end
 
-function acwpt(x::AbstractVector{T}, wt::OrthoFilter, L::Integer=maxtransformlevels(x)) where T<:Number
+function acwpt(x::AbstractVector{T}, 
+               wt::OrthoFilter, 
+               L::Integer=maxtransformlevels(x)) where T<:Number
     W = Array{Float64,2}(undef,length(x),2<<L-1)
     W[:,1] = x
     Pmf, Qmf = ACWT.make_acreverseqmfpair(wt)
@@ -295,16 +310,16 @@ function iacwt(xw::AbstractArray{<:Number,2})
     return y[:,1]
 end
 
-function iacwt(xw::AbstractArray{<:Number,4})
+function iacwt(xw::AbstractArray{T,4}) where T<:Number
     nrow, ncol, _, Lcol = size(xw)
     W4d = permutedims(xw,[4,2,3,1])
-    W3d = Array{Number,3}(undef, nrow, Lcol, ncol)
+    W3d = Array{T,3}(undef, nrow, Lcol, ncol)
     for i in 1:Lcol
         for j in 1:nrow
             @inbounds W3d[j,i,:] = iacwt(W4d[i,:,:,j])
         end
     end
-    y = Array{Number,2}(undef, nrow, ncol)
+    y = Array{T,2}(undef, nrow, ncol)
     for i in 1:ncol
         @inbounds y[:,i] = iacwt(W3d[:,:,i])
     end
