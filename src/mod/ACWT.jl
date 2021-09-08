@@ -249,8 +249,8 @@ function vacwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter, L::Integer=maxtran
 end
 
 function acwt(x::AbstractArray{<:Number,2}, wt::OrthoFilter,
-              Lrow::Integer=maxtransformlevels(x[1,:]),
-              Lcol::Integer=maxtransformlevels(x[:,1]))
+              Lrow::Integer=maxtransformlevels(x,1),
+              Lcol::Integer=maxtransformlevels(x,2))
     nrow, ncol = size(x)
     W3d = hacwt(x,wt,Lcol)
     W4d = Array{Number,4}(undef,Lcol+1,ncol,Lrow+1,nrow)

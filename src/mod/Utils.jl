@@ -22,6 +22,44 @@ using
     Random, 
     ImageQualityIndexes
 
+
+"""
+    maxtransformlevels(n)
+
+    maxtransformlevels(x[, dims])
+
+Extension function from Wavelets.jl. Finds the max number of transform levels for an array
+`x`. If `dims` is provided for a multidimensional array, then it finds the max transform
+level for that corresponding dimension.
+
+# Arguments
+- `x::AbstractArray`: Input array.
+- `dims::Integer`: Dimension used for wavelet transform.
+- `n::Integer`: Length of input vector.
+
+# Returns
+`::Integer`: Max number of transform levels.
+
+# Examples
+```
+using Wavelets, WaveletsExt
+
+# Define random signal
+x = randn(64, 128)
+
+# Max transform levels and their corresponding return values
+maxtransformlevels(128)     # 7
+maxtransformlevels(x)       # 6
+maxtransformlevels(x, 2)    # 7
+```
+"""
+function Wavelets.Util.maxtransformlevels(x::AbstractArray, dims::Integer)
+    # Sanity check
+    @assert 1 ≤ dims ≤ ndims(x)
+    # Compute max transform levels of relevant dimension
+    return maxtransformlevels(size(x)[dims])
+end
+
 """
     left(i)
 
