@@ -1,3 +1,4 @@
+ENV["GKS_WSTYPE"]=100
 using Documenter, WaveletsExt
 
 makedocs(
