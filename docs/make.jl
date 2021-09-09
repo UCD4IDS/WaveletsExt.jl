@@ -1,4 +1,5 @@
-ENV["GKS_WSTYPE"]=100
+ENV["GKSwstype"] = "100"
+ENV["PLOTS_TEST"] = "true"
 using Documenter, WaveletsExt
 
 makedocs(
