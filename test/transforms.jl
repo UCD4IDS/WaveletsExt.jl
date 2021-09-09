@@ -6,12 +6,9 @@
     y2 = wpt(x, wt, 2)
     y3 = wpt(x, wt, 3)
     @test wpd(x, wt) == [x y1 y2 y3]
-    @test wpd(x, wt, h, g) == [x y1 y2 y3]
     
     y = Array{Float64,2}(undef, (8,4))
     wpd!(y, x, wt)
-    @test y == [x y1 y2 y3]
-    wpd!(y, x, wt, h, g)
     @test y == [x y1 y2 y3]
 end
 
@@ -71,4 +68,22 @@ end
     y₃ = acwpt(x₁, wavelet(WT.haar))
     @test y₃[:,8] == y₁[:,1]
     @test iacwpt(y₃, tree) ≈ x₁
+end
+
+@testset "Transform All" begin
+    x = randn(8)
+    xₙ = [x x x]
+    wt = wavelet(WT.haar)
+    
+    # dwt
+    y = dwt(x, wt)
+    @test dwtall(xₙ, wt) == [y y y]
+
+    # wpt
+    y = wpt(x, wt)
+    @test wptall(xₙ, wt) == [y y y]
+
+    # wpd
+    y = [x wpt(x,wt,1) wpt(x,wt,2)]
+    @test wpdall(xₙ, wt, 2) == cat(y,y,y, dims=3)
 end

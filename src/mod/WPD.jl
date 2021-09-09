@@ -1,7 +1,10 @@
 module WPD
 export 
     wpd,
-    wpd!
+    wpd!,
+    dwtall,
+    wptall,
+    wpdall
 
 using 
     Wavelets
@@ -12,81 +15,64 @@ using
 """
     wpd(x, wt[, L=maxtransformlevels(x)])
 
-    wpd(x, wt, hqf, gqf[, L=maxtransformlevels(x)])
-
 Returns the wavelet packet decomposition WPD) for L levels for input signal(s) 
 x.
 
 **See also:** [`wpd!`](@ref)
 """
-function wpd(x::AbstractVector{<:Number}, wt::OrthoFilter, 
-        L::Integer=maxtransformlevels(x))
-
+function wpd(x::AbstractVector{T}, 
+             wt::OrthoFilter, 
+             L::Integer=maxtransformlevels(x)) where T<:Number
+    # Sanity check
     @assert 0 <= L <= maxtransformlevels(x)
-    gqf, hqf = WT.makereverseqmfpair(wt, true)
-    
-    return wpd(x, wt, hqf, gqf, L)
-end
+    @assert isdyadic(x)
+    @assert 0 ≤ L ≤ maxtransformlevels(x)
 
-function wpd(x::AbstractVector{T}, wt::DiscreteWavelet, hqf::Array{S,1}, 
-        gqf::Array{S,1}, L::Integer=maxtransformlevels(x)) where 
-        {T<:Number, S<:Number}
-
+    # Allocate variable for result
     n = length(x)
-    @assert isdyadic(n)
-    @assert 0 <= L <= maxtransformlevels(n)
-
-    result = Array{T, 2}(undef, (n, L+1))
-    wpd!(result, x, wt, hqf, gqf, L)
-    return result
+    xw = Array{T,2}(undef, (n,L+1))
+    # Wavelet packet decomposition
+    wpd!(xw, x, wt, L)
+    return xw
 end
-
 
 """
     wpd!(y, x, wt[, L=maxtransformlevels(x)])
-
-    wpd!(y, x, wt, hqf, gqf[, L=maxtransformlevels(x)])
 
 Same as `wpd` but without array allocation.
 
 **See also:** [`wpd`](@ref)
 """
-function wpd!(y::AbstractArray{T,2}, x::AbstractArray{T,1},
-        wt::DiscreteWavelet, L::Integer=maxtransformlevels(x)) where
-        T<:Number
-
-    gqf, hqf = WT.makereverseqmfpair(wt, true)
-    wpd!(y, x, wt, hqf, gqf, L)
-    return nothing
-end
-
 function wpd!(y::AbstractArray{T,2}, 
-              x::AbstractArray{T,1}, 
+              x::AbstractArray{T,1},
               wt::DiscreteWavelet, 
-              hqf::Array{S,1}, 
-              gqf::Array{S,1}, 
-              L::Integer=maxtransformlevels(x)) where 
-             {T<:Number, S<:Number}
+              L::Integer=maxtransformlevels(x)) where T<:Number
+    # Sanity check
     n = length(x)
-    @assert 0 <= L <= maxtransformlevels(n)
-    @assert size(y) == (n, L+1)
+    @assert 0 ≤ L ≤ maxtransformlevels(x)
+    @assert size(y) == (n,L+1)
 
+    # Construct low pass and high pass filters
+    gqf, hqf = WT.makereverseqmfpair(wt, true)
+    # First column of y is level 0, ie. original signal
     y[:,1] = x
-    si = Vector{S}(undef, length(wt)-1)
+    # Allocate placeholder variable
+    si = similar(gqf, eltype(gqf), length(wt)-1)
+    # Compute L levels of decomposition
     for i in 0:(L-1)
-        # parent node length
+        # Parent node length
         nₚ = nodelength(n, i) 
         for j in 0:((1<<i)-1)
-            # extract parent node
+            # Extract parent node
             colₚ = i + 1
             rng = (j * nₚ + 1):((j + 1) * nₚ)
             @inbounds nodeₚ = @view y[rng, colₚ]
 
-            # extract left and right child nodes
+            # Extract left and right child nodes
             colₘ = colₚ + 1
             @inbounds nodeₘ = @view y[rng, colₘ]
 
-            # perform 1 level of wavelet decomposition
+            # Perform 1 level of wavelet decomposition
             Transforms.unsafe_dwt1level!(nodeₘ, nodeₚ, wt, true, hqf, gqf, si)
         end
     end
