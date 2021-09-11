@@ -40,9 +40,9 @@ end
     @test relativenorm(y, x0) <= 2*err
 
     ## Autocorrelation wavelet transforms
-    y = denoise(acwt(x, wt), :acwt, wt, dnt=dnt, smooth=:undersmooth)
+    y = denoise(acdwt(x, wt), :acwt, wt, dnt=dnt, smooth=:undersmooth)
     @test relativenorm(y, x0) <= 2*err
-    y = denoise(acwpt(x, wt), :acwpt, wt, smooth=:undersmooth)
+    y = denoise(acwpd(x, wt), :acwpt, wt, smooth=:undersmooth)
     @test relativenorm(y, x0) <= 2*err
     
     # Group denoising
@@ -54,15 +54,12 @@ end
     ## Non-redundant Transforms
     y = denoiseall(x, :sig, wt, dnt=dnt, bestTH=mean)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
-    y = denoiseall(hcat([dwt(x[:,i], wt) for i in 1:5]...), :dwt, wt, dnt=dnt)
+    y = denoiseall(dwtall(x, wt), :dwt, wt, dnt=dnt)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
     dnt = RelErrorShrink(HardTH(), 0.3)
-    y = denoiseall(hcat([wpt(x[:,i], wt) for i in 1:5]...), :wpt, wt,
-        tree=maketree(n, 8, :full), dnt=dnt, estnoise=relerrorthreshold)
+    y = denoiseall(wptall(x, wt), :wpt, wt, tree=maketree(n, 8, :full), dnt=dnt, estnoise=relerrorthreshold)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
-    y = denoiseall(hcat([wpt(x[:,i], wt) for i in 1:5]...), :wpt, wt,
-        tree=maketree(n, 8, :full), dnt=dnt, estnoise=relerrorthreshold, 
-        bestTH=mean)
+    y = denoiseall(wptall(x, wt), :wpt, wt, tree=maketree(n, 8, :full), dnt=dnt, estnoise=relerrorthreshold, bestTH=mean)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
 
     ## Stationary Wavelet Transforms
@@ -80,9 +77,9 @@ end
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
 
     ## Autocorrelation Wavelet Transforms
-    y = denoiseall(cat([acwt(x[:,i], wt) for i in 1:5]..., dims=3), :acwt, wt)
+    y = denoiseall(cat([acdwt(x[:,i], wt) for i in 1:5]..., dims=3), :acwt, wt)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err 
-    y = denoiseall(cat([acwpt(x[:,i], wt) for i in 1:5]..., dims=3), :acwpt, wt,
+    y = denoiseall(cat([acwpd(x[:,i], wt) for i in 1:5]..., dims=3), :acwpt, wt,
         tree=maketree(n, 7, :full), dnt=dnt, estnoise=relerrorthreshold)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
 end

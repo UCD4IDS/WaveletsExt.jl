@@ -1,17 +1,21 @@
 module ACWT
 export
-    acwt, 
+    acdwt, 
+    iacdwt,
+    acwpd, 
+    iacwpt,
+    # Functions to be deprecated
+    acwt,
     iacwt,
-    acwpt, 
-    iacwpt
+    acwpt
 
 using ..Utils
 using LinearAlgebra, Wavelets
 
 """
-	acwt(x, wt[, L=maxtransformlevels(x)])
+	acdwt(x, wt[, L=maxtransformlevels(x)])
 
-    acwt(x, wt[, Lrow=maxtransformlevels(x[1,:]), Lcol=maxtransformlevels(x[:,1])])
+    acdwt(x, wt[, Lrow=maxtransformlevels(x[1,:]), Lcol=maxtransformlevels(x[:,1])])
 
 Performs a discrete autocorrelation wavelet transform for a given signal `x`.
 The signal can be 1D or 2D. The wavelet type `wt` determines the transform type.
@@ -19,45 +23,45 @@ Refer to Wavelet.jl for a list of available methods.
 
 # Examples
 ```julia
-acwt(x, wavelet(WT.db4))
+acdwt(x, wavelet(WT.db4))
 
-acwt(x, wavelet(WT.db4), 4) # level 4 decomposition
+acdwt(x, wavelet(WT.db4), 4) # level 4 decomposition
 ```
 
-**See also:** [`acwt_step`](@ref), [`iacwt`](@ref)
+**See also:** [`acdwt_step`](@ref), [`iacdwt`](@ref)
 """
-function acwt end
+function acdwt end
 
 """
-    acwt_step(v, j, h, g)
+    acdwt_step(v, j, h, g)
 
-Performs one level of the autocorrelation discrete wavelet transform (ACWT) on the 
+Performs one level of the autocorrelation discrete wavelet transform (acdwt) on the 
 vector `v`, which is the j-th level scaling coefficients (Note the 0th level
 scaling coefficients is the raw signal). The vectors `h` and `g` are the detail
 and scaling filters.
 
 Returns a tuple `(v, w)` of the scaling and detail coefficients at level `j+1`.
 
-**See also:** [`acwt`](@ref), [`iacwt`](@ref)
+**See also:** [`acdwt`](@ref), [`iacdwt`](@ref)
 """
-function acwt_step end
+function acdwt_step end
 
 """
-    acwpt(x, wt[, L=maxtransformlevels(x)])
+    acwpd(x, wt[, L=maxtransformlevels(x)])
 
 Performs a discrete autocorrelation wavelet packet transform for a given signal `x`.
 The wavelet type `wt` determines the transform type. Refer to Wavelet.jl for a list of available methods.
 
 # Examples
 ```julia
-acwpt(x, wavelet(WT.db4))
+acwpd(x, wavelet(WT.db4))
 
-acwpt(x, wavelet(WT.db4), 4)
+acwpd(x, wavelet(WT.db4), 4)
 ```
 
-**See also:** [`acwt`](@ref), `acwpt_step`, [`iacwpt`](@ref)
+**See also:** [`acdwt`](@ref), `acwpt_step`, [`iacwpt`](@ref)
 """
-function acwpt end
+function acwpd end
 
 """
     acwpt_step(W, i, d, Qmf, Pmf)
@@ -66,38 +70,38 @@ Performs one level of the autocorrelation discrete wavelet packet transform
 (ACWPT) on the `i`-th node at depth `d` in the array `W`. The vectors `Qmf` and 
 `Pmf` are the detail and scaling filters.
 
-**See also:** [`acwpt`](@ref), [`iacwpt`](@ref)
+**See also:** [`acwpd`](@ref), [`iacwpt`](@ref)
 """
 function acwpt_step end
 
 """
-	iacwt(xw::AbstractArray{<:Number,2})
+	iacdwt(xw::AbstractArray{<:Number,2})
 
-    iacwt(xw::AbstractArray{<:Number,4})
+    iacdwt(xw::AbstractArray{<:Number,4})
 
 Performs the inverse autocorrelation discrete wavelet transform. 
 Can be used for both the 1D and 2D case.
 
-**See also:** [`iacwt!`](@ref), [`acwt`](@ref)
+**See also:** [`iacdwt!`](@ref), [`acdwt`](@ref)
 """
-function iacwt end
+function iacdwt end
 
 """
-	iacwt!(xw::AbstractArray{<:Number,2})
+	iacdwt!(xw::AbstractArray{<:Number,2})
 
-Same as `iacwt` but performs the inverse autocorrelation discrete wavelet transform in place.
+Same as `iacdwt` but performs the inverse autocorrelation discrete wavelet transform in place.
 
-**See also:** [`iacwt`](@ref), [`acwt`](@ref)
+**See also:** [`iacdwt`](@ref), [`acdwt`](@ref)
 """
-function iacwt! end
+function iacdwt! end
 
 """
-    iacwpt(xw, tree, i)
+    iacwpd(xw, tree, i)
 
 Performs the inverse autocorrelation discrete wavelet packet transform,
 with respect to a decomposition tree.
 
-**See also:** [`acwpt`](@ref)
+**See also:** [`acwpd`](@ref)
 """
 function iacwpt end
 
@@ -176,7 +180,7 @@ end
 
 ### ACWT Transforms ### 
 ## 1D ##
-function acwt_step(v::AbstractVector{T}, 
+function acdwt_step(v::AbstractVector{T}, 
                    j::Integer, 
                    h::Array{T,1}, 
                    g::Array{T,1}) where {T<:Number}
@@ -200,7 +204,7 @@ function acwt_step(v::AbstractVector{T},
     return v1, w1 
 end
 
-function acwt(x::AbstractVector{<:Number}, 
+function acdwt(x::AbstractVector{<:Number}, 
               wt::OrthoFilter, 
               L::Integer=maxtransformlevels(x))
 
@@ -214,7 +218,7 @@ function acwt(x::AbstractVector{<:Number},
     wp[:,1] = x
   
     for j in 1:L
-        @inbounds wp[:,1], wp[:,L+2-j] = acwt_step(wp[:,1],j,Qmf,Pmf)
+        @inbounds wp[:,1], wp[:,L+2-j] = acdwt_step(wp[:,1],j,Qmf,Pmf)
     end
   
     return wp
@@ -222,49 +226,49 @@ end
 
 ## 2D ##
 """
-    hacwt(x, wt[, L=maxtransformlevels(x,2)])
+    hacdwt(x, wt[, L=maxtransformlevels(x,2)])
 
 Computes the column-wise discrete autocorrelation transform coeficients for 2D signals.
 
-**See also:** [`vacwt`](@ref)
+**See also:** [`vacdwt`](@ref)
 """
-function hacwt(x::AbstractArray{T,2}, 
+function hacdwt(x::AbstractArray{T,2}, 
                wt::OrthoFilter, 
                L::Integer=maxtransformlevels(x,2)) where T<:Number
     nrow, ncol = size(x)
     W = Array{T,3}(undef,nrow,L+1,ncol)
     for i in 1:ncol
-        @inbounds W[:,:,i] = acwt(x[:,i],wt,L)
+        @inbounds W[:,:,i] = acdwt(x[:,i],wt,L)
     end
     return W
 end
 
 """
-    vacwt(x, wt[, L=maxtransformlevels(x)])
+    vacdwt(x, wt[, L=maxtransformlevels(x)])
 
 Computes the row-wise discrete autocorrelation transform coeficients for 2D signals.
 
-**See also:** [`hacwt`](@ref)
+**See also:** [`hacdwt`](@ref)
 """
-function vacwt(x::AbstractArray{T,2}, 
+function vacdwt(x::AbstractArray{T,2}, 
                wt::OrthoFilter, 
                L::Integer=maxtransformlevels(x,1)) where T<:Number
     nrow, ncol = size(x)
     W = Array{T,3}(undef,ncol,L+1,nrow)
     for i in 1:nrow
-        W[:,:,i] = acwt(x[i,:],wt,L)
+        W[:,:,i] = acdwt(x[i,:],wt,L)
     end
     return W
 end
 
-function acwt(x::AbstractArray{T,2}, wt::OrthoFilter,
+function acdwt(x::AbstractArray{T,2}, wt::OrthoFilter,
               Lrow::Integer=maxtransformlevels(x,1),
               Lcol::Integer=maxtransformlevels(x,2)) where T<:Number
     nrow, ncol = size(x)
-    W3d = hacwt(x,wt,Lcol)
+    W3d = hacdwt(x,wt,Lcol)
     W4d = Array{T,4}(undef,Lcol+1,ncol,Lrow+1,nrow)
     for i in 1:Lcol+1
-        @inbounds W4d[i,:,:,:] = vacwt(W3d[:,i,:],wt,Lrow)
+        @inbounds W4d[i,:,:,:] = vacdwt(W3d[:,i,:],wt,Lrow)
     end
     W4d = permutedims(W4d, [4,2,3,1])
     return W4d
@@ -278,24 +282,24 @@ function acwpt_step(W::AbstractArray{T,2},
                     Pmf::Vector{T}) where T<:Number
     _,m = size(W)
     if i<<1+1 <= m
-        W[:,i<<1], W[:,i<<1+1] = acwt_step(W[:,i],d,Qmf,Pmf)
+        W[:,i<<1], W[:,i<<1+1] = acdwt_step(W[:,i],d,Qmf,Pmf)
         acwpt_step(W,i<<1,d+1,Qmf,Pmf) # left
         acwpt_step(W,i<<1+1,d+1,Qmf,Pmf) # right
     end
 end
 
-function acwpt(x::AbstractVector{T}, 
+function acwpd(x::AbstractVector{T}, 
                wt::OrthoFilter, 
                L::Integer=maxtransformlevels(x)) where T<:Number
     W = Array{Float64,2}(undef,length(x),2<<L-1)
     W[:,1] = x
-    Pmf, Qmf = ACWT.make_acreverseqmfpair(wt)
+    Pmf, Qmf = make_acreverseqmfpair(wt)
     acwpt_step(W,1,1,Qmf,Pmf)
     return W
 end
 
 ### Inverse Transforms ###
-function iacwt!(xw::AbstractArray{<:Number,2})
+function iacdwt!(xw::AbstractArray{<:Number,2})
     _,m = size(xw)
     @inbounds begin
         for i = 2:m
@@ -304,24 +308,24 @@ function iacwt!(xw::AbstractArray{<:Number,2})
     end
 end
 
-function iacwt(xw::AbstractArray{<:Number,2})
+function iacdwt(xw::AbstractArray{<:Number,2})
     y = deepcopy(xw)
-    iacwt!(y)
+    iacdwt!(y)
     return y[:,1]
 end
 
-function iacwt(xw::AbstractArray{T,4}) where T<:Number
+function iacdwt(xw::AbstractArray{T,4}) where T<:Number
     nrow, ncol, _, Lcol = size(xw)
     W4d = permutedims(xw,[4,2,3,1])
     W3d = Array{T,3}(undef, nrow, Lcol, ncol)
     for i in 1:Lcol
         for j in 1:nrow
-            @inbounds W3d[j,i,:] = iacwt(W4d[i,:,:,j])
+            @inbounds W3d[j,i,:] = iacdwt(W4d[i,:,:,j])
         end
     end
     y = Array{T,2}(undef, nrow, ncol)
     for i in 1:ncol
-        @inbounds y[:,i] = iacwt(W3d[:,:,i])
+        @inbounds y[:,i] = iacdwt(W3d[:,:,i])
     end
     return y
 end
@@ -347,5 +351,32 @@ end
 #   v₁ = iacwpt(xw,tree,3)
 #   return (v₀ + v₁) / √2
 # end
+
+# ========== Deprecated Functions ==========================================================
+# Functions that will be completely deleted by v0.2.0
+function acwt(args...)
+    Base.depwarn("`acwt` is deprecated, use `acdwt` instead.", :acwt, force=true)
+    return acdwt(args...)
+end
+
+function iacwt(args...)
+    Base.depwarn("`iacwt` is deprecated, use `iacdwt` instead.", :iacwt, force=true)
+    return iacdwt(args...)
+end
+
+function vacwt(args...)
+    Base.depwarn("`vacwt` is deprecated, use `vacdwt` instead.", :acwt, force=true)
+    return vacdwt(args...)
+end
+
+function hacwt(args...)
+    Base.depwarn("`hacwt` is deprecated, use `hacdwt` instead.", :acwt, force=true)
+    return hacdwt(args...)
+end
+
+function acwpt(args...)
+    Base.depwarn("`acwpt` is deprecated, use `acwpd` instead.", :acwpt, force=true)
+    return acwpd(args...)
+end
 
 end # end module

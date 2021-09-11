@@ -222,7 +222,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
             x̃ = [x[:,1] threshold!(temp, dnt.th, σ*dnt.t)]
         end
         # reconstruction
-        y = iacwt(x̃)
+        y = iacdwt(x̃)
 
     else                                    # autocorrelation wpt
         @assert ndims(x) > 1
