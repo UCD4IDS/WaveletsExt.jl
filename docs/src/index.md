@@ -9,8 +9,22 @@
 ```
 
 # WaveletsExt.jl
-
-This package is a [Julia](https://github.com/JuliaLang/julia) extension package to [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl) (WaveletsExt is short for Wavelets Extension). It contains additional functionalities that complement Wavelets.jl, which include multiple best basis algorithms, denoising methods, [Local Discriminant Basis (LDB)](https://www.math.ucdavis.edu/~saito/publications/saito_ldb_jmiv.pdf), [Stationary Wavelet Transform](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.49.2662&rep=rep1&type=pdf), and the [Shift Invariant Wavelet Decomposition](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf).
+This package is a [Julia](https://github.com/JuliaLang/julia) extension package to
+[Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl) (WaveletsExt is short for Wavelets
+Extension). It contains additional functionalities that complement Wavelets.jl, namely
+- Multi-dimensional wavelet transforms
+- Redundant wavelet transforms
+    - [Autocorrelation Wavelet Transforms (ACWT)](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/1826/1/Wavelets-their-autocorrelation-functions-and-multiresolution-representations-of-signals/10.1117/12.131585.short)
+    - [Stationary Wavelet Transforms (SWT)](https://doi.org/10.1007/978-1-4612-2544-7_17)
+    - [Shift Invariant Wavelet Transforms (SIWT)](https://doi.org/10.1016/S0165-1684(97)00007-8)
+- Best basis algorithms
+    - [Joint best basis (JBB)](https://ieeexplore.ieee.org/document/119732)
+    - [Least statistically dependent basis (LSDB)](https://ieeexplore.ieee.org/document/750958)
+- Denoising methods
+    - [Relative Error Shrink (RelErrorShrink)](https://ieeexplore.ieee.org/document/7752982)
+    - [Stein Unbiased Risk Estimator Shrink (SUREShrink)](https://www.tandfonline.com/doi/abs/10.1080/01621459.1995.10476626)
+- Wavelet transform based feature extraction techniques
+    - [Local Discriminant Basis (LDB)](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/2303/1/Local-discriminant-bases/10.1117/12.188763.short).
 
 ## Authors
 This package is written and maintained by Zeng Fung Liew and Shozen Dan under the supervision of Professor Naoki Saito at the University of California, Davis.
@@ -30,61 +44,31 @@ Load the WaveletsExt module along with Wavelets.jl.
 using Wavelets, WaveletsExt
 ```
 
-## Wavelet Packet Decomposition
-In contrast to Wavelets.jl's `wpt` function, `wpd` outputs expansion coefficients of all levels of a given signal. Each column represents a level in the decomposition tree.
-```julia
-y = wpd(x, wavelet(WT.db4))
-```
-
-## Stationary Wavelet Transform
-The redundant and non-orthogonal transform by Nason-Silverman can be implemented using either [`sdwt`](@ref WaveletsExt.SWT.sdwt) (for stationary discrete wavelet transform) or [`swpd`](@ref WaveletsExt.SWT.swpd) (for stationary wavelet packet decomposition). Similarly, the reconstruction of signals can be computed using [`isdwt`](@ref WaveletsExt.SWT.isdwt) and [`iswpt`](@ref WaveletsExt.SWT.iswpt).
-```julia
-# stationary discrete wavelet transform
-y = sdwt(x, wavelet(WT.db4))
-z = isdwt(y, wavelet(WT.db4))
-
-# stationary wavelet packet decomposition
-y = swpd(x, wavelet(WT.db4))
-z = iswpt(y, wavelet(WT.db4))
-```
-
-## Best Basis
-In addition to the best basis algorithm by M.V. Wickerhauser implemented in Wavelets.jl, WaveletsExt.jl contains the implementation of the Joint Best Basis (JBB) by Wickerhauser an the [Least Statistically-Dependent Basis (LSDB)](https://www.math.ucdavis.edu/~saito/courses/ACHA.suppl/lsdb-pr-journal.pdf) by N. Saito.
-```julia
-y = cat([wpd(x[:,i], wt) for i in N]..., dims=3)    # x has size (2^L, N)
-
-# individual best basis trees
-bbt = bestbasistree(y, BB())
-# joint best basis
-bbt = bestbasistree(y, JBB())
-# least statistically dependent basis
-bbt = bestbasistree(y, LSDB())
-```
-Given a `BitVector` representing a best basis tree, one can obtain the corresponding expansion coefficients using [`bestbasiscoef`](@ref WaveletsExt.BestBasis.bestbasiscoef).
-```julia
-coef = bestbasiscoef(y, bbt)
-```
-For more information on the different wavelet transforms and best basis algorithms, please refer to its [manual](@ref transforms_manual).
-
-## Signal Denoising
-WaveletsExt.jl includes additional signal denoising and thresholding methods that complement those written in Wavelets.jl. One can denoise a signal as using the [`denoise`](@ref WaveletsExt.Denoising.denoise) Wavelets.jl extension function as follows:
-```julia
-x̂ = denoise(y, :wpt, wt, tree=bt)
-```
-Additionally, for cases where there are multiple signals to be denoised, one can use the [`denoiseall`](@ref WaveletsExt.Denoising.denoiseall) function as below.
-```julia
-X̂ = denoiseall(Y, :wpt, wt, tree=bt)
-```
-
-## Local Discriminant Basis
-Local Discriminant Basis (LDB) is a feature extraction method developed by N. Saito and R. Coifman and can be accessed as follows.
-```julia
-# generate data
-X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
-wt = wavelet(WT.haar)
-
-# LDB
-f = LocalDiscriminantBasis(wt, top_k=5, n_features=5)
-Xt = fit_transform(f, X, y)
-```
-For more information on how to use LDB, please refer to its [manual](@ref ldb_manual).
+## References
+[1] Coifman, R.R., Wickerhauser, M.V. (1992). *Entropy-based algorithms for best basis
+selection*. DOI: [10.1109/18.119732](https://ieeexplore.ieee.org/document/119732) <br>
+[2] Saito, N. (1998). *The least statistically-dependent basis and its applications*. DOI:
+[10.1109/ACSSC.1998.750958](https://ieeexplore.ieee.org/document/750958) <br>
+[3] Beylkin, G., Saito, N. (1992). *Wavelets, their autocorrelation functions, and
+multiresolution representations of signals*. DOI:
+[10.1117/12.131585](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/1826/1/Wavelets-their-autocorrelation-functions-and-multiresolution-representations-of-signals/10.1117/12.131585.short)
+<br>
+[4] Nason, G.P., Silverman, B.W. (1995) *The Stationary Wavelet Transform and some
+Statistical Applications*. DOI:
+[10.1007/978-1-4612-2544-7_17](https://doi.org/10.1007/978-1-4612-2544-7_17) <br>
+[5] Donoho, D.L., Johnstone, I.M. (1995). *Adapting to Unknown Smoothness via Wavelet
+Shrinkage*. DOI:
+[10.1080/01621459.1995.10476626](https://www.tandfonline.com/doi/abs/10.1080/01621459.1995.10476626)
+<br>
+[6] Saito, N., Coifman, R.R. (1994). *Local Discriminant Basis*. DOI:
+[10.1117/12.188763](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/2303/1/Local-discriminant-bases/10.1117/12.188763.short)
+<br>
+[7] Saito, N., Coifman, R.R. (1995). *Local discriminant basis and their applications*. DOI:
+[10.1007/BF01250288](https://doi.org/10.1007/BF01250288) <br>
+[8] Saito, N., Marchand, B. (2012). *Earth Mover's Distance-Based Local Discriminant Basis*.
+DOI: [10.1007/978-1-4614-4145-8_12](https://doi.org/10.1007/978-1-4614-4145-8_12) <br>
+[9] Cohen, I., Raz, S., Malah, D. (1997). *Orthonormal shift-invariant wavelet packet
+decomposition and representation*. DOI:
+[10.1016/S0165-1684(97)00007-8](https://doi.org/10.1016/S0165-1684(97)00007-8) <br>
+[10] Irion, J., Saito, N. (2017). *Efficient Approximation and Denoising of Graph Signals
+Using the Multiscale Basis Dictionaries*. DOI: [10.1109/TSIPN.2016.2632039](https://ieeexplore.ieee.org/document/7752982)
