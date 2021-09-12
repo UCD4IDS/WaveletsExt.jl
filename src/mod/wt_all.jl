@@ -32,6 +32,8 @@ wt = wavelet(WT.db4)
 # DWT on all signals in x
 xw = dwtall(x, wt)
 ```
+
+**See also:** [`wpdall`](@ref), [`wptall`](@ref)
 """
 function dwtall(x::AbstractArray{T}, args...) where T<:Number
     # Sanity check
@@ -92,8 +94,10 @@ wt = wavelet(WT.db4)
 # WPT on all signals in x
 xw = wptall(x, wt)
 ```
+
+**See also:** [`wpdall`](@ref), [`dwtall`](@ref), [`wpt`](@ref)
 """
-function wptall(x::AbstractArray{T}, args..., kwargs...) where T<:Number
+function wptall(x::AbstractArray{T}, args...; kwargs...) where T<:Number
     # Sanity check
     @assert ndims(x) > 1
     
@@ -145,6 +149,9 @@ wt = wavelet(WT.db4)
 
 # WPT on all signals in x
 xw = wpdall(x, wt)
+```
+
+**See also:** [`wptall`](@ref), [`dwtall`](@ref), [`wpd`](@ref), [`wpd!`](@ref)
 """
 function wpdall(x::AbstractArray{T}, 
                 wt::OrthoFilter, 
