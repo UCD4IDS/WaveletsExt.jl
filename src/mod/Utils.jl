@@ -1,5 +1,9 @@
 module Utils
 export 
+    makequadtree,
+    getquadtreelevel,
+    getrowrange,
+    getcolrange,
     left,
     right,
     nodelength,
@@ -22,7 +26,35 @@ using
     Random, 
     ImageQualityIndexes
 
+# ========== Structs ==========
+"""
+    ClassData(type, s₁, s₂, s₃)
 
+Based on the input `type`, generates 3 classes of signals with sample sizes
+`s₁`, `s₂`, and `s₃` respectively. Accepted input types are:  
+- `:tri`: Triangular signals of length 32
+- `:cbf`: Cylinder-Bell-Funnel signals of length 128
+
+Based on N. Saito and R. Coifman in "Local Discriminant Basis and their Applications" in the
+Journal of Mathematical Imaging and Vision, Vol. 5, 337-358 (1995).
+
+**See also:** [`generateclassdata`](@ref)
+"""
+struct ClassData
+    "Signal type, accepted inputs are `:tri` and `:cbf`"
+    type::Symbol
+    "Sample size for class 1"
+    s₁::Int
+    "Sample size for class 2"
+    s₂::Int
+    "Sample size for class 3"
+    s₃::Int
+    ClassData(type, s₁, s₂, s₃) = type ∈ [:tri, :cbf] ? new(type, s₁, s₂, s₃) : 
+        throw(ArgumentError("Invalid type. Accepted types are :tri and :cbf only."))
+end
+
+# ========== Functions ==========
+# `maxtransformlevels` of a specific dimension
 """
     maxtransformlevels(n)
 
@@ -60,6 +92,7 @@ function Wavelets.Util.maxtransformlevels(x::AbstractArray, dims::Integer)
     return maxtransformlevels(size(x)[dims])
 end
 
+# Left and right node index of a binary tree
 """
     left(i)
 
@@ -78,6 +111,7 @@ Given the node index `i`, returns the index of its right node.
 """
 right(i::Integer) = i<<1 + 1
 
+# Length of node at level L
 """
     nodelength(N, L)
 
@@ -88,6 +122,7 @@ function nodelength(N::Integer, L::Integer)
     return (N >> L)
 end
 
+# Get leaf nodes in the form of a BitVector
 """
     getleaf(tree)
 
@@ -111,6 +146,7 @@ function getleaf(tree::BitVector)
     return result
 end
 
+# Index range of coarsest scaling coefficients
 """
     coarsestscalingrange(x, tree[, redundant=false])
 
@@ -146,6 +182,7 @@ function coarsestscalingrange(n::Integer, tree::BitVector,
     return rng
 end
 
+# Index range of finest detail coefficients
 """
     finestdetailrange(x, tree[, redundant=false])
     
@@ -180,6 +217,210 @@ function finestdetailrange(n::Integer, tree::BitVector, redundant::Bool=false)
     return rng
 end
 
+# Build a quadtree
+"""
+    makequadtree(x, L[, s])
+
+Build quadtree for 2D wavelet transform. Indexing of the quadtree are as follows:
+
+```
+Level 0                 Level 1                 Level 2             ...
+-----------------       -----------------       -----------------
+|               |       |   2   |   3   |       |_6_|_7_|10_|11_|
+|       1       |       |_______|_______|       |_8_|_9_|12_|13_|   ...
+|               |       |   4   |   5   |       |14_|15_|18_|19_|
+|               |       |       |       |       |16_|17_|20_|21_|
+-----------------       -----------------       -----------------
+```
+
+# Arguments
+- `x::AbstractArray{T,2} where T<:Number`: Input array.
+- `L::Integer`: Number of decomposition levels.
+- `s::Symbol`: (Default: `:full`) Type of quadtree. Available types are `:full` and `:dwt`.
+
+# Returns
+`::BitVector`: Quadtree representation.
+
+# Examples
+```
+using WaveletsExt
+
+x = randn(16,16)
+makequadtree(x, 3)
+```
+"""
+function makequadtree(x::AbstractArray{T,2}, L::Integer, s::Symbol = :full) where T<:Number
+    ns = maxtransformlevels(x)      # Max transform levels of x
+    # TODO: Find a mathematical formula to define this rather than sum things up to speed up
+    # TODO: process.
+    nq = sum(4 .^ (0:ns))           # Quadtree size
+    @assert 0 ≤ L ≤ ns
+
+    # Construct quadtree
+    q = BitArray(undef, nq)
+    fill!(q, false)
+
+    # Fill in true values depending on input `s`
+    if s == :full
+        # TODO: Find a mathematical formula to define this
+        rng = 4 .^ (0:(L-1)) |> sum |> x -> 0:x
+        for i in rng
+            @inbounds q[i] = true
+        end
+    elseif s == :dwt
+        q[1] = true     # Root node
+        for i in 0:(L-2)
+            # TODO: Find a mathematical formula to define this
+            idx = 4 .^ (0:i) |> sum |> x -> x+1     # Subsequent LL subspace nodes
+            @inbounds q[idx] = true
+        end
+    else
+        throw(ArgumentError("Unknown symbol."))
+    end
+    return q
+end
+
+# Get level of a particular index in a tree
+"""
+    getquadtreelevel(idx)
+
+Get level of `idx` in the quadtree.
+
+# Arguments
+- `idx::T where T<:Integer`: Index of a quadtree.
+
+# Returns
+`::T`: Level of `idx`.
+
+# Examples
+```
+using WaveletsExt
+
+getquadtreelevel(1)     # 0
+getquadtreelevel(3)     # 1
+```
+
+**See also:** [`makequadtree`](@ref)
+"""
+function getquadtreelevel(idx::T) where T<:Integer
+    # TODO: Get a mathematical solution to this
+    @assert idx > 0
+    # Root node => level 0
+    if idx == 1
+        return 0
+    # Node level is 1 level lower than parent node
+    else
+        parent_idx = floor(T, (idx+2)/4)
+        return 1 + getquadtreelevel(parent_idx)
+    end
+end
+
+# TODO: Build a generalizable function `getslicerange` that does the same thing as
+# TODO: `getrowrange` and `getcolrange` but condensed in to 1 function and generalizes into
+# TODO: any arbitrary number of dimensions.
+# Get range of particular row from a given signal length and quadtree index
+"""
+    getrowrange(n, idx)
+
+Get the row range from a matrix with `n` rows that corresponds to `idx` from a quadtree.
+
+# Arguments
+- `n::Integer`: Number of rows in matrix.
+- `idx::T where T<:Integer`: Index from a quadtree corresponding to the matrix.
+
+# Returns
+`::UnitRange{Int64}`: Row range in matrix that corresponds to `idx`.
+
+# Examples
+```
+using WaveletsExt
+
+x = randn(8,8)
+tree = makequadtree(x, 3, :full)
+getrowrange(8,3)            # 1:4
+```
+
+**See also:** [`makequadtree`](@ref), [`getcolrange`](@ref)
+"""
+function getrowrange(n::Integer, idx::T) where T<:Integer
+    # TODO: Get a mathematical solution to this, if possible
+    # Sanity check
+    @assert idx > 0
+
+    # Root node => range is of entire array
+    if idx == 1
+        return 1:n
+    # Slice from parent node
+    else
+        # Get parent node's row range and midpoint of the range.
+        parent_idx = floor(T, (idx+2)/4)
+        parent_rng = getrowrange(n, parent_idx)
+        midpoint = (parent_rng[begin]+parent_rng[end]) ÷ 2
+        # Children nodes of subspaces LL and HL have indices 4i-2 and 4i-1 for any parent of
+        # index i, these nodes take the upper half of the parent's range.
+        if idx < 4*parent_idx
+            return parent_rng[begin]:midpoint
+        # Children nodes of subspaces LH and HH have indices 4i and 4i+1 for any parent of
+        # index i, these nodes take the lower half of the parent's range.
+        else
+            return (midpoint+1):parent_rng[end]
+        end
+    end
+end
+
+# Get range of particular column from a given signal length and quadtree index
+"""
+    getcolrange(n, idx)
+
+Get the column range from a matrix with `n` columns that corresponds to `idx` from a
+quadtree.
+
+# Arguments
+- `n::Integer`: Number of columns in matrix.
+- `idx::T where T<:Integer`: Index from a quadtree corresponding to the matrix.
+
+# Returns
+`::UnitRange{Int64}`: Column range in matrix that corresponds to `idx`.
+
+# Examples
+```
+using WaveletsExt
+
+x = randn(8,8)
+tree = makequadtree(x, 3, :full)
+getcolrange(8,3)            # 5:8
+```
+
+**See also:** [`makequadtree`](@ref), [`getrowrange`](@ref)
+"""
+function getcolrange(n::Integer, idx::T) where T<:Integer
+    # TODO: Get a mathematical solution to this, if possible
+    # Sanity check
+    @assert idx > 0
+
+    # Root node => range is of entire array
+    if idx == 1
+        return 1:n
+    # Slice from parent node
+    else
+        # Get parent node's column range and midpoint of the range.
+        parent_idx = floor(T, (idx+2)/4)
+        parent_rng = getcolrange(n, parent_idx)
+        midpoint = (parent_rng[begin]+parent_rng[end]) ÷ 2
+        # Children nodes of subspaces LL and LH have indices 4i-2 and 4i for any parent of
+        # index i, these nodes take the left half of the parent's range.
+        if iseven(idx)
+            return parent_rng[begin]:midpoint
+        # Children nodes of subspaces HL and HH have indices 4i-1 and 4i+1 for any parent of
+        # index i, these nodes take the right half of the parent's range.
+        else
+            return (midpoint+1):parent_rng[end]
+        end
+    end
+end
+
+# ----- Computational metrics -----
+# Relative norm between 2 vectors
 """
     relativenorm(x, x₀[, p=2]) where T<:Number
 
@@ -195,6 +436,7 @@ function relativenorm(x::AbstractVector{T}, x₀::AbstractVector{T},
     return norm(x-x₀,p)/norm(x₀,p)
 end
 
+# PSNR between 2 vectors
 """
     psnr(x, x₀)
 
@@ -213,6 +455,7 @@ function psnr(x::AbstractVector{T}, x₀::AbstractVector{T}) where T<:Number
     return 20 * log(10, maximum(x₀)) - 10 * log(10, mse)
 end
 
+# SNR between 2 vectors
 """
     snr(x, x₀)
 
@@ -226,6 +469,7 @@ function snr(x::AbstractVector{T}, x₀::AbstractVector{T}) where T<:Number
     return 20 * log(10, norm(x₀,2)/norm(x-x₀,2))
 end
 
+# SSIM between 2 arrays
 """
     ssim(x, x₀)
 
@@ -240,6 +484,8 @@ function ssim(x::AbstractArray{T}, x₀::AbstractArray{T}) where T<:Number
     return assess_ssim(x, x₀)
 end
 
+# ----- Signal Generation -----
+# Make a set of circularly shifted and noisy signals of original signal.
 """
     duplicatesignals(x, N, k[, noise=false, t=1])
 
@@ -263,6 +509,7 @@ function duplicatesignals(x::AbstractVector{T}, N::Integer, k::Integer,
     return X
 end
 
+# Generate 6 types of signals used in popular papers.
 """
     generatesignals(fn, L)
 
@@ -326,32 +573,7 @@ function generatesignals(fn::Symbol, L::Integer)
     return x
 end
 
-"""
-    ClassData(type, s₁, s₂, s₃)
-
-Based on the input `type`, generates 3 classes of signals with sample sizes
-`s₁`, `s₂`, and `s₃` respectively. Accepted input types are:  
-- `:tri`: Triangular signals of length 32
-- `:cbf`: Cylinder-Bell-Funnel signals of length 128
-
-Based on N. Saito and R. Coifman in "Local Discriminant Basis and their Applications" in the
-Journal of Mathematical Imaging and Vision, Vol. 5, 337-358 (1995).
-
-**See also:** [`generateclassdata`](@ref)
-"""
-struct ClassData
-    "Signal type, accepted inputs are `:tri` and `:cbf`"
-    type::Symbol
-    "Sample size for class 1"
-    s₁::Int
-    "Sample size for class 2"
-    s₂::Int
-    "Sample size for class 3"
-    s₃::Int
-    ClassData(type, s₁, s₂, s₃) = type ∈ [:tri, :cbf] ? new(type, s₁, s₂, s₃) : 
-        throw(ArgumentError("Invalid type. Accepted types are :tri and :cbf only."))
-end
-
+# Generate 3 classes of signals used in Saito's LDB paper.
 """
     generateclassdata(c[, shuffle=false])
 

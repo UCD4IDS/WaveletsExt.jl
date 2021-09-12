@@ -52,11 +52,13 @@ end
 
 # ----- Wavelet Packet Transforms on a set of signals -----
 """
-    wptall(x, wt)
-
-    wptall(x, wt, L)
+    wptall(x, wt[, L])
 
     wptall(x, wt, tree)
+
+    wptall(x, wt[, L; standard])
+
+    wptall(x, wt, tree[; standard])
 
 Computes the wavelet packet transform (WPT) on each slice of signal. Signals are sliced on
 the ``n``-th dimension for an ``n``-dimensional input `x`.
@@ -71,8 +73,9 @@ the ``n``-th dimension for an ``n``-dimensional input `x`.
 - `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
   decomposition. 
 - `tree::BitVector`: (Default: `Wavelets.maketree(xᵢ, :full)`) Tree to follow for wavelet
-  decomposition. 
-
+  decomposition. Default value is only applicable for 1D signals.
+- `standard::Bool`: (Default: `true`) Whether to compute the standard or non-standard
+  wavelet transform. Only applicable for 2D signals.
 # Returns
 `::Array{T}`: Slices of transformed signals. Signals are sliced the same way as the input
 signal `x`.
@@ -90,7 +93,7 @@ wt = wavelet(WT.db4)
 xw = wptall(x, wt)
 ```
 """
-function wptall(x::AbstractArray{T}, args...) where T<:Number
+function wptall(x::AbstractArray{T}, args..., kwargs...) where T<:Number
     # Sanity check
     @assert ndims(x) > 1
     
@@ -101,7 +104,7 @@ function wptall(x::AbstractArray{T}, args...) where T<:Number
     # Compute transforms
     @inbounds begin
         @views for (yᵢ, xᵢ) in zip(eachslice(y, dims=dim), eachslice(x, dims=dim))
-            wpt!(yᵢ, Array(xᵢ), args...)
+            wpt!(yᵢ, Array(xᵢ), args..., kwargs...)
         end
     end
     return y
@@ -111,7 +114,7 @@ end
 """
     wpdall(x, wt[, L])
 
-    wpdall(y, x, wt, hqf, gqf[, L])
+    wpdall(x, wt[, L; standard])
 
 Computes the wavelet packet decomposition (WPD) on each slice of signal. Signals are sliced
 on the ``n``-th dimension for an ``n``-dimensional input `x`.
@@ -125,13 +128,28 @@ on the ``n``-th dimension for an ``n``-dimensional input `x`.
 - `wt::OrthoFilter`: Wavelet used.
 - `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
   decomposition. 
+- `standard::Bool`: (Default: `true`) Whether to compute the standard or non-standard
+  wavelet transform. Only applicable for 2D signals.
 
 # Returns
-`::Array{T}`
+`::Array{T}`: Array of decomposed signals. Signals are sliced by the final dimension.
+
+# Examples
+```
+using Wavelets, WaveletsExt
+
+# Generate random signals
+x = randn(32, 5)
+# Create wavelet
+wt = wavelet(WT.db4)
+
+# WPT on all signals in x
+xw = wpdall(x, wt)
 """
 function wpdall(x::AbstractArray{T}, 
                 wt::OrthoFilter, 
-                L::Integer=maxtransformlevels(x,1)) where T<:Number
+                L::Integer=maxtransformlevels(x,1);
+                kwargs...) where T<:Number
     # Sanity check
     @assert ndims(x) > 1
     @assert 0 ≤ L ≤ maxtransformlevels(x,1)
@@ -146,7 +164,7 @@ function wpdall(x::AbstractArray{T},
     # Compute transforms
     @inbounds begin
         @views for (yᵢ, xᵢ) in zip(eachslice(y, dims=dim_y), eachslice(x, dims=dim_x))
-            wpd!(yᵢ, Array(xᵢ), wt, L)
+            wpd!(yᵢ, Array(xᵢ), wt, L, kwargs...)
         end
     end
     return y
