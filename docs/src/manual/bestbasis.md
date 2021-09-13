@@ -2,12 +2,10 @@
 The Wavelets.jl's package contains a best basis algorithm that search for the basis tree
 within a single signal $x$ such that the Shannon's Entropy or the Log Energy Entropy of the
 basis of the signal is minimized, ie. ``\min_{b \in B} M_x(b)``, where  
-```@raw html
-&emsp; $B$ is the collection of bases for the signal $x$, <br>
-&emsp; $b$ is a basis for the signal $x$, and <br>
-&emsp; $M_x(.)$ is the information cost (eg. Shannon's entropy or Log Energy entropy) for
-the basis of signal $x$. 
-```
+- ``B`` is the collection of bases for the signal ``x``,
+- ``b`` is a basis for the signal ``x``, and
+- ``M_x(.)`` is the information cost (eg. Shannon's entropy or Log Energy entropy) for
+the basis of signal ``x``. 
 
 However, the challenge arises when there is a need to work on a group of signals $X$ and
 find a single best basis $b$ that minimizes the information cost $M_x$ for all $x \in X$, ie. ``\min_{b \in B} \sum_{x \in X} M_x(b)``
@@ -22,32 +20,19 @@ algorithms for the estimation of an overall best basis:
 To represent a best basis tree in the most memory efficient way, Wavelets.jl uses Julia's
 `BitVector` data structure to represent a binary tree that corresponds to the bases of 1D
 signals. The indices of the `BitVector`s correspond to nodes of the trees as follows:
-```@raw html
-<figure>
-  <img src="https://github.com/UCD4IDS/WaveletsExt.jl/tree/master/docs/src/fig/binary_tree.PNG" alt="binary_tree" style="width:50%">
-  <figcaption>Fig.1 - Binary tree structure.</figcaption>
-</figure>
-<figure>
-  <img src="https://github.com/UCD4IDS/WaveletsExt.jl/tree/master/docs/src/fig/binary_tree_indexing.PNG" alt="binary_tree_indexing" style="width:50%">
-  <figcaption>Fig.2 - Binary tree indexing.</figcaption>
-</figure>
-```
+
+|Figure 1: Binary tree structure | Figure 2: Binary tree indexing |
+|:---:|:---:|
+|![](../fig/binary_tree.PNG) |![](../fig/binary_tree_indexing.PNG) |
 
 where L corresponds to a low pass filter and H corresponds to a high pass filter.
 
 Similarly, a quadtree, used to represent the basis of a 2D wavelet transform, uses a
 `BitVector` with the following indexing:
 
-```@raw html
-<figure>
-  <img src="https://github.com/UCD4IDS/WaveletsExt.jl/tree/master/docs/src/fig/quad_tree.PNG" alt="quad_tree" style="width:50%">
-  <figcaption>Fig.3 - Quadtree structure.</figcaption>
-</figure>
-<figure>
-  <img src="https://github.com/UCD4IDS/WaveletsExt.jl/tree/master/docs/src/fig/quad_tree_indexing.PNG" alt="quad_tree_indexing" style="width:50%">
-  <figcaption>Fig.4 - Quadtree indexing.</figcaption>
-</figure>
-```
+|Figure 3: Quadtree structure | Figure 4: Quadtree indexing |
+|:---:|:---:|
+|![](../fig/quad_tree.PNG) |![](../fig/quad_tree_indexing.PNG) |
 
 ## Examples
 ### Best Basis of each signal
