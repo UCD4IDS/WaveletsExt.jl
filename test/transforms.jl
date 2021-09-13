@@ -1,7 +1,8 @@
 @testset "WPD" begin
     x = randn(8)
     wt = wavelet(WT.haar)
-    g, h = WT.makereverseqmfpair(wt, true)
+
+    # 1D transforms
     y1 = wpt(x, wt, 1)
     y2 = wpt(x, wt, 2)
     y3 = wpt(x, wt, 3)
@@ -10,6 +11,16 @@
     y = Array{Float64,2}(undef, (8,4))
     wpd!(y, x, wt)
     @test y == [x y1 y2 y3]
+
+    # 2D transforms
+    x = randn(8,8)
+    y = dwt(x, wt, 1)
+    z1 = wpt(x, wt, 1)
+    z2 = wpt(x, wt, 2)
+    z3 = wpt(x, wt, 3)
+    @test y == z1
+    @test wpd(x, wt) == cat(x, z1, z2, z3, dims=3)
+    @test dwt(x, wt) == wpt(x, wt, makequadtree(x, 3, :dwt))
 end
 
 @testset "SWT" begin

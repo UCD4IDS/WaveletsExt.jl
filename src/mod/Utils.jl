@@ -262,7 +262,7 @@ function makequadtree(x::AbstractArray{T,2}, L::Integer, s::Symbol = :full) wher
     # Fill in true values depending on input `s`
     if s == :full
         # TODO: Find a mathematical formula to define this
-        rng = 4 .^ (0:(L-1)) |> sum |> x -> 0:x
+        rng = 4 .^ (0:(L-1)) |> sum |> x -> 1:x
         for i in rng
             @inbounds q[i] = true
         end
