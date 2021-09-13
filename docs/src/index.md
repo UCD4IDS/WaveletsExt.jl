@@ -46,29 +46,36 @@ using Wavelets, WaveletsExt
 
 ## References
 [1] Coifman, R.R., Wickerhauser, M.V. (1992). *Entropy-based algorithms for best basis
-selection*. DOI: [10.1109/18.119732](https://ieeexplore.ieee.org/document/119732) <br>
+selection*. DOI: [10.1109/18.119732](https://ieeexplore.ieee.org/document/119732)
+
 [2] Saito, N. (1998). *The least statistically-dependent basis and its applications*. DOI:
-[10.1109/ACSSC.1998.750958](https://ieeexplore.ieee.org/document/750958) <br>
+[10.1109/ACSSC.1998.750958](https://ieeexplore.ieee.org/document/750958)
+
 [3] Beylkin, G., Saito, N. (1992). *Wavelets, their autocorrelation functions, and
 multiresolution representations of signals*. DOI:
 [10.1117/12.131585](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/1826/1/Wavelets-their-autocorrelation-functions-and-multiresolution-representations-of-signals/10.1117/12.131585.short)
-<br>
+
 [4] Nason, G.P., Silverman, B.W. (1995) *The Stationary Wavelet Transform and some
 Statistical Applications*. DOI:
-[10.1007/978-1-4612-2544-7_17](https://doi.org/10.1007/978-1-4612-2544-7_17) <br>
+[10.1007/978-1-4612-2544-7_17](https://doi.org/10.1007/978-1-4612-2544-7_17)
+
 [5] Donoho, D.L., Johnstone, I.M. (1995). *Adapting to Unknown Smoothness via Wavelet
 Shrinkage*. DOI:
-[10.1080/01621459.1995.10476626](https://www.tandfonline.com/doi/abs/10.1080/01621459.1995.10476626)
-<br>
+[10.1080/01621459.1995.10476626](https://www.tandfonline.com/doi/abs/10.1080/01621459.1995.10476626)  
+
 [6] Saito, N., Coifman, R.R. (1994). *Local Discriminant Basis*. DOI:
-[10.1117/12.188763](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/2303/1/Local-discriminant-bases/10.1117/12.188763.short)
-<br>
+[10.1117/12.188763](https://www.spiedigitallibrary.org/conference-proceedings-of-spie/2303/1/Local-discriminant-bases/10.1117/12.188763.short)  
+
 [7] Saito, N., Coifman, R.R. (1995). *Local discriminant basis and their applications*. DOI:
-[10.1007/BF01250288](https://doi.org/10.1007/BF01250288) <br>
+[10.1007/BF01250288](https://doi.org/10.1007/BF01250288)  
+
 [8] Saito, N., Marchand, B. (2012). *Earth Mover's Distance-Based Local Discriminant Basis*.
-DOI: [10.1007/978-1-4614-4145-8_12](https://doi.org/10.1007/978-1-4614-4145-8_12) <br>
+DOI: [10.1007/978-1-4614-4145-8_12](https://doi.org/10.1007/978-1-4614-4145-8_12)  
+
 [9] Cohen, I., Raz, S., Malah, D. (1997). *Orthonormal shift-invariant wavelet packet
 decomposition and representation*. DOI:
-[10.1016/S0165-1684(97)00007-8](https://doi.org/10.1016/S0165-1684(97)00007-8) <br>
+[10.1016/S0165-1684(97)00007-8](https://doi.org/10.1016/S0165-1684(97)00007-8)  
+
 [10] Irion, J., Saito, N. (2017). *Efficient Approximation and Denoising of Graph Signals
 Using the Multiscale Basis Dictionaries*. DOI: [10.1109/TSIPN.2016.2632039](https://ieeexplore.ieee.org/document/7752982)
+```
