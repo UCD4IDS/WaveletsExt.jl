@@ -1,5 +1,36 @@
-# [Wavelet Transforms and Their Best Bases](@id transforms_manual)
-As an extension to Wavelets.jl's wavelet packet transform and best basis functions `wpt` and `bestbasistree`, WaveletsExt goes one step further and brings a full decomposition function `wpd` and redundant transforms in the form of Stationary Wavelet Transform, Autocorrelation Wavelet Transform, and Shift-Invariant Wavelet Transform. Additionally, more advanced best basis algorithms for a group of signals such as the Joint Best Basis (JBB) and Least Statistically Dependent Basis (LSDB) are also included here.
+# [Wavelet Transforms](@id transforms_manual)
+Wavelet transform is a feature extraction process for decomposing signals into high and low
+frequency segments. Using a pair of orthonormal wavelet ``\psi \in L^2(\mathbb{R})``, where
+``L^2(\mathbb{R})`` is a Hilbert space of square integrable functions, one can compute
+- ``y_{low} = g(x)`` where ``x`` is the signal of interest, ``g`` is the low pass filter
+  corresponding to ``\psi``, and ``y_{low}`` is the output when ``x`` passes through ``g``.
+- ``y_{high} = h(x)`` where ``x`` is the signal of interest, ``h`` is the high pass filter
+  corresponding to ``\psi``, and ``y_{high}`` is the output when ``x`` passes through ``h``.
+
+The wavelet transform can be thought of as an improvement over the Fourier transform due to
+its ability to preserve information in both the time and frequency domains. It has vast
+applications in fields such as signal analysis and image compression.
+
+As an extension to [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl), WaveletsExt.jl offers additional (redundant) wavelet transform techniques via [autocorrelation wavelet transforms](@ref ac_transforms) (Beylkin, Saito), [stationary wavelet transforms](@ref s_transforms) (Nason, Silverman), and [shift invariant wavelet transform](@ref si_transforms) (Cohen et. al.).
+
+## Wavelet Transform Methods
+### Discrete Wavelet Transforms
+
+### Wavelet Packet Transforms
+
+### Wavelet Packet Decomposition
+
+## Types of Wavelet Transforms
+### Regular Wavelet Transform
+
+
+### [Autocorrelation Wavelet Transforms] (@id ac_transforms)
+
+
+### [Stationary Wavelet Transforms] (@id s_transforms)
+
+
+### [Shift Invariant Wavelet Transforms] (@id si_transforms)
 
 ## Regular Wavelet Packet Transform
 

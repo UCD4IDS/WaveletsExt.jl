@@ -24,10 +24,9 @@ using
 """
     RelErroShrink(th, t) <: DNFT
 
-Relative Error Shrink method used in their paper "Efficient Approximation and 
-Denoising of Graph Signals using the Multiscale Basis Dictionary" for IEEE 
-Transactions on Signal and Information Processing over Networks, Vol 0, No. 0, 
-2016.
+Relative Error Shrink method used in their paper "Efficient Approximation and Denoising of
+Graph Signals using the Multiscale Basis Dictionary" for IEEE Transactions on Signal and
+Information Processing over Networks, Vol 0, No. 0, 2016.
 """
 struct RelErrorShrink <: DNFT
     th::Wavelets.Threshold.THType
@@ -80,7 +79,7 @@ function SureShrink(x::AbstractArray{<:Number},
     return SureShrink(th, t)
 end
 
-                                                                                # TODO: add additional threshold determination methods
+# TODO: add additional threshold determination methods
 
 """
     denoise(x, inputtype, wt[; L=maxtransformlevels(size(x,1)),

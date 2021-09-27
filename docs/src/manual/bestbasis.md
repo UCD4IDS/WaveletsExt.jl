@@ -1,7 +1,8 @@
 # [Extracting the best bases from signals](@id bestbasis_manual)
-The Wavelets.jl's package contains a best basis algorithm that search for the basis tree
-within a single signal $x$ such that the Shannon's Entropy or the Log Energy Entropy of the
-basis of the signal is minimized, ie. ``\min_{b \in B} M_x(b)``, where  
+The Wavelets.jl's package contains a best basis algorithm (via [`bestbasistree`](@ref
+WaveletsExt.BestBasis.bestbasistree)) that search for the basis tree within a single signal
+$x$ such that the Shannon's Entropy or the Log Energy Entropy of the basis of the signal is
+minimized, ie. ``\min_{b \in B} M_x(b)``, where  
 - ``B`` is the collection of bases for the signal ``x``,
 - ``b`` is a basis for the signal ``x``, and
 - ``M_x(.)`` is the information cost (eg. Shannon's entropy or Log Energy entropy) for
