@@ -1,7 +1,7 @@
 # [Signal Denoising](@id denoising_manual)
 Wavelet denoising is an important step in signal analysis as it helps remove unnecessary high frequency noise while maintaining the most important features of the signal. Intuitively, signal denoising comes in the following simple steps:
 1. Decompose a signal or a group of signals. One can choose to decompose signals into its best basis tree for more optimal results.
-2. Find a suitable threshold value. There are many ways to do so, with VisuShrink (D. Donoho, I. Johnstone) being one of the most popular approaches. The VisuShrink implementation in Wavelets.jl, along with the [RelErrorShrink](@ref WaveletsExt.Denoising.RelErrorShrink) and the [SureShrink](@ref WaveletsExt.Denoising.SureShrink) implementations in WaveletsExt.jl give users more threshold selection options.
+2. Find a suitable threshold value. There are many ways to do so, with VisuShrink (D. Donoho, I. Johnstone) being one of the most popular approaches. The VisuShrink implementation in Wavelets.jl, along with the RelErrorShrink and the SureShrink implementations in WaveletsExt.jl give users more threshold selection options.
 3. Threshold the wavelet coefficients. There are various thresholding methods implemented in Wavelets.jl for this purpose, with Hard and Soft thresholding being the usual go-to method due to its simplistic approach.
 4. Reconstruct the original signals using the thresholded coefficients.
 

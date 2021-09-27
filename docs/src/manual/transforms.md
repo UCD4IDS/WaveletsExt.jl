@@ -11,194 +11,99 @@ The wavelet transform can be thought of as an improvement over the Fourier trans
 its ability to preserve information in both the time and frequency domains. It has vast
 applications in fields such as signal analysis and image compression.
 
-As an extension to [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl), WaveletsExt.jl offers additional (redundant) wavelet transform techniques via [autocorrelation wavelet transforms](@ref ac_transforms) (Beylkin, Saito), [stationary wavelet transforms](@ref s_transforms) (Nason, Silverman), and [shift invariant wavelet transform](@ref si_transforms) (Cohen et. al.).
+As an extension to [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl), WaveletsExt.jl
+offers additional (redundant) wavelet transform techniques via [autocorrelation wavelet
+transforms](@ref ac_transforms) (Beylkin, Saito), [stationary wavelet transforms](@ref
+s_transforms) (Nason, Silverman), and [shift invariant wavelet transform](@ref
+si_transforms) (Cohen et. al.).
 
 ## Wavelet Transform Methods
-### Discrete Wavelet Transforms
+There are essentially 3 methods of wavelet transforms: discrete wavelet transforms, wavelet
+packet transforms, and wavelet packet decomposition. The overall idea of signals being
+decomposed into high and low frequency segments remain the same, but the number of levels of
+decomposition for each segment may vary.
+### Discrete Wavelet Transforms (DWT)
+The discrete wavelet transfrom only iteratively decomposes the approximation coefficients at each level, ie. iteratively transforms the output from the low pass filter. The coefficients of the leaf nodes are returned. See Figure 1 for a visualization of the DWT transform process and output.
+### Wavelet Packet Transforms (WPT)
+The wavelet packet transform takes the decomposition process one step further and itereatively decomposes on both the approximation and detail coefficients, ie. both the outputs from the low pass filter and high pass filter are being iteratively decomposed. The coefficients of the leaf nodes are returned.
 
-### Wavelet Packet Transforms
+An extension to WPT is that one can decompose a signal based on a given tree. See Figure 1 for better visualization of the transform process.
 
-### Wavelet Packet Decomposition
+### Wavelet Packet Decomposition (WPD)
+The wavelet packet decomposition functions similarly to WPT, except that all the coefficients (regardless of whether they're at the lead node) are retained in the output. The WPD is useful for selecting the [wavelet best basis](@ref bestbasis_manual) and feature extraction algorithms such as [Local Discriminant Basis](@ref ldb_manual).
 
-## Types of Wavelet Transforms
+| Discrete Wavelet Transform | Wavelet Packet Transform | Wavelet Packet Decomposition|
+|:---:|:---:|:---:|
+| ![](../fig/dwt.PNG) | ![](../fig/wpt1.PNG) | ![](../fig/wpd.PNG) |
+|| ![](../fig/wpt2.PNG) ||
+
+Figure 1: Decomposition method for DWT, WPT, and WPD respectively. Coefficient outputs from DWT, WPT, and WPD are highlighted in red.
+## Types of Wavelet Transforms and Their Examples in WaveletsExt.jl
 ### Regular Wavelet Transform
-
-
-### [Autocorrelation Wavelet Transforms] (@id ac_transforms)
-
-
-### [Stationary Wavelet Transforms] (@id s_transforms)
-
-
-### [Shift Invariant Wavelet Transforms] (@id si_transforms)
-
-## Regular Wavelet Packet Transform
-
-The standard best basis algorithm on the wavelet packet transform from Wavelets.jl can be performed as follows:
+The standard wavelet transform (DWT and WPT) from Wavelets.jl and the WPD can be performed
+as follows:
 ```@example wt
 using Wavelets, WaveletsExt
 
-# define function and wavelet
+# Define function and wavelet
 x = generatesignals(:heavysine, 8)
 wt = wavelet(WT.db4)
 
-# best basis tree
-tree = bestbasistree(x, wt)
+# ----- Discrete Wavelet Transform (DWT) -----
+y = dwt(x, wt)      # Forward transform
+z = idwt(y, wt)     # Inverse transform
 
-# decomposition
-y = wpt(x, wt, tree); 
+# ----- Wavelet Packet Transform (WPT) -----
+y = wpt(x, wt)      # Forward transform
+z = iwpt(y, wt)     # Inverse transform
+
+# ----- Wavelet Packet Decomposition (WPD) -----
+y = wpd(x, wt)      # Decompose into L levels
 nothing # hide
 ```
 
-However, in the case where there is a large amount of signals to transform to its best basis, one may find the following approach more convenient.
+In the case where there are multiple signals to transform, one may opt for [`dwtall`](@ref WaveletsExt.WPD.dwtall), [`wptall`](@ref WaveletsExt.WPD.wptall), and [`wpdall`](@ref WaveletsExt.WPD.wpdall).
+
+### [Stationary Wavelet Transforms] (@id s_transforms)
+The stationary wavelet transform is a redundant type of wavelet transform. This means that there are no downsampling involved unlike the standard transforms, resulting in an exponentially larger number of coefficients compared to that of the standard transforms. A strength of the stationary wavelet transform is its ability to retain more information, thereby being more useful in certain signal analysis applications such as denoising. However, it also takes an exponentially larger amount of time and space to decompose a signal compared to the standard transforms.
+
 ```@example wt
-# generate 10 Heavy Sine signals
-X = duplicatesignals(x, 10, 2, true, 0.5)
+# ----- Discrete Wavelet Transform (DWT) -----
+y = sdwt(x, wt)     # Forward transform
+z = isdwt(y, wt)    # Inverse transform
 
-# decomposition of all signals
-xw = cat([wpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
-
-# best basis trees, each column corresponds to 1 tree
-trees = bestbasistree(xw, BB()); 
+# ----- Wavelet Packet Decomposition (WPD) -----
+y = swpd(x, wt)     # Decompose into L levels
 nothing # hide
 ```
 
-Additionally, one can view the selected nodes from the best basis trees using the [`plot_tfbdry`](@ref WaveletsExt.Visualizations.plot_tfbdry) function as shown below.
+### [Autocorrelation Wavelet Transforms] (@id ac_transforms)
+The autocorrelation wavelet transforms, similar to the stationary transforms, is a redundant type of wavelet transform. This also means that there is no downsampling involved unlike the standard transforms, and that more information is retained. 
+
+While the decomposition process is still slower than that of the standard transform, its reconstruction process is extremely quick as it only requires the iterative summation of approximation and detail coefficients.
 ```@example wt
-plot_tfbdry(trees[:,1])
+# ----- Discrete Wavelet Transform (DWT) -----
+y = acdwt(x, wt)    # Forward transform
+z = iacdwt(y)       # Inverse transform
+
+# ----- Wavelet Packet Decomposition (WPD) -----
+y = acwpd(x, wt)    # Decompose into L levels
+nothing # hide
 ```
 
-We can also view the JBB and LSDB trees using a similar syntax. Unlike the previous best basis algorithm, JBB and LSDB do not generate a tree for each individual signal, as they search for the best tree that generalizes the group of signal as a whole.
+### [Shift Invariant Wavelet Packet Decomposition] (@id si_transforms)
+The [Shift-Invariant Wavelet Decomposition (SIWPD)](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf) is developed by Cohen et. al.. While it is also a type of redundant transform, it does not follow the same methodology as the SWT and the ACWT. Cohen's main goal for developing this algorithm was to obtain a global minimum entropy from a signal and all its shifted versions. See [its best basis implementation](@ref si_bestbasis) for more information.
 
-* Joint Best Basis (JBB)
-```@example wt
-# joint best basis
-tree = bestbasistree(xw, JBB())
-plot_tfbdry(tree)
-```
-
-* Least Statistically Dependent Basis (LSDB)
-```@example wt
-# least statistically dependent basis
-tree = bestbasistree(xw, LSDB())
-plot_tfbdry(tree)
-```
-
-## Stationary and Autocorrelation Wavelet Transforms
-The [Stationary Wavelet Transform (SWT)](https://link.springer.com/chapter/10.1007/978-1-4612-2544-7_17) was developed by G.P. Nason and B.W. Silverman in the 1990s. One can use the discrete SWT as shown below, or the SWT decomposition shown after.
-### Example
-```@example wt
-# discrete swt
-y = sdwt(x, wt)
-
-# view the transform
-wiggle(y, sc=0.7)
-```
-
-The SWT decomposition and its best basis search is highly similar with that of the regular wavelet transforms.
-* Regular best basis algorithm
-```@example wt
-# decomposition of all signals
-xw = cat([swpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
-
-# best basis trees, each column corresponds to 1 tree
-trees = bestbasistree(xw, BB(redundant=true)); 
-plot_tfbdry(trees[:,1])
-```
-
-* Joint Best Basis (JBB)
-```@example wt
-# best basis trees, each column corresponds to 1 tree
-tree = bestbasistree(xw, JBB(redundant=true)); 
-plot_tfbdry(tree)
-```
-
-* Least Statistically Dependent Basis (LSDB)
-```@example wt
-# best basis trees, each column corresponds to 1 tree
-tree = bestbasistree(xw, LSDB(redundant=true)); 
-plot_tfbdry(tree)
-```
-
-In fact, this same exact procedures can be implemented with the [Autocorrelation wavelet transforms](https://www.math.ucdavis.edu/~saito/publications/saito_acs_spie.pdf), since they're both redundant types of transform. To implement the autocorrelation transforms, simply change `sdwt` to `acwt`, and `swpd` to `acwpt`.
-
-## Shift-Invariant Wavelet Packet Decomposition
-The [Shift-Invariant Wavelet Decomposition (SIWPD)](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf) is developed by I. Cohen. While it is also a type of redundant transform, it does not follow the same methodology as the SWT and the ACWT. One can compute the SIWPD of a single signal as follows.
-### Example
+One can compute the SIWPD of a single signal as follows.
 ```@example wt
 # decomposition
-xw = siwpd(x, wt)
-
-# best basis tree
-tree = bestbasistree(xw, 8, SIBB());
+xw = siwpd(x, wt);
 nothing # hide
 ```
 
-As of right now, there is not too many functions written based on the SIWPD, as it does not
-follow the conventional style of wavelet transforms. There is a lot of ongoing work to
-develop more functions catered for the SIWPD such as it's inverse transforms and
-group-implementations.
+!!! note 
+    As of right now, there is not too many functions written based on the SIWPD, as it does not follow the conventional style of wavelet transforms. There is a lot of ongoing work to develop more functions catered for the SIWPD such as it's inverse transforms and group-implementations.
 
 
 
 
-
-# Parking Lot
-## Wavelet Packet Decomposition
-In contrast to Wavelets.jl's `wpt` function, `wpd` outputs expansion coefficients of all levels of a given signal. Each column represents a level in the decomposition tree.
-```julia
-y = wpd(x, wavelet(WT.db4))
-```
-
-## Stationary Wavelet Transform
-The redundant and non-orthogonal transform by Nason-Silverman can be implemented using either [`sdwt`](@ref WaveletsExt.SWT.sdwt) (for stationary discrete wavelet transform) or [`swpd`](@ref WaveletsExt.SWT.swpd) (for stationary wavelet packet decomposition). Similarly, the reconstruction of signals can be computed using [`isdwt`](@ref WaveletsExt.SWT.isdwt) and [`iswpt`](@ref WaveletsExt.SWT.iswpt).
-```julia
-# stationary discrete wavelet transform
-y = sdwt(x, wavelet(WT.db4))
-z = isdwt(y, wavelet(WT.db4))
-
-# stationary wavelet packet decomposition
-y = swpd(x, wavelet(WT.db4))
-z = iswpt(y, wavelet(WT.db4))
-```
-
-## Best Basis
-In addition to the best basis algorithm by M.V. Wickerhauser implemented in Wavelets.jl, WaveletsExt.jl contains the implementation of the Joint Best Basis (JBB) by Wickerhauser an the [Least Statistically-Dependent Basis (LSDB)](https://www.math.ucdavis.edu/~saito/courses/ACHA.suppl/lsdb-pr-journal.pdf) by N. Saito.
-```julia
-y = cat([wpd(x[:,i], wt) for i in N]..., dims=3)    # x has size (2^L, N)
-
-# individual best basis trees
-bbt = bestbasistree(y, BB())
-# joint best basis
-bbt = bestbasistree(y, JBB())
-# least statistically dependent basis
-bbt = bestbasistree(y, LSDB())
-```
-Given a `BitVector` representing a best basis tree, one can obtain the corresponding expansion coefficients using [`bestbasiscoef`](@ref WaveletsExt.BestBasis.bestbasiscoef).
-```julia
-coef = bestbasiscoef(y, bbt)
-```
-For more information on the different wavelet transforms and best basis algorithms, please refer to its [manual](@ref transforms_manual).
-
-## Signal Denoising
-WaveletsExt.jl includes additional signal denoising and thresholding methods that complement those written in Wavelets.jl. One can denoise a signal as using the [`denoise`](@ref WaveletsExt.Denoising.denoise) Wavelets.jl extension function as follows:
-```julia
-x̂ = denoise(y, :wpt, wt, tree=bt)
-```
-Additionally, for cases where there are multiple signals to be denoised, one can use the [`denoiseall`](@ref WaveletsExt.Denoising.denoiseall) function as below.
-```julia
-X̂ = denoiseall(Y, :wpt, wt, tree=bt)
-```
-
-## Local Discriminant Basis
-Local Discriminant Basis (LDB) is a feature extraction method developed by N. Saito and R. Coifman and can be accessed as follows.
-```julia
-# generate data
-X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
-wt = wavelet(WT.haar)
-
-# LDB
-f = LocalDiscriminantBasis(wt, top_k=5, n_features=5)
-Xt = fit_transform(f, X, y)
-```
-For more information on how to use LDB, please refer to its [manual](@ref ldb_manual).

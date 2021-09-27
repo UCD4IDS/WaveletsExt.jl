@@ -90,3 +90,16 @@ plot!(p5, title="JBB")
 plot!(p6, title="LSDB")
 plot(p5, p6, layout=(1,2))
 ```
+
+## [Best Basis of Shift-Invariant Wavelet Packet Decomposition](@id si_bestbasis)
+One can think of searching for the best basis of the shift-invariant wavelet packet decomposition as a problem of finding ``\min_{b \in B} \sum_{x \in X} M_x(b)``, where ``X`` is all the possible shifted versions of an original signal ``y``. One can compute the best basis tree as follows:
+```@example wt
+xw = siwpd(x, wt)
+
+# SIBB
+tree = bestbasistree(xw, 7, SIBB());
+nothing #hide
+```
+
+!!! warning 
+    SIWPD is still undergoing large changes in terms of data structures and efficiency improvements. Syntax changes may occur in the next patch updates.
