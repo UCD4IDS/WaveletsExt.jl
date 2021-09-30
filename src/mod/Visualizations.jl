@@ -13,8 +13,46 @@ using
 """
     treenodes_matrix(x) 
 
-Given a `BitVector` of nodes in a binary tree, output the matrix representation 
-of the nodes.
+Given a `BitVector` of nodes in a binary tree, output the matrix representation of the
+nodes.
+
+# Arguments
+- `x::BitVector`: BitVector representing a binary tree, where an input is 1 if the
+  corresponding node exists and has children, and 0 if the corresponding node does not
+  exist/does not have children.
+
+# Returns
+`::BitMatrix`: BitMatrix representation of the tree, where each column corresponds to a
+level of the binary tree. The inputs in the matrix are 1 if the corresponding node exists
+and has children, and 0 if the corresponding node does not exist/does not have children.
+
+# Visualization
+```
+# Binary tree
+      x
+     / \\
+    x   o
+   / \\
+  x   o
+ / \\
+o   o
+
+# BitVector representation
+[1,1,0,1,0,0,0]
+
+# BitMatrix representation
+[1 1 1 1;
+ 1 1 0 0;
+ 1 0 0 0]
+```
+
+# Examples
+```@repl
+using Wavelets, WaveletsExt
+
+tree = maketree(8, 3, :dwt)
+WaveletsExt.Visualizations.treenodes_matrix(tree)
+```
 """
 function treenodes_matrix(x::BitVector)  
     n = (length(x) + 1) >> 1
@@ -50,7 +88,7 @@ start the node count of each level with 0 or 1.
 `::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
 
 # Examples
-```
+```julia
 using Wavelets, WaveletsExt
 
 # Build a tree using Wavelets `maketree`
@@ -105,6 +143,8 @@ Plots a set of shaded wiggles.
 # Arguments
 - `plt::Plots.Plot`: Input plot to plot shaded wiggles.
 - `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+
+# Keyword Arguments
 - `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
 - `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
 - `sc::Real`: (Default: `1`) Scale factor/magnification.
@@ -124,7 +164,7 @@ Plots a set of shaded wiggles.
 `::Plots.Plot`: Shaded wiggles on top of current plot object.
 
 # Examples
-```
+```julia
 using Plots, WaveletsExt
 
 # Generate random signals
@@ -161,6 +201,8 @@ plot the shaded wiggles.
 # Arguments
 - `plt::Plots.Plot`: Input plot to plot shaded wiggles.
 - `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+
+# Keyword Arguments
 - `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
 - `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
 - `sc::Real`: (Default: `1`) Scale factor/magnification.
@@ -180,7 +222,7 @@ plot the shaded wiggles.
 `::Plots.Plot`: Shaded wiggles on top of current plot object.
 
 # Examples
-```
+```julia
 using Plots, WaveletsExt
 
 # Generate random signals

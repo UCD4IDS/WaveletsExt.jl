@@ -7,8 +7,8 @@ tree = BitVector([1,1,1])
 @test_nowarn plot_tfbdry(tree, nodecolor=:red)
 x = randn(16,5)
 # wiggle() test
-p = plot()
 @test typeof(wiggle(x)) == Plots.Plot{Plots.GRBackend}
+p = plot()
 @test typeof(wiggle(p, x)) == Plots.Plot{Plots.GRBackend}
 # wiggle!() test
 @test typeof(wiggle!(x)) == Plots.Plot{Plots.GRBackend}

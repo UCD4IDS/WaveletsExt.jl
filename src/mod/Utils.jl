@@ -73,7 +73,7 @@ level for that corresponding dimension.
 `::Integer`: Max number of transform levels.
 
 # Examples
-```
+```@repl
 using Wavelets, WaveletsExt
 
 # Define random signal
@@ -98,6 +98,19 @@ end
 
 Given the node index `i`, returns the index of its left node.
 
+# Arguments
+- `i::Integer`: Index of the node of interest.
+
+# Returns
+`::Integer`: Index of left child.
+
+# Examples
+```@repl
+using Wavelets, WaveletsExt
+
+left(3)     # 6
+```
+
 **See also:** [`right`](@ref)
 """
 left(i::Integer) = i<<1
@@ -107,6 +120,19 @@ left(i::Integer) = i<<1
 
 Given the node index `i`, returns the index of its right node.
 
+# Arguments
+- `i::Integer`: Index of the node of interest.
+
+# Returns
+`::Integer`: Index of right child.
+
+# Examples
+```@repl
+using Wavelets, WaveletsExt
+
+left(3)     # 7
+```
+
 **See also:** [`left`](@ref)
 """
 right(i::Integer) = i<<1 + 1
@@ -115,18 +141,38 @@ right(i::Integer) = i<<1 + 1
 """
     nodelength(N, L)
 
-Returns the node length at level L of a signal of length N. Level L == 0 
-corresponds to the original input signal.
+Returns the node length at level L of a signal of length N when performaing wavelet packet
+decomposition. Level L == 0 corresponds to the original input signal.
+
+# Arguments
+- `N::Integer`: Length of signal.
+- `L::Integer`: Level of signal.
+
+# Returns
+`::Integer`: Length of nodes at level `L`.
 """
-function nodelength(N::Integer, L::Integer)
-    return (N >> L)
-end
+nodelength(N::Integer, L::Integer) = N >> L
 
 # Get leaf nodes in the form of a BitVector
 """
     getleaf(tree)
 
 Returns the leaf nodes of a tree.
+
+# Arguments
+- `tree::BitVector`: BitVector to represent binary tree.
+
+# Returns
+`::BitVector`: BitVector that can represent a binary tree, but only the leaves are labeled
+1, the rest of the nodes are labeled 0.
+
+# Examples
+```@repl
+using Wavelets, WaveletsExt
+
+tree = maketree(4, 2, :dwt)     # [1,1,0]
+getleaf(tree)                   # [0,0,1,1,1,0,0]
+```
 """
 function getleaf(tree::BitVector)
     @assert isdyadic(length(tree) + 1)
@@ -148,22 +194,49 @@ end
 
 # Index range of coarsest scaling coefficients
 """
-    coarsestscalingrange(x, tree[, redundant=false])
+    coarsestscalingrange(x, tree[, redundant])
+    coarsestscalingrange(n, tree[, redundant])
 
-    coarsestscalingrange(n, tree[, redundant=false])
+Given a binary tree, returns the index range of the coarsest scaling coefficients.
 
-Given a binary tree, returns the index range of the coarsest scaling 
-coefficients.
+# Arguments
+- `x::AbstractArray{T} where T<:Number`: Decomposed 1D-signal.
+- `n::Integer`: Length of signal of interest.
+- `tree::BitVector`: Binary tree.
+- `redundant::Bool`: (Default: `false`) Whether the wavelet decomposition is redundant.
+  Examples of redundant wavelet transforms are the Autocorrelation wavelet transform (ACWT),
+  Stationary wavelet transform (SWT), and the Maximal Overlap wavelet transform (MOWT).
+
+# Returns
+`UnitRange{Integer}` or `::Tuple{UnitRange{Integer}, Integer}`: The index range of the
+coarsest scaling subspace based on the input binary tree.
+
+# Examples
+```@repl
+using Wavelets, WaveletsExt
+
+x = randn(8)
+wt = wavelet(WT.haar)
+tree = maketree(x)
+
+# Non-redundant wavelet transform
+xw = wpd(x, wt)
+coarsestscalingrange(xw, tree)          # 1:1
+
+# Redundant wavelet transform
+xw = swpd(x, wt)
+coarsestscalingrange(xw, tree, true)    # (1:8, 8)
+```
+
+*See also:* [`finestdetailrange`](@ref)
 """
-function coarsestscalingrange(x::AbstractArray{T}, tree::BitVector, 
-        redundant::Bool=false) where T<:Number
-
+function coarsestscalingrange(x::AbstractArray{T}, 
+                              tree::BitVector, 
+                              redundant::Bool=false) where T<:Number
     return coarsestscalingrange(size(x,1), tree, redundant)
 end
 
-function coarsestscalingrange(n::Integer, tree::BitVector, 
-        redundant::Bool=false)
-
+function coarsestscalingrange(n::Integer, tree::BitVector, redundant::Bool=false)
     if !redundant          # regular wt
         i = 1
         j = 0
@@ -184,12 +257,41 @@ end
 
 # Index range of finest detail coefficients
 """
-    finestdetailrange(x, tree[, redundant=false])
-    
-    finestdetailrange(n, tree[, redundant=false])
+    finestdetailrange(x, tree[, redundant])
+    finestdetailrange(n, tree[, redundant])
 
-Given a binary tree, returns the index range of the coarsest scaling 
-coefficients.
+Given a binary tree, returns the index range of the finest detail coefficients.
+
+# Arguments
+- `x::AbstractArray{T} where T<:Number`: Decomposed 1D-signal.
+- `n::Integer`: Length of signal of interest.
+- `tree::BitVector`: Binary tree.
+- `redundant::Bool`: (Default: `false`) Whether the wavelet decomposition is redundant.
+  Examples of redundant wavelet transforms are the Autocorrelation wavelet transform (ACWT),
+  Stationary wavelet transform (SWT), and the Maximal Overlap wavelet transform (MOWT).
+
+# Returns
+`UnitRange{Integer}` or `::Tuple{UnitRange{Integer}, Integer}`: The index range of the
+finest detail subspace based on the input binary tree.
+
+# Examples
+```@repl
+using Wavelets, WaveletsExt
+
+x = randn(8)
+wt = wavelet(WT.haar)
+tree = maketree(x)
+
+# Non-redundant wavelet transform
+xw = wpd(x, wt)
+finestdetailrange(xw, tree)          # 8:8
+
+# Redundant wavelet transform
+xw = swpd(x, wt)
+finestdetailrange(xw, tree, true)    # (1:8, 15)
+```
+
+*See also:* [`coarsestscalingrange`](@ref)
 """
 function finestdetailrange(x::AbstractArray{T}, tree::BitVector,
         redundant::Bool=false) where T<:Number
@@ -201,7 +303,7 @@ function finestdetailrange(n::Integer, tree::BitVector, redundant::Bool=false)
     if !redundant      # regular wt
         i = 1
         j = 0
-        while i<length(tree) && tree[i]
+        while i≤length(tree) && tree[i]
             i = right(i)
             j += 1
         end
@@ -209,7 +311,7 @@ function finestdetailrange(n::Integer, tree::BitVector, redundant::Bool=false)
         rng = (n-n₀+1):n
     else               # redundant wt
         i = 1
-        while i<length(tree) && tree[i]
+        while i≤length(tree) && tree[i]
             i = right(i)
         end
         rng = (1:n, i)
@@ -241,7 +343,7 @@ _________________       _________________       _________________
 `::BitVector`: Quadtree representation.
 
 # Examples
-```
+```@repl
 using WaveletsExt
 
 x = randn(16,16)
@@ -292,7 +394,7 @@ Get level of `idx` in the quadtree.
 `::T`: Level of `idx`.
 
 # Examples
-```
+```@repl
 using WaveletsExt
 
 getquadtreelevel(1)     # 0
@@ -331,7 +433,7 @@ Get the row range from a matrix with `n` rows that corresponds to `idx` from a q
 `::UnitRange{Int64}`: Row range in matrix that corresponds to `idx`.
 
 # Examples
-```
+```@repl
 using WaveletsExt
 
 x = randn(8,8)
@@ -382,7 +484,7 @@ quadtree.
 `::UnitRange{Int64}`: Column range in matrix that corresponds to `idx`.
 
 # Examples
-```
+```@repl
 using WaveletsExt
 
 x = randn(8,8)
@@ -421,26 +523,62 @@ end
 # ----- Computational metrics -----
 # Relative norm between 2 vectors
 """
-    relativenorm(x, x₀[, p=2]) where T<:Number
+    relativenorm(x, x₀[, p]) where T<:Number
 
 Returns the relative norm of base p between original signal x₀ and noisy signal
 x.
 
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Signal with noise.
+- `x₀::AbstractVector{T} where T<:Number`: Reference signal.
+- `p::Real`: (Default: 2) ``p``-norm to be computed.
+
+# Returns
+`::AbstractFloat`: The relative norm between x and x₀.
+
+# Examples
+```@repl
+using WaveletsExt
+
+x = randn(8)
+y = randn(8)
+
+relativenorm(x, y)
+```
+
 **See also:** [`psnr`](@ref), [`snr`](@ref), [`ssim`](@ref)
 """
-function relativenorm(x::AbstractVector{T}, x₀::AbstractVector{T}, 
-        p::Real=2) where T<:Number
-
+function relativenorm(x::AbstractVector{T}, 
+                      x₀::AbstractVector{T}, 
+                      p::Real = 2) where T<:Number
     @assert length(x) == length(x₀)             # ensure same lengths
     return norm(x-x₀,p)/norm(x₀,p)
 end
 
 # PSNR between 2 vectors
-"""
+@doc raw"""
     psnr(x, x₀)
 
-Returns the peak signal to noise ratio (PSNR) between original signal x₀ and
-noisy signal x.
+Returns the peak signal to noise ratio (PSNR) between original signal x₀ and noisy signal x.
+
+PSNR definition: ``10 \log_{10} \frac{\max{(x_0)}^2}{MSE(x, x_0)}``
+
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Signal with noise.
+- `x₀::AbstractVector{T} where T<:Number`: Reference signal.
+
+# Returns
+`::AbstractFloat`: The PSNR between x and x₀.
+
+# Examples
+```@repl
+using WaveletsExt
+
+x = randn(8)
+y = randn(8)
+
+psnr(x, y)
+```
 
 **See also:** [`relativenorm`](@ref), [`snr`](@ref), [`ssim`](@ref)
 """
@@ -455,11 +593,29 @@ function psnr(x::AbstractVector{T}, x₀::AbstractVector{T}) where T<:Number
 end
 
 # SNR between 2 vectors
-"""
+@doc raw"""
     snr(x, x₀)
 
-Returns the signal to noise ratio (SNR) between original signal x₀ and noisy 
-signal x.
+Returns the signal to noise ratio (SNR) between original signal x₀ and noisy signal x.
+
+SNR definition: ``20 \log_{10} \frac{||x_0||_2}{||x-x_0||_2}``
+
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Signal with noise.
+- `x₀::AbstractVector{T} where T<:Number`: Reference signal.
+
+# Returns
+`::AbstractFloat`: The SNR between x and x₀.
+
+# Examples
+```@repl
+using WaveletsExt
+
+x = randn(8)
+y = randn(8)
+
+snr(x, y)
+```
 
 **See also:** [`relativenorm`](@ref), [`psnr`](@ref), [`ssim`](@ref)
 """
@@ -474,8 +630,25 @@ end
 
 Wrapper for `assess_ssim` function from ImageQualityIndex.jl.
 
-Returns the Structural Similarity Index Measure (SSIM) between the original 
-signal/image x₀ and noisy signal/image x.
+Returns the Structural Similarity Index Measure (SSIM) between the original signal/image x₀
+and noisy signal/image x.
+
+# Arguments
+- `x::AbstractArray{T} where T<:Number`: Signal with noise.
+- `x₀::AbstractArray{T} where T<:Number`: Reference signal.
+
+# Returns
+`::AbstractFloat`: The SNR between x and x₀.
+
+# Examples
+```@repl
+using WaveletsExt
+
+x = randn(8)
+y = randn(8)
+
+ssim(x, y)
+```
 
 **See also:** [`relativenorm`](@ref), [`psnr`](@ref), [`snr`](@ref)
 """
@@ -488,14 +661,37 @@ end
 """
     duplicatesignals(x, N, k[, noise=false, t=1])
 
-Given a signal x, returns N shifted versions of the signal, each with shifts
-of multiples of k. 
+Given a signal `x`, returns N shifted versions of the signal, each with shifts
+of multiples of `k`. 
 
 Setting `noise = true` allows randomly generated Gaussian noises of μ = 0, 
 σ² = t to be added to the circularly shifted signals.
+
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: 1D-signal to be duplicated.
+- `N::Integer`:: Number of duplicated signals.
+- `k::Integer`:: Circular shift size for each duplicated signal.
+- `noise::Bool`: (Default: `false`) Whether or not to add Gaussian noise.
+- `t::Real`: (Default: 1) Relative size of noise.
+
+# Returns
+`::Array{T}`: Duplicated signals.
+
+# Examples
+```@repl
+using WaveletsExt
+
+x = generatesignals(:blocks)
+duplicatesignals(x, 5, 0)      # [x x x x x]
+```
+
+*See also:* [`generatesignals`](@ref)
 """
-function duplicatesignals(x::AbstractVector{T}, N::Integer, k::Integer, 
-        noise::Bool=false, t::Real=1) where T<:Number
+function duplicatesignals(x::AbstractVector{T}, 
+                          N::Integer, 
+                          k::Integer, 
+                          noise::Bool = false, 
+                          t::Real = 1) where T<:Number
 
     n = length(x)
     X = Array{T, 2}(undef, (n, N))
@@ -525,12 +721,22 @@ Shrinkage" Preprint Stanford, January 93, p 27-28.
 The code for this function is adapted and translated based on MATLAB's Wavelet Toolbox's 
 `wnoise` function.
 
+# Arguments
+- `fn::Symbol`: Type of function/signal to generate.
+- `L::Integer`: (Default = 7) Size of the signal to generate. Will return a signal of size
+  2ᴸ.
+
+# Returns
+`::Vector{Float64}`: Signal of length 2ᴸ.
+
 # Examples
-```julia
+```repl
+using WaveletsExt
+
 generatesignals(:bumps, 8)
 ```
 """
-function generatesignals(fn::Symbol, L::Integer)
+function generatesignals(fn::Symbol, L::Integer = 7)
     @assert L >= 1
 
     t = [0.1, 0.13, 0.15, 0.23, 0.25, 0.4, 0.44, 0.65, 0.76, 0.78, 0.81]
@@ -574,7 +780,7 @@ end
 
 # Generate 3 classes of signals used in Saito's LDB paper.
 """
-    generateclassdata(c[, shuffle=false])
+    generateclassdata(c[, shuffle])
 
 Generates 3 classes of data given a `ClassData` struct as an input. Returns a matrix 
 containing the 3 classes of signals and a vector containing their corresponding labels.
@@ -582,9 +788,25 @@ containing the 3 classes of signals and a vector containing their corresponding 
 Based on N. Saito and R. Coifman in "Local Discriminant Basis and their Applications" in the
 Journal of Mathematical Imaging and Vision, Vol. 5, 337-358 (1995).
 
+# Arguments
+- `c::ClassData`: Type of signal classes to generate.
+- `shuffle::Bool`: (Default: `true`). Whether or not to shuffle the signals.
+
+# Returns
+- `::Matrix{Float64}`: Generated signals.
+- `::Vector{Int64}`: Class corresponding to each column of generated signals.
+
+# Examples
+```@repl
+using WaveletsExt
+
+c = ClassData(:tri, 100, 100, 100)
+generateclassdata(c)
+```
+
 **See also:** [`ClassData`](@ref)
 """
-function generateclassdata(c::ClassData, shuffle::Bool=false)
+function generateclassdata(c::ClassData, shuffle::Bool = false)
     @assert c.s₁ >= 0
     @assert c.s₂ >= 0
     @assert c.s₃ >= 0
@@ -592,19 +814,26 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
     if c.type == :tri
         n = 32
         i = collect(1:n)
-        u = rand(Uniform(0,1),1)[1]
-        ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
+        # Define classes
         y = Int64.(vcat(ones(Int, c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃)))
         
+        # Random value generations
+        u₁ = rand(Uniform(0,1), c.s₁)
+        u₂ = rand(Uniform(0,1), c.s₂)
+        u₃ = rand(Uniform(0,1), c.s₃)
+        ϵ₁ = rand(Normal(0,1), (n, c.s₁))
+        ϵ₂ = rand(Normal(0,1), (n, c.s₂))
+        ϵ₃ = rand(Normal(0,1), (n, c.s₃))
+
         h₁ = max.(6 .- abs.(i.-7), 0)
         h₂ = max.(6 .- abs.(i.-15), 0)
         h₃ = max.(6 .- abs.(i.-11), 0)
-
-        H₁ = repeat(u*h₁ + (1-u)*h₂, outer=c.s₁) |> y -> reshape(y, (n, c.s₁))
-        H₂ = repeat(u*h₁ + (1-u)*h₃, outer=c.s₂) |> y -> reshape(y, (n, c.s₂))
-        H₃ = repeat(u*h₂ + (1-u)*h₃, outer=c.s₃) |> y -> reshape(y, (n, c.s₃))
+        # Build signals
+        H₁ = h₁ * u₁' + h₂ * (1 .- u₁)' + ϵ₁
+        H₂ = h₁ * u₂' + h₃ * (1 .- u₂)' + ϵ₂
+        H₃ = h₂ * u₃' + h₃ * (1 .- u₃)' + ϵ₃
         
-        H = hcat(H₁, H₂, H₃) + ϵ
+        H = hcat(H₁, H₂, H₃)
     elseif c.type == :cbf
         n = 128
         ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
@@ -626,7 +855,7 @@ function generateclassdata(c::ClassData, shuffle::Bool=false)
         H₂ = zeros(n,c.s₂)
         a = rand(d₁,c.s₂)
         b = a+rand(d₂,c.s₂)
-        η = randn(c.s₂);
+        η = randn(c.s₂)
         for k in 1:c.s₂
             H₂[a[k]:b[k],k]=(6+η[k])*collect(0:(b[k]-a[k]))/(b[k]-a[k])
         end

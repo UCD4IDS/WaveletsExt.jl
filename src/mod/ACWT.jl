@@ -59,7 +59,7 @@ acwpd(x, wavelet(WT.db4))
 acwpd(x, wavelet(WT.db4), 4)
 ```
 
-**See also:** [`acdwt`](@ref), `acwpt_step`, [`iacwpt`](@ref)
+**See also:** [`acdwt`](@ref), [`acwpt_step`](@ref), [`iacwpt`](@ref)
 """
 function acwpd end
 
