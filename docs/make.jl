@@ -22,6 +22,7 @@ makedocs(
             "LDB" => "api/ldb.md",
             "SIWPD" => "api/siwpd.md",
             "SWT" => "api/swt.md",
+            "TIWT" => "api/tiwt.md",
             "Utils" => "api/utils.md",
             "Visualizations" => "api/visualizations.md",
             "WPD" => "api/wpd.md",

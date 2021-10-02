@@ -4,6 +4,7 @@ module WaveletsExt
 
 include("mod/Utils.jl")
 include("mod/WPD.jl")
+include("mod/TIWT.jl")
 include("mod/SIWPD.jl")
 include("mod/ACWT.jl")
 include("mod/BestBasis.jl")
@@ -18,6 +19,7 @@ using Reexport
                 .Denoising,
                 .Utils,
                 .LDB,
+                .TIWT,
                 .SWT,
                 .SIWPD,
                 .ACWT,

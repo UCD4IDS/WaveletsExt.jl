@@ -192,6 +192,37 @@ function getleaf(tree::BitVector)
     return result
 end
 
+# Packet table Indexing
+"""
+    packet(d, b, n)
+
+Packet table indexing.
+
+# Arguments
+- `d::Integer`: Depth of splitting in packet decomposition. *Note: Depth of root node is 0.*
+- `b::Integer`: Block index among 2ᵈ possibilities at depth `d`. *Note: Block indexing
+  starts from 0.*
+- `n::Integer`: Length of signal.
+
+# Returns
+`::UnitRange{Int64}`: Index range of block `b` of signal of length `n` at level `d`.
+
+# Examples
+```julia
+using WaveletsExt
+
+WaveletsExt.Utils.packet(0, 0, 8)       # 1:8
+WaveletsExt.Utils.packet(2, 1, 8)       # 3:4
+```
+
+Translated from Wavelab850 by Zeng Fung Liew.
+"""
+function packet(d::Integer, b::Integer, n::Integer)
+    npack = 1 << d                                  # Number of blocks in current level
+    p = (b * (n÷npack) + 1) : ((b+1) * (n÷npack))   # Range of specified block
+    return p
+end
+
 # Index range of coarsest scaling coefficients
 """
     coarsestscalingrange(x, tree[, redundant])
