@@ -328,14 +328,121 @@ function itidwt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
 end
 
 # ========== Translation-Invariant WPT ==========
-# TODO: TIWPT (only for level-based transform, tree based not allowed)
-function tiwpt()
-    return
+@doc raw"""
+    tiwpt(x, wt[, L])
+
+Computes `L` levels of translation-invariant wavelet packet transform (TIWPT) on `x`.
+
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+  \in \mathbb{N}``.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
+
+# Returns
+`::Matrix{T}`: Output from TIWPT on `x`.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# TIWPT
+xw = tiwpt(x, wt)
+```
+
+**See also:** [`itiwpt`](@ref), [`tidwt`](@ref)
+"""
+function tiwpt(x::AbstractVector{T},
+               wt::OrthoFilter,
+               L::Integer = maxtransformlevels(x)) where T<:Number
+    # Sanity check
+    @assert L ≤ maxtransformlevels(x) ||
+            throw(ArgumentError("Too many transform levels (length(x) < 2ᴸ)"))
+    @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
+
+    # Setup
+    g, h = WT.makereverseqmfpair(wt, true)
+    n = length(x)
+    xw = Matrix{T}(undef, (n, 1<<L))
+    xw[:,1] = x
+
+    # TIWPT for L levels
+    for d in 0:(L-1)
+        nblock = 1<<d
+        for b in 0:(nblock-1)
+            # Parent index
+            np = (1<<L)÷nblock
+            i = b*np + 1
+            # Children indices
+            nc = np÷2
+            j₁ = 2*b*nc + 1
+            j₂ = (2*b+1)*nc + 1
+            # Overwrite output of TIDWT directly onto xw
+            xw[:,j₁], xw[:,j₂] = tidwt_step(xw[:,i], d, h, g)
+        end
+    end
+    return xw
 end
 
-# TODO: iTIWPT
-function itiwpt()
-    return
+"""
+    itiwpt(xw, wt)
+
+Computes the inverse translation-invariant wavelet packet transform (iTIWPT) on `xw`.
+
+# Arguments
+- `xw::AbstractArray{T,2} where T<:Number`: TIDWT-transformed array.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+
+# Returns
+`::Vector{T}`: Inverse transformed signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# TIWPT
+xw = tiwpt(x, wt)
+
+# iTIWPT
+x̂ = itiwpt(xw, wt)
+```
+
+**See also:** [`tiwpt`](@ref), [`itidwt`](@ref)
+"""
+function itiwpt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
+    # Sanity check
+    n, m = size(xw)
+    @assert isdyadic(m) || throw(ArgumentError("Number of columns of xw is not dyadic."))
+
+    # Setup
+    g, h = WT.makereverseqmfpair(wt, false)
+    temp = copy(xw)                         # Temp. array to store intermediate outputs
+    L = ndyadicscales(m)                    # Number of decompositions from xw
+
+    # iTIWPT
+    for d in (L-1):-1:0
+        nblock = 1<<d
+        for b in 0:(nblock-1)
+            # Parent index
+            np = (1<<L)÷nblock
+            i = b*np + 1
+            # Children indices
+            nc = np÷2
+            j₁ = 2*b*nc + 1
+            j₂ = (2*b+1)*nc + 1
+            # Overwrite output of iTIWPT directly onto temp
+            temp[:,i] = itidwt_step(temp[:,j₁], temp[:,j₂], d, h, g)
+        end
+    end
+    return temp[:,1]
 end
 
 # ========== Translation-Invariant WPD ==========
