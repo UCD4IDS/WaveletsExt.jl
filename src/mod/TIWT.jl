@@ -104,7 +104,7 @@ function tidwt_step!(w₁::AbstractVector{T},
     # One step of translation-invariant transform
     for b in 0:(1<<d-1)
         # ----- Transform original block -----
-        block = v[Utils.packet(d,b,n)]
+        block = @view v[Utils.packet(d,b,n)]
         st = 2*b*nc + 1                     # Starting index in w₁, w₂
         # Decompose using low and high pass filter
         Transforms.filtdown!(g, si, w₁, st, nc, block, 1, 0, false)
@@ -446,13 +446,125 @@ function itiwpt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
 end
 
 # ========== Translation-Invariant WPD ==========
-# TODO: TIWPD
-function tiwpd()
-    return
+@doc raw"""
+    tiwpd(x, wt[, L])
+
+Computes `L` levels of translation-invariant wavelet packet decomposition (TIWPD) on `x`.
+
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+  \in \mathbb{N}``.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
+
+# Returns
+`::Matrix{T}`: Output from TIWPD on `x`.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# TIWPD
+xw = tiwpd(x, wt)
+```
+
+**See also:** [`itiwpd`](@ref), [`tiwpt`](@ref)
+"""
+function tiwpd(x::AbstractVector{T},
+               wt::OrthoFilter,
+               L::Integer = maxtransformlevels(x)) where T<:Number
+    # Sanity check
+    @assert L ≤ maxtransformlevels(x) ||
+            throw(ArgumentError("Too many transform levels (length(x) < 2ᴸ)"))
+    @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
+
+    # Setup
+    g, h = WT.makereverseqmfpair(wt, true)
+    n = length(x)                       # Size of signal
+    n₀ = 1<<(L+1)-1                     # Total number of nodes
+    n₁ = n₀ - (1<<L)                    # Total number of nodes excluding leaf nodes
+    xw = Matrix{T}(undef, (n, n₀))      # Output allocation
+    xw[:,1] = x
+
+    # TIWPD
+    for i in 1:n₁
+        d = floor(Integer, log2(i))     # Current depth
+        xw[:,left(i)], xw[:,right(i)] = tidwt_step(xw[:,i], d, h, g)
+    end
+    return xw
 end
 
-function itiwpd()
-    return
+"""
+    itiwpd(xw, wt[, L])
+    itiwpd(xw, wt, tree)
+
+Computes the inverse translation-invariant wavelet packet decomposition (iTIWPD) on `xw`.
+
+# Arguments
+- `xw::AbstractArray{T,2} where T<:Number`: TIDWT-transformed array.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(size(xw,1))`) Depth of inverse decomposition.
+- `tree::BitVector`: Representation of binary tree used as basis for the signal `x`.
+
+# Returns
+`::Vector{T}`: Inverse transformed signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# TIWPD
+xw = tiwpd(x, wt)
+
+# iTIWPD
+x̂ = itiwpd(xw, wt)
+```
+
+**See also:** [`tiwpd`](@ref), [`itiwpt`](@ref)
+"""
+function itiwpd(xw::AbstractArray{T,2},
+                wt::OrthoFilter,
+                L::Integer = maxtransformlevels(size(xw,1))) where T<:Number
+    # Sanity check
+    @assert L ≤ maxtransformlevels(x) ||
+            throw(ArgumentError("Too many transform levels (length(x) < 2ᴸ)"))
+    @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
+    return itiwpd(xw, wt, maketree(size(xw,1), L, :full))
+end
+
+function itiwpd(xw::AbstractArray{T,2}, wt::OrthoFilter, tree::BitVector) where 
+                T<:Number
+    # Sanity check
+    @assert isvalidtree(xw[:,1], tree)
+
+    # Setup
+    g, h = WT.makereverseqmfpair(wt, false)
+    tmp = copy(xw)
+
+    # iTIWPD
+    for (i, haschild) in Iterators.reverse(enumerate(tree))
+        # Current node has child => Compute one step of inverse transform
+        if haschild
+            # Current depth
+            d = floor(Integer, log2(i))
+            # Parent node
+            v = @view tmp[:,i]
+            # Children nodes
+            w₁ = @view tmp[:,left(i)]
+            w₂ = @view tmp[:,right(i)]
+            # Inverse transform
+            itidwt_step!(v, w₁, w₂, d, h, g)
+        end
+    end
+    return tmp[:,1]
 end
 
 end
