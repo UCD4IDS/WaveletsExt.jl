@@ -11,29 +11,275 @@ export
 
 using Wavelets
 
+using ..Utils
+
+# ========== Single Step Stationary Wavelet Transform ==========
 """
-    sdwt_step(v, j, h, g)
+    sdwt_step(v, d, h, g)
 
-Perform one level of the stationary discrete wavelet transform (SDWT) on the 
-vector `v`, which is the j-th level scaling coefficients (Note the 0th level
-scaling coefficients is the raw signal). The vectors `h` and `g` are the detail
-and scaling filters.
+Perform one level of the stationary discrete wavelet transform (SDWT) on the vector `v`,
+which is the `d`-th level scaling coefficients (Note the 0th level scaling coefficients is the
+raw signal). The vectors `h` and `g` are the detail and scaling filters.
 
-Returns a tuple `(v, w)` of the scaling and detail coefficients at level `j+1`.
+# Arguments
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+- `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
+- `d::Integer`: Depth level of `v`.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+
+# One step of SDWT
+SWT.sdwt_step(v, 0, h, g)
+```
 
 **See also:** [`sdwt_step!`](@ref)
 """
-function sdwt_step end
+function sdwt_step(v::AbstractVector{T}, d::Integer, h::Array{S,1}, g::Array{S,1}) where 
+                  {T<:Number, S<:Number}
+    n = length(v)
+    w₁ = zeros(T, n)
+    w₂ = zeros(T, n)
+
+    sdwt_step!(w₁, w₂, v, d, h, g)
+    return w₁, w₂
+end
 
 """
     sdwt_step!(v1, w1, v, j, h, g)
 
 Same as `sdwt_step` but without array allocation.
 
+# Arguments
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+- `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
+- `d::Integer`: Depth level of `v`.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+w₁ = zeros(8)
+w₂ = zeros(8)
+
+# One step of SDWT
+SWT.sdwt_step!(w₁, w₂, v, 0, h, g)
+```
+
 **See also:** [`sdwt_step`](@ref)
 """
-function sdwt_step! end
+function sdwt_step!(w₁::AbstractVector{T}, 
+                    w₂::AbstractVector{T},
+                    v::AbstractVector{T},
+                    d::Integer, 
+                    h::Array{S,1},
+                    g::Array{S,1}) where {T<:Number, S<:Number}
+    # Setup
+    n = length(v)                   # Signal length
+    filtlen = length(h)             # Filter length
 
+    # One step of stationary transform
+    for i in 1:n
+        k = i
+        @inbounds w₁[i] = g[1] * v[k]
+        @inbounds w₂[i] = h[1] * v[k]
+        for j in 2:filtlen
+            k += 1 << d
+            k = k > n ? mod1(k,n) : k
+            @inbounds w₁[i] += g[j] * v[k]
+            @inbounds w₂[i] += h[j] * v[k]
+        end
+    end
+    return w₁, w₂
+end
+
+"""
+    isdwt_step(w₁, w₂, d, h, g)
+    isdwt_step(w₁, w₂, d, sv, sw, h, g)
+
+Perform one level of the inverse stationary discrete wavelet transform (ISDWT) on the
+vectors `w₁` and `w₂`, which are the `d+1`-th level scaling coefficients (Note the 0th level
+scaling coefficients is the raw signal). The vectors `h` and `g` are the detail and scaling
+filters.
+
+!!! note
+    One can decide to choose the average-based inverse transform or the shift-based inverse
+    transform. For shift based, one needs to specify the shifts of the parent and children
+    nodes; for the average based, the output is the average of all possible shift-based
+    inverse transform outputs.
+
+# Arguments
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+- `d::Integer`: Depth level of parent node of `w₁` and `w₂`.
+- `sv::Integer`: Shift of parent node `v`.
+- `sw::Integer`: Shift of children nodes `w₁` and `w₂`.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+
+# One step of SDWT
+w₁, w₂ = SWT.sdwt_step(v, 0, h, g)
+
+# One step of ISDWT
+v̂ = SWT.isdwt_step(w₁, w₂, 0, h, g)         # Average based
+ṽ = SWT.isdwt_step(w₁, w₂, 0, 0, 1, h, g)   # Shift based
+```
+
+**See also:** [`isdwt_step!`](@ref)
+"""
+function isdwt_step(w₁::AbstractVector{T},
+                    w₂::AbstractVector{T},
+                    d::Integer,
+                    h::Array{S,1},
+                    g::Array{S,1}) where {T<:Number, S<:Number}
+    # Setup
+    v₁ = similar(w₁)        # Allocation for isdwt_step of w₁, w₂ with no additional shift
+    v₂ = similar(w₁)        # Allocation for isdwt_step of w₁, w₂ with additional shift
+    n = length(w₁)          # Signal length
+    nd = 1 << d             # Number of blocks for parent node
+
+    # isdwt_step for each shift
+    for sv in 0:(nd-1)
+        sw₁ = sv            # Shift of w₁, w₂ with no additional shift
+        sw₂ = sv + 1<<d     # Shift of w₁, w₂ with addtional shift
+        isdwt_step!(v₁, w₁, w₂, d, sv, sw₁, h, g)   # Without shift
+        isdwt_step!(v₂, w₁, w₂, d, sv, sw₂, h, g)   # With shift
+    end
+    return (v₁+v₂)/2        # Average the results of v₁, v₂
+end
+
+function isdwt_step(w₁::AbstractVector{T}, 
+                    w₂::AbstractVector{T}, 
+                    d::Integer, 
+                    sv::Integer, 
+                    sw::Integer, 
+                    h::Array{S,1}, 
+                    g::Array{S,1}) where {T<:Number, S<:Number}
+    v = similar(w₁)
+    isdwt_step!(v, w₁, w₂, d, sv, sw, h, g)
+    return v
+end
+
+"""
+    isdwt_step!(v, w₁, w₂, d, sv, sw, h, g)
+
+Same as `isdwt_step` but without array allocation.
+
+# Arguments
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+- `d::Integer`: Depth level of parent node of `w₁` and `w₂`.
+- `sv::Integer`: Shift of parent node `v`.
+- `sw::Integer`: Shift of children nodes `w₁` and `w₂`.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+v̂ = similar(v)
+ṽ = similar(v)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+
+# One step of SDWT
+w₁, w₂ = SWT.sdwt_step(v, 0, h, g)
+
+# One step of ISDWT
+SWT.isdwt_step(v̂, w₁, w₂, 0, h, g)          # Average based
+SWT.isdwt_step(ṽ, w₁, w₂, 0, 0, 1, h, g)    # Shift based
+```
+
+**See also:** [`isdwt_step`](@ref)
+"""
+function isdwt_step!(v::AbstractVector{T}, 
+                     w₁::AbstractVector{T}, 
+                     w₂::AbstractVector{T}, 
+                     d::Integer, 
+                     sv::Integer, 
+                     sw::Integer,
+                     h::Array{S,1}, 
+                     g::Array{S,1}) where {T<:Number, S<:Number}
+    # Sanity check
+    @assert sw ≥ sv
+
+    # Setup
+    n = length(v)               # Signal length
+    filtlen = length(h)         # filter length
+    ip = sv + 1                 # Parent start index
+    sp = 1 << d                 # Parent step size
+    ic = sw + 1                 # Child start index
+    sc = 1 << (d+1)             # Child step size
+    
+    # One step of inverse SDWT
+    for (t, m) in enumerate(ip:sp:n)
+        i = mod1(t,2)
+        j = sw == sv ? m : mod1(m+sp, n)        # Circshift needed if sw > sv
+        k = (ceil(Int, t/2) - 1) * sc + ic      # Child start index for calculating v[j]
+        v[j] = h[i] * w₂[k] + g[i] * w₁[k]      # Calculation of v[j]
+        while i + 2 ≤ filtlen
+            k -= 1 << (d+1)
+            k = k ≤ 0 ? mod1(k,n) : k
+            i += 2
+            v[j] += h[i] * w₂[k] + g[i] * w₁[k]
+        end
+    end
+    return v
+end
+
+# ========== Stationary DWT ==========
 """
     sdwt(x, wt[, L=maxtransformlevels(x)])
 
@@ -55,82 +301,27 @@ xw = sdwt(x, wt, 5)
 
 **See also:** [`swpd`](@ref), [`swpt`](@ref), [`isdwt`](@ref)
 """
-function sdwt end
+function sdwt(x::AbstractVector{T}, wt::OrthoFilter, 
+        L::Integer=maxtransformlevels(x)) where T<:Number
+    
+    @assert L <= maxtransformlevels(x) ||
+        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+    @assert L >= 1 || throw(ArgumentError("L must be >= 1"))
 
-"""
-    swpd(x, wt[, L=maxtransformlevels(x)])
+    g, h = WT.makereverseqmfpair(wt, true)
+    N = length(x)
+    W = zeros(T, (N, L))
+    V = deepcopy(x)
 
-Perform a stationary wavelet packet decomposition (SPWD) of the array `x`. The 
-wavelet type `wt` determines the transform type and the wavelet class, see 
-`wavelet`.
+    @inbounds begin
+        for j in 0:(L-1)
+            V[:], W[:, L - j] = sdwt_step(V, j, h, g)
+        end    
+    end
+    return [V W]
+end
 
-The number of transform levels `L` can be 1 ≤ L ≤ `maxtransformlevels(x)`.
-Default value is set to `maxtransformlevels(x)`.
-
-Returns the `n × (2⁽ᴸ⁺¹⁾-1)` matrix (where `n` is the length of `x`) with each 
-column representing the nodes in the binary tree.
-
-# Examples
-```julia
-xw = swpd(x, wt, 5)
-```
-
-
-**See also:** [`swpt`](@ref), [`sdwt`](@ref), [`iswpt`](@ref)
-"""
-function swpd end
-
-"""
-    swpt(x, wt[, L=maxtransformlevels(x)])
-
-    swpt(x, wt, tree)
-
-    swpt(x, h, g, tree)
-
-    swpt(x, h, g, tree, i)
-
-Performs the stationary wavelet packet transform (SWPT) of the vector `x` of 
-length `N = 2ᴸ`. The wavelet type `wt` determines the transform type and the 
-wavelet class, see `wavelet`.
-
-The number of transform levels `L` can be 1 ≤ L ≤ `maxtransformlevels(x)`.
-Default value is set to `maxtransformlevels(x)`.
-
-Returns the expansion coefficients of the SWPT of the size `N × k`. Each column 
-represents a leaf node from `tree`. Number of returned columns can vary between 
-1 ≤ k ≤ N depending on the input `tree`.
-
-*Note:* If one wants to compute the stationary wavelet packet transform on a 
-signal, yet hopes to reconstruct the original signal later on, please use the 
-`swpd` function instead.
-
-**See also:** [`sdwt`](@ref), [`swpd`](@ref)
-"""
-function swpt end
-
-"""
-    isdwt_step(v1, w1, j, s0, s1, g, h)
-
-Perform one level of the inverse stationary discrete wavelet transform (ISDWT) 
-on the vector `v1` and `w1`, which is the j-th level scaling coefficients (Note 
-the 0th level scaling coefficients is the raw signal). The vectors `h` and `g` 
-are the detail and scaling filters.
-
-Returns a vector `v0` of the scaling and detail coefficients at level `j-1`.
-
-**See also:** [`isdwt_step!`](@ref)
-"""
-function isdwt_step end
-
-"""
-    isdwt_step!(v0, v1, w1, j, s0, s1, g, h)
-
-Same as `isdwt_step` but without array allocation.
-
-**See also:** [`isdwt_step`](@ref)
-"""
-function isdwt_step! end
-
+# ε-basis inverse stationary discrete wavelet transform (ISDWT)
 """
     isdwt(xw, wt[, ε])
 
@@ -153,220 +344,6 @@ y = isdwt(xw, wt)
 
 **See also:** [`iswpt`](@ref), [`sdwt`](@ref)
 """
-function isdwt end
-
-"""
-    iswpt(xw, wt, ε[, L=maxtransformlevels(size(xw,1))])
-
-    iswpt(xw, wt, ε, tree)
-
-    iswpt(xw, wt[, L=maxtransformlevels(size(xw,1))])
-
-    iswpt(xw, wt, tree)
-
-Performs the inverse stationary wavelet packet transform (ISWPT) on the `swpd`
-transform coefficients with respect to a given Boolean Vector that represents a
-binary `tree` and the BitVector `ε` which represents the shifts to be used. If
-`ε` is not provided, the average-basis ISWPT will be computed instead.
-
-# Examples
-```julia
-# decompose signal
-xw = swpd(x, wt, 5)
-
-# best basis tree
-bt = bestbasistree(xw, BB(redundant=true))
-
-# ε-based reconstruction
-y = iswpt(xw, wt, BitVector([0,0,0,1,0]), 5)
-y = iswpt(xw, wt, BitVector([0,0,0,1,0]), bt)
-
-# average-based reconstruction
-y = iswpt(xw, wt, 5)
-y = iswpt(xw, wt, bt)
-```
-
-**See also:** [`isdwt`](@ref), [`swpd`](@ref)
-"""
-function iswpt end
-
-# decomposition step of SDWT
-function sdwt_step(v::AbstractVector{T}, j::Integer, h::Array{S,1},
-        g::Array{S,1}) where {T<:Number, S<:Number}
-        
-    N = length(v)
-    v1 = zeros(T, N)
-    w1 = zeros(T, N)
-
-    sdwt_step!(v1, w1, v, j, h, g)
-    return v1, w1
-end
-
-# decomposition step of SDWT without allocation
-function sdwt_step!(v1::AbstractVector{T}, w1::AbstractVector{T},
-        v::AbstractVector{T}, j::Integer, h::Array{S,1},
-        g::Array{S,1}) where {T<:Number, S<:Number}
-
-    N = length(v)
-    L = length(h)
-
-    @inbounds begin
-        for t in 1:N
-            k = t
-            w1[t] = h[1] * v[k]
-            v1[t] = g[1] * v[k]
-            for n in 2:L
-                k += 1 << j
-                if k > N
-                    k = mod1(k, N)
-                end
-                w1[t] += h[n] * v[k]
-                v1[t] += g[n] * v[k]
-            end
-        end
-    end
-    return nothing
-end
-
-# stationary discrete wavelet transform (SDWT)
-function sdwt(x::AbstractVector{T}, wt::OrthoFilter, 
-        L::Integer=maxtransformlevels(x)) where T<:Number
-    
-    @assert L <= maxtransformlevels(x) ||
-        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
-    @assert L >= 1 || throw(ArgumentError("L must be >= 1"))
-
-    g, h = WT.makeqmfpair(wt)
-    N = length(x)
-    W = zeros(T, (N, L))
-    V = deepcopy(x)
-
-    @inbounds begin
-        for j in 0:(L-1)
-            V[:], W[:, L - j] = sdwt_step(V, j, h, g)
-        end    
-    end
-    return [V W]
-end
-
-# stationary wavelet packet decomposition (SWPD)
-function swpd(x::AbstractVector{T}, wt::OrthoFilter, 
-        L::Integer=maxtransformlevels(x)) where T<:Number
-
-    @assert L <= maxtransformlevels(x) ||
-        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
-    @assert L >= 1 || throw(ArgumentError("L must be >= 1"))
-
-    g, h = WT.makeqmfpair(wt)
-    N = length(x)
-    n₀ = 1 << (L+1) - 1
-    W = zeros(T, (N, n₀))
-    W[:, 1] = x
-
-    @inbounds begin
-        for i in 1:n₀
-            if (i << 1) > n₀
-                break
-            end
-            j = floor(Int, log2(i))
-            c₁, c₂ = sdwt_step(W[:, i], j, h, g)
-            W[:,i<<1], W[:,i<<1+1] = c₁, c₂
-        end
-    end
-    return W
-end
-
-# stationary wavelet packet transform (SWPT)
-function swpt(x::AbstractVector{T}, wt::DiscreteWavelet,                        
-        L::Integer=maxtransformlevels(x)) where T<:Number
-
-    return swpt(x, wt, maketree(length(x), L, :full))
-end
-
-function swpt(x::AbstractVector{T}, filter::OrthoFilter,
-        tree::BitVector) where T<:Number
-
-    g, h = WT.makeqmfpair(filter)
-    return swpt(x, h, g, tree, 1)
-end
-
-function swpt(x::AbstractVector{T}, h::Array{S,1}, g::Array{S,1},
-        tree::BitVector) where {T<:Number, S<:Number}
-
-    return swpt(x, h, g, tree, 1)
-end
-
-function swpt(x::AbstractVector{T}, h::Array{S,1}, g::Array{S,1},
-        tree::BitVector, i::Integer) where {T<:Number, S<:Number}
-
-    L = length(tree)                # tree length
-    @assert 0 <= i <= L
-    i > 0 || return x
-
-    j = floor(Integer, log2(i))     # current level
-    v, w = sdwt_step(x, j, h, g)
-
-    if i<<1 > L                     # leaf nodes: bottom level of tree
-        return [v w]
-    end
-
-    if tree[i<<1]                   # left node has children
-        v = swpt(v, h, g, tree, i<<1)
-    end
-    if tree[i<<1+1]                 # right node has children
-        w = swpt(w, h, g, tree, i<<1+1)
-    end
-    
-    return [v w]
-end
-
-# reconstruction step of inverse stationary discrete wavelet transform (ISDWT)
-function isdwt_step(v1::AbstractVector{T}, w1::AbstractVector{T}, j::Integer,
-        s0::Integer, s1::Integer, g::Array{S,1}, h::Array{S,1}) where 
-        {T<:Number, S<:Number}
-
-    v0 = zeros(T, length(v1))
-    isdwt_step!(v0, v1, w1, j, s0, s1, g, h)
-    return v0
-end
-
-# isdwt_step with no memory allocation
-function isdwt_step!(v0::AbstractVector{T}, v1::AbstractVector{T},
-        w1::AbstractVector{T}, j::Integer, s0::Integer, s1::Integer,
-        g::Array{S,1}, h::Array{S,1}) where {T<:Number, S<:Number}
-
-    N = length(v1)      # signal length
-    L = length(h)       # filter length
-    # parent start index and step size
-    pstart = s0 + 1
-    pstep = 1 << (j-1)
-    # child start index and step size
-    cstart = s1 + 1
-    cstep = 1 << j
-    # isdwt for each coefficient
-    @inbounds begin
-        for (t, m) in enumerate(pstart:pstep:N)
-            i = rem(t, 2) == 1 ? 1 : 2
-            # circshift needed if s1 > s0
-            n = s1 == s0 ? m : mod1(m + pstep, N)
-            # child start index for calculating v0[n]
-            k = (ceil(Integer, t/2) - 1) * cstep + cstart
-            #calculation of v0[n]
-            v0[n] = h[i] * w1[k] + g[i] * v1[k]
-            while i + 2 <= L
-                k -= 1 << j
-                if k <= 0
-                    k = mod1(k, N)
-                end
-                i += 2
-                v0[n] += h[i] * w1[k] + g[i] * v1[k]
-            end
-        end
-    end
-    return nothing
-end
-
-# ε-basis inverse stationary discrete wavelet transform (ISDWT)
 function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter,
         ε::AbstractVector{Bool}) where T<:Number
 
@@ -420,7 +397,158 @@ function isdwt(v1::AbstractArray{T,1}, w1::AbstractArray{T,1}, j::Integer,
     return isdwt_step(v1, w1, j, s0, s1, g, h)
 end
 
+# ========== Stationary WPT ==========
+"""
+    swpt(x, wt[, L=maxtransformlevels(x)])
+
+    swpt(x, wt, tree)
+
+    swpt(x, h, g, tree)
+
+    swpt(x, h, g, tree, i)
+
+Performs the stationary wavelet packet transform (SWPT) of the vector `x` of 
+length `N = 2ᴸ`. The wavelet type `wt` determines the transform type and the 
+wavelet class, see `wavelet`.
+
+The number of transform levels `L` can be 1 ≤ L ≤ `maxtransformlevels(x)`.
+Default value is set to `maxtransformlevels(x)`.
+
+Returns the expansion coefficients of the SWPT of the size `N × k`. Each column 
+represents a leaf node from `tree`. Number of returned columns can vary between 
+1 ≤ k ≤ N depending on the input `tree`.
+
+*Note:* If one wants to compute the stationary wavelet packet transform on a 
+signal, yet hopes to reconstruct the original signal later on, please use the 
+`swpd` function instead.
+
+**See also:** [`sdwt`](@ref), [`swpd`](@ref)
+"""
+function swpt(x::AbstractVector{T}, wt::DiscreteWavelet,                        
+        L::Integer=maxtransformlevels(x)) where T<:Number
+
+    return swpt(x, wt, maketree(length(x), L, :full))
+end
+
+function swpt(x::AbstractVector{T}, filter::OrthoFilter,
+        tree::BitVector) where T<:Number
+
+    g, h = WT.makeqmfpair(filter)
+    return swpt(x, h, g, tree, 1)
+end
+
+function swpt(x::AbstractVector{T}, h::Array{S,1}, g::Array{S,1},
+        tree::BitVector) where {T<:Number, S<:Number}
+
+    return swpt(x, h, g, tree, 1)
+end
+
+function swpt(x::AbstractVector{T}, h::Array{S,1}, g::Array{S,1},
+        tree::BitVector, i::Integer) where {T<:Number, S<:Number}
+
+    L = length(tree)                # tree length
+    @assert 0 <= i <= L
+    i > 0 || return x
+
+    j = floor(Integer, log2(i))     # current level
+    v, w = sdwt_step(x, j, h, g)
+
+    if i<<1 > L                     # leaf nodes: bottom level of tree
+        return [v w]
+    end
+
+    if tree[i<<1]                   # left node has children
+        v = swpt(v, h, g, tree, i<<1)
+    end
+    if tree[i<<1+1]                 # right node has children
+        w = swpt(w, h, g, tree, i<<1+1)
+    end
+    
+    return [v w]
+end
+
+
+# ========== Stationary WPD ==========
+"""
+    swpd(x, wt[, L=maxtransformlevels(x)])
+
+Perform a stationary wavelet packet decomposition (SPWD) of the array `x`. The 
+wavelet type `wt` determines the transform type and the wavelet class, see 
+`wavelet`.
+
+The number of transform levels `L` can be 1 ≤ L ≤ `maxtransformlevels(x)`.
+Default value is set to `maxtransformlevels(x)`.
+
+Returns the `n × (2⁽ᴸ⁺¹⁾-1)` matrix (where `n` is the length of `x`) with each 
+column representing the nodes in the binary tree.
+
+# Examples
+```julia
+xw = swpd(x, wt, 5)
+```
+
+**See also:** [`swpt`](@ref), [`sdwt`](@ref), [`iswpt`](@ref)
+"""
+function swpd(x::AbstractVector{T}, wt::OrthoFilter, 
+        L::Integer=maxtransformlevels(x)) where T<:Number
+
+    @assert L <= maxtransformlevels(x) ||
+        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+    @assert L >= 1 || throw(ArgumentError("L must be >= 1"))
+
+    g, h = WT.makeqmfpair(wt)
+    N = length(x)
+    n₀ = 1 << (L+1) - 1
+    W = zeros(T, (N, n₀))
+    W[:, 1] = x
+
+    @inbounds begin
+        for i in 1:n₀
+            if (i << 1) > n₀
+                break
+            end
+            j = floor(Int, log2(i))
+            c₁, c₂ = sdwt_step(W[:, i], j, h, g)
+            W[:,i<<1], W[:,i<<1+1] = c₁, c₂
+        end
+    end
+    return W
+end
+
 # ε-basis inverse stationary wavelet packet transform (ISWPT)
+"""
+    iswpt(xw, wt, ε[, L=maxtransformlevels(size(xw,1))])
+
+    iswpt(xw, wt, ε, tree)
+
+    iswpt(xw, wt[, L=maxtransformlevels(size(xw,1))])
+
+    iswpt(xw, wt, tree)
+
+Performs the inverse stationary wavelet packet transform (ISWPT) on the `swpd`
+transform coefficients with respect to a given Boolean Vector that represents a
+binary `tree` and the BitVector `ε` which represents the shifts to be used. If
+`ε` is not provided, the average-basis ISWPT will be computed instead.
+
+# Examples
+```julia
+# decompose signal
+xw = swpd(x, wt, 5)
+
+# best basis tree
+bt = bestbasistree(xw, BB(redundant=true))
+
+# ε-based reconstruction
+y = iswpt(xw, wt, BitVector([0,0,0,1,0]), 5)
+y = iswpt(xw, wt, BitVector([0,0,0,1,0]), bt)
+
+# average-based reconstruction
+y = iswpt(xw, wt, 5)
+y = iswpt(xw, wt, bt)
+```
+
+**See also:** [`isdwt`](@ref), [`swpd`](@ref)
+"""
 function iswpt(xw::AbstractArray{T,2}, wt::DiscreteWavelet, 
         ε::AbstractVector{Bool}, 
         L::Integer=maxtransformlevels(size(xw,1))) where T<:Number
