@@ -20,7 +20,7 @@ Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
 [compat]
 AverageShiftedHistograms = "0.8.6"
 Distributions = "0.24, 0.25"
-GR = "0.59"
+GR = "0.59, 0.60"
 ImageQualityIndexes = "0.2"
 Parameters = "0.12.2"
 Plots = "1.20"
