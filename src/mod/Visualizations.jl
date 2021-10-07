@@ -98,8 +98,11 @@ tree = maketree(128, 7, :dwt)
 plot_tfbdry(tree)
 ```
 """
-function plot_tfbdry(tree::BitVector; start::Integer=0, 
-        nodecolor::Symbol=:white)
+function plot_tfbdry(tree::BitVector; 
+                     start::Integer = 0, 
+                     nd_col::Symbol = :white,
+                     ln_col::Symbol = :white,
+                     bg_col::Symbol = :black)
 
     @assert 0 <= start <= 1
     leaf = getleaf(tree)
@@ -108,27 +111,27 @@ function plot_tfbdry(tree::BitVector; start::Integer=0,
     nrow = Int(log2(ncol)) + 1
     mat = treenodes_matrix(leaf)
 
-    p = heatmap(start:(ncol+start-1), 0:(nrow-1), mat, 
-        color = [:black, nodecolor], legend = false, 
-        background_color = :black)
+    p = heatmap(start:(ncol+start-1), 0:(nrow-1), mat, color = [bg_col, nd_col], 
+                legend = false, background_color = bg_col)
 
-    plot!(p, xlims = (start-0.5, ncol+start-0.5), 
-        ylims = (-0.5, nrow-0.5), yticks = 0:nrow)
+    plot!(p, xlims = (start-0.5, ncol+start-0.5), ylims = (-0.5, nrow-0.5), yticks = 0:nrow)
     # plot horizontal lines
     for j in 0:(nrow-1)
-        plot!(p, (start-0.5):(ncol+start-0.5), (j-0.5)*ones(ncol+1), 
-            color = :white, legend = false)
+        x_rng = (start-0.5):(ncol+start-0.5)
+        y_val = (j-0.5)*ones(ncol+1)
+        plot!(p, x_rng, y_val, color = ln_col, legend = false)
     end
 
     # plot vertical lines
     for j in 1:(nrow-1)
         for jj in 1:2^(j-1)
-            vpos = (ncol/2^j)*(2*jj-1)+start-0.5;
-            plot!(p, vpos*ones(nrow-j+1), j-0.5:nrow-0.5, color = :white)
+            x_val = (ncol/2^j)*(2*jj-1)+start-0.5;
+            y_rng = j-0.5:nrow-0.5
+            plot!(p, x_val*ones(nrow-j+1), y_rng, color = ln_col)
         end
     end
-    plot!(p, (ncol+start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = :white)
-    plot!(p, (start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = :white)
+    plot!(p, (ncol+start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = ln_col)
+    plot!(p, (start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = ln_col)
     plot!(p, yaxis = :flip)
 
     return p

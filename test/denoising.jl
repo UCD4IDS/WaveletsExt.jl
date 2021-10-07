@@ -7,8 +7,8 @@
     tree = maketree(x, :full)
     @test typeof(SureShrink(HardTH(), 1)) == SureShrink
     @test typeof(SureShrink(x)) == SureShrink
-    @test typeof(SureShrink(x, tree)) == SureShrink
-    @test typeof(SureShrink(x, tree, HardTH())) == SureShrink
+    @test typeof(SureShrink(x, false, tree)) == SureShrink
+    @test typeof(SureShrink(x, false, tree, HardTH())) == SureShrink
 end
 
 @testset "Denoise" begin
@@ -89,17 +89,17 @@ end
     x = randn(32)
     tree = maketree(32, 5, :full)
     @test typeof(noisest(x, false)) <: Real
-    @test typeof(surethreshold(x, false)) <: Real
+    @test typeof(Denoising.surethreshold(x, false)) <: Real
     @test typeof(relerrorthreshold(x, false)) <: Real
     # stationary - sdwt
     x = randn(32, 6)
     @test typeof(noisest(x, true, nothing)) <: Real
-    @test typeof(surethreshold(x, true, nothing)) <: Real
+    @test typeof(Denoising.surethreshold(x, true, nothing)) <: Real
     @test typeof(relerrorthreshold(x, true, nothing)) <: Real
     # stationary - swpd
     x = randn(32, 63)
     @test typeof(noisest(x, true, tree)) <: Real
-    @test typeof(surethreshold(x, true, tree)) <: Real
+    @test typeof(Denoising.surethreshold(x, true, tree)) <: Real
     @test typeof(relerrorthreshold(x, true, tree)) <: Real
     # relative error plot
     @test typeof(relerrorthreshold(x, true, tree, makeplot=true)[2]) == 
