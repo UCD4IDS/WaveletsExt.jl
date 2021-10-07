@@ -421,6 +421,8 @@ function itiwpt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
     # Sanity check
     n, m = size(xw)
     @assert isdyadic(m) || throw(ArgumentError("Number of columns of xw is not dyadic."))
+    @assert m ≤ maxtransformlevels(n) || 
+            throw(ArgumentError("Number of nodes in `xw` is more than possible number of nodes at any depth for signal of length `n`"))
 
     # Setup
     g, h = WT.makereverseqmfpair(wt, false)
