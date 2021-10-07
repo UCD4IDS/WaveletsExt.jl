@@ -178,7 +178,6 @@ function isdwt_step(w₁::AbstractVector{T},
     # Setup
     v₁ = similar(w₁)        # Allocation for isdwt_step of w₁, w₂ with no additional shift
     v₂ = similar(w₁)        # Allocation for isdwt_step of w₁, w₂ with additional shift
-    n = length(w₁)          # Signal length
     nd = 1 << d             # Number of blocks for parent node
 
     # isdwt_step for each shift
@@ -280,121 +279,130 @@ function isdwt_step!(v::AbstractVector{T},
 end
 
 # ========== Stationary DWT ==========
-"""
-    sdwt(x, wt[, L=maxtransformlevels(x)])
+@doc raw"""
+    sdwt(x, wt[, L])
 
-Perform a stationary discrete wavelet transform (SDWT) of the array `x`. The
-wavelet type `wt` determines the transform type and the wavelet class, see 
-`wavelet`. 
+Computes the stationary discrete wavelet transform (SDWT) for `L` levels.
 
-The number of transform levels `L` can be 1 ≤ L ≤ `maxtransformlevels(x)`.
-Default value is set to `maxtransformlevels(x)`.
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+    \in \mathbb{N}``.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
-Returns the `n × (L+1)` matrix (where `n` is the length of `x`) with the detail
-coefficients for level j in column (L-j+2). The scaling coefficients are in the
-1st column.
+# Returns
+`::Matrix{T}`: Output from SDWT on `x`.
 
 # Examples
 ```julia
-xw = sdwt(x, wt, 5)
-```
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# SDWT
+xw = sdwt(x, wt)
+```    
 
 **See also:** [`swpd`](@ref), [`swpt`](@ref), [`isdwt`](@ref)
 """
-function sdwt(x::AbstractVector{T}, wt::OrthoFilter, 
-        L::Integer=maxtransformlevels(x)) where T<:Number
-    
-    @assert L <= maxtransformlevels(x) ||
+function sdwt(x::AbstractVector{T}, 
+              wt::OrthoFilter, 
+              L::Integer = maxtransformlevels(x)) where T<:Number
+    # Sanity check
+    @assert L ≤ maxtransformlevels(x) ||
         throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
-    @assert L >= 1 || throw(ArgumentError("L must be >= 1"))
+    @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
 
-    g, h = WT.makereverseqmfpair(wt, true)
-    N = length(x)
-    W = zeros(T, (N, L))
-    V = deepcopy(x)
+    # Setup
+    g, h = WT.makeqmfpair(wt, true)
+    n = length(x)
+    w = Matrix{T}(undef, (n, L+1))
+    w[:,end] = x
 
-    @inbounds begin
-        for j in 0:(L-1)
-            V[:], W[:, L - j] = sdwt_step(V, j, h, g)
-        end    
-    end
-    return [V W]
+    # SDWT
+    for d in 0:(L-1)
+        @inbounds v = w[:, L-d+1]       # Parent node
+        w₁ = @view w[:, L-d]            # Scaling coefficients
+        w₂ = @view w[:, L-d+1]          # Detail coefficients
+        @inbounds sdwt_step!(w₁, w₂, v, d, h, g)
+    end    
+    return w
 end
 
-# ε-basis inverse stationary discrete wavelet transform (ISDWT)
+# Shift-based ISDWT
 """
     isdwt(xw, wt[, ε])
 
-Performs the inverse stationary discrete wavelet transform (ISDWT) on the `sdwt`
-transform coefficients with respect to the Boolean Vector `ε` which represents 
-the shifts to be used. If `ε` is not provided, the average-basis ISDWT will be 
-computed instead.
+Computes the inverse stationary discrete wavelet transform (iSDWT) on `xw`.
+
+# Arguments
+- `xw::AbstractArray{T,2} where T<:Number`: SDWT-transformed array.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
+  be computed. This results in faster computation, but fails to fully utilize the strength
+  of redundant wavelet transforms.
+
+# Returns
+`::Vector{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
-# decompose signal
-xw = sdwt(x, wt, 5)
+using Wavelets, WaveletsExt
 
-# ε-based reconstruction
-y = isdwt(xw, wt, BitVector([0,1,0,0,0]))
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
 
-# average-based reconstruction
-y = isdwt(xw, wt)
+# SDWT
+xw = sdwt(x, wt)
+
+#  Shift-based iSDWT
+x̂ = isdwt(xw, wt, 5)
+
+# Average-based iSDWT
+x̃ = isdwt(xw, wt)
 ```
 
-**See also:** [`iswpt`](@ref), [`sdwt`](@ref)
+**See also:** [`isdwt_step`](@ref), [`iswpt`](@ref), [`sdwt`](@ref)
 """
-function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter,
-        ε::AbstractVector{Bool}) where T<:Number
+function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter, sm::Integer) where T<:Number
+    # Sanity check
+    _, k = size(xw)
+    L = k-1
+    @assert 0 ≤ log2(sm) < L
 
-    _, K = size(xw)
-    L = K - 1
-    @assert length(ε) == L
+    # Setup
+    g, h = WT.makeqmfpair(wt, false)
+    sd = Utils.main2depthshift(sm, L)
+    v = xw[:, 1]
 
-    g, h = WT.makeqmfpair(wt)
-    shifts = collect(0:(L - 1))
-    cumsum!(shifts, ε .<< shifts)    # shifts represented by each εᵢ
-    j = L                            # current level
-    x = xw[:, 1]
-    @inbounds begin
-        for i in 2:K
-            s0 = j == 1 ? 0 : shifts[j-1]
-            s1 = shifts[j]
-            x = isdwt_step(x, xw[:, i], j, s0, s1, g, h)
-            j -= 1
-        end
+    for d in reverse(0:(L-1))
+        sv = sd[d+1]
+        sw = sd[d+2]
+        w₁ = copy(v)
+        @inbounds w₂ = @view xw[:,L-d+1]
+        @inbounds isdwt_step!(v, w₁, w₂, d, sv, sw, h, g)
     end
-    return x
+    return v
 end
 
-# average-basis inverse stationary discrete wavelet transform (ISDWT)
+# Average-based ISDWT
 function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
-    g, h = WT.makeqmfpair(wt)
-    v2 = size(xw, 2) > 2 ? xw[:, 1:end .!= end] : xw[:, 1]
-    w2 = xw[:, end]
-    v1₀ = isdwt(v2, w2, 1, 0, 0, g, h)
-    v1₁ = isdwt(v2, w2, 1, 0, 1, g, h)
-    return (v1₀ + v1₁) / 2
-end
+    # Setup
+    g, h = WT.makeqmfpair(wt, false)
+    _, k = size(xw)
+    v = xw[:,1]
+    L = k-1
 
-function isdwt(v::AbstractArray{T,2}, w1::AbstractArray{T,1}, j::Integer,
-        s0::Integer, s1::Integer, g::Array{S,1}, h::Array{S,1}) where
-        {T<:Number, S<:Number}
-
-    v2 = size(v, 2) > 2 ? v[:, 1:end .!= end] : v[:, 1]
-    w2 = v[:, end]
-    v1₀ = isdwt(v2, w2, j + 1, s1, s1, g, h)
-    v1₁ = isdwt(v2, w2, j + 1, s1, s1 + 1<<j, g, h)
-    v1 = (v1₀ + v1₁) / 2
-
-    return isdwt_step(v1, w1, j, s0, s1, g, h)
-end
-
-function isdwt(v1::AbstractArray{T,1}, w1::AbstractArray{T,1}, j::Integer,
-        s0::Integer, s1::Integer, g::Array{S,1}, h::Array{S,1}) where
-        {T<:Number, S<:Number}
-
-    return isdwt_step(v1, w1, j, s0, s1, g, h)
+    # ISDWT
+    for d in reverse(0:(L-1))
+        w₁ = copy(v)
+        @inbounds w₂ = @view xw[:,L-d+1]
+        @inbounds v = isdwt_step(w₁, w₂, d, h, g)
+    end
+    return v
 end
 
 # ========== Stationary WPT ==========

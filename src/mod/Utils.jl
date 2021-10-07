@@ -211,8 +211,8 @@ Packet table indexing.
 ```julia
 using WaveletsExt
 
-WaveletsExt.Utils.packet(0, 0, 8)       # 1:8
-WaveletsExt.Utils.packet(2, 1, 8)       # 3:4
+Utils.packet(0, 0, 8)       # 1:8
+Utils.packet(2, 1, 8)       # 3:4
 ```
 
 Translated from Wavelab850 by Zeng Fung Liew.
@@ -221,6 +221,37 @@ function packet(d::Integer, b::Integer, n::Integer)
     npack = 1 << d                                  # Number of blocks in current level
     p = (b * (n÷npack) + 1) : ((b+1) * (n÷npack))   # Range of specified block
     return p
+end
+
+# Shift decomposed into BitVector
+"""
+    main2depthshift(sm, L)
+
+Given the overall shift `sm`, compute the cumulative shift at each depth. Useful for
+computing the shift based inverse redundant wavelet transforms.
+
+# Arguments
+- `sm::Integer`: Overall shift.
+- `L::Integer`: The total number of depth.
+
+# Returns
+`::Vector{Int}`: Vector where each entry `i` describes the shift at depth `i-1`.
+
+# Examples
+```
+using WaveletsExt
+
+Utils.main2depthshift(10, 4)      # [0, 0, 2, 2, 10]
+Utils.main2depthshift(5, 5)       # [0, 1, 1, 5, 5, 5]
+```
+"""
+function main2depthshift(sm::Integer, L::Integer)
+    sb = Array{Bool,1}(undef, L)
+    digits!(sb, sm, base=2)         # Compute if a shift is necessary at each depth
+    d = collect(0:(L-1))            # Collect all depths
+    sd = sb .<< d |> cumsum         # Compute overall shift at each depth
+    pushfirst!(sd, 0)               # At depth 0, there will be no shift
+    return sd
 end
 
 # Index range of coarsest scaling coefficients
