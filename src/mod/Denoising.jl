@@ -4,8 +4,7 @@ export
     RelErrorShrink,
     SureShrink,
     denoiseall,
-    relerrorthreshold,
-    relerrorplot
+    relerrorthreshold
     
 using 
     Wavelets, 

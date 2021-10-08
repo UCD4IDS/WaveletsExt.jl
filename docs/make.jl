@@ -1,6 +1,6 @@
 ENV["GKSwstype"] = "100"
 ENV["PLOTS_TEST"] = "true"
-using Documenter, WaveletsExt
+using Documenter, Wavelets, WaveletsExt
 
 makedocs(
     sitename = "WaveletsExt.jl",
