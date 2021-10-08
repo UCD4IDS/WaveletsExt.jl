@@ -4,7 +4,7 @@ tree = BitVector([1,1,1])
 @test typeof(plot_tfbdry(tree)) == Plots.Plot{Plots.GRBackend}
 @test_nowarn plot_tfbdry(tree, start=1)
 @test_throws AssertionError plot_tfbdry(tree, start=2)
-@test_nowarn plot_tfbdry(tree, nodecolor=:red)
+@test_nowarn plot_tfbdry(tree, nd_col=:red, bg_col=:white, ln_col=:black)
 x = randn(16,5)
 # wiggle() test
 @test typeof(wiggle(x)) == Plots.Plot{Plots.GRBackend}
