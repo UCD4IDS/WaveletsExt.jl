@@ -590,10 +590,11 @@ end
 
 
 ## BEST BASIS EXPANSION COEFFICIENTS
+# TODO: change to basiscoef (any basis tree should work, not just best basis)
+# TODO: Should this work for only 1 signal, or multiple signal? 
+# TODO: Should the case of multiple signal have a different function name from 1 signal?
 """
     bestbasiscoef(X, tree)
-
-    bestbasiscoef(X, wt, tree)
 
 Returns the expansion coefficients based on the given tree(s) and wavelet packet
 decomposition (WPD) expansion coefficients. If the WPD expansion coefficients 
@@ -641,37 +642,6 @@ function bestbasiscoef(X::AbstractArray{T,3}, tree::BitArray{2}) where
     y = Array{T,2}(undef, (n,N))
     for i in axes(X,3)
         @inbounds y[:,i] = bestbasiscoef(X[:,:,i], tree[:,i])
-    end
-    return y
-end
-
-function bestbasiscoef(X::AbstractVector{T}, wt::DiscreteWavelet, 
-        tree::BitVector) where T<:AbstractFloat
-    
-    @assert isvalidtree(X, tree)
-    return wpt(X, wt, tree)
-end
-
-function bestbasiscoef(X::AbstractArray{T,2}, wt::DiscreteWavelet, 
-        tree::BitVector) where T<:AbstractFloat
-    @assert isvalidtree(X[:,1], tree)  
-    (n, N) = size(X)
-    y = Array{T,2}(undef, (n, N))
-    for i in axes(y,2)
-        @inbounds y[:,i] = wpt(X[:,i], wt, tree)
-    end
-    return y
-end
-
-function bestbasiscoef(X::AbstractArray{T,2}, wt::DiscreteWavelet, 
-        tree::BitArray{2}) where T<:AbstractFloat
-    @assert size(X,2) == size(tree,2)
-    @assert size(X,1) == size(tree,1) + 1    
-
-    (n, N) = size(X)
-    y = Array{T,2}(undef, (n, N))
-    for i in axes(y,2)
-        @inbounds y[:,i] = wpt(X[:,i], wt, tree[:,i])
     end
     return y
 end

@@ -4,7 +4,10 @@ export
     wpd!,
     dwtall,
     wptall,
-    wpdall
+    wpdall,
+    idwtall,
+    iwptall,
+    iwpdall
 
 using 
     Wavelets
@@ -16,10 +19,13 @@ using
 # 1D Wavelet Packet Decomposition without allocated output array
 """
     wpd(x, wt[, L])
-
     wpd(x, wt[, L; standard])
 
 Returns the wavelet packet decomposition (WPD) for L levels for input signal x.
+
+!!! note 
+    Nonstandard transform is not yet available for 2D-WPD. Setting `standard = true` will 
+    currently result in an error message.
 
 # Arguments
 - `x::AbstractVector{T} where T<:Number` or `x::AbstractArray{T,2} where T<:Number`: Input
@@ -88,10 +94,13 @@ end
 # 1D Wavelet Packet Decomposition with allocated output array
 """
     wpd!(y, x, wt[, L])
-
     wpd!(y, x, wt[, L; standard])
 
 Same as `wpd` but without array allocation.
+
+!!! note 
+    Nonstandard transform is not yet available for 2D-WPD. Setting `standard = true` will 
+    currently result in an error message.
 
 # Arguments
 - `y::AbstractArray{T,2} where T<:Number` or `y::AbstractArray{T,3} where T<:Number`: An
@@ -139,29 +148,27 @@ function wpd!(y::AbstractArray{T,2},
     @assert 0 ≤ L ≤ maxtransformlevels(x)
     @assert size(y) == (n,L+1)
 
-    # Construct low pass and high pass filters
-    gqf, hqf = WT.makereverseqmfpair(wt, true)
-    # First column of y is level 0, ie. original signal
+    # Setup
+    g, h = WT.makereverseqmfpair(wt, true)
     y[:,1] = x
-    # Allocate placeholder variable
-    si = similar(gqf, eltype(gqf), length(wt)-1)
-    # Compute L levels of decomposition
+
+    # Wavelet Decomposition
     for i in 0:(L-1)
-        # Parent node length
-        nₚ = nodelength(n, i) 
+        np = nodelength(n, i)                   # Parent node length
         for j in 0:((1<<i)-1)
-            # Extract parent node
-            colₚ = i + 1
-            rng = (j * nₚ + 1):((j + 1) * nₚ)
-            @inbounds nodeₚ = @view y[rng, colₚ]
-            # Extract left and right child nodes
-            colₘ = colₚ + 1
-            @inbounds nodeₘ = @view y[rng, colₘ]
-            # Perform 1 level of wavelet decomposition
-            Transforms.unsafe_dwt1level!(nodeₘ, nodeₚ, wt, true, hqf, gqf, si)
+            colₚ = i+1                          # Parent column
+            rngₚ = (j*nₚ+1):((j+1)*np)           # Parent range
+            @inbounds v = @view y[rngₚ, colₚ]    # Parent node
+            colᵣ = colₚ+1                       # Child column
+            nc = np÷2                           # Child node length
+            rng₁ = (2*j*nc+1):((2*j+1)*nc)      # Approx coef range
+            rng₂ = ((2*j+1)*nc+1):(2*(j+1)*nc)  # Detail coef range
+            @inbounds w₁ = @view y[rng₁, colᵣ]  # Approx coef node
+            @inbounds w₂ = @view y[rng₂, colᵣ]  # Detail coef node
+            dwt_step!(w₁, w₂, v, h, g)          # Decompose
         end
     end
-    return nothing
+    return y
 end
 
 # 2D Wavelet Packet Decomposition with allocated output array
@@ -210,15 +217,14 @@ end
 # TODO: Add `isvalidquadtree` function in Utils
 # 2D Wavelet Packet Transform without allocated output array
 """
-    wpt(x, wt[, L])
-
-    wpt(x, wt, tree)
-
     wpt(x, wt[, L; standard])
-
     wpt(x, wt, tree[; standard])
 
 Returns the wavelet packet transform (WPT) for `L` levels or by given quadratic `tree`.
+
+!!! note
+    Nonstandard transform is not yet available. Setting `standard = true` will currently
+    result in an error message.
 
 # Arguments
 - `x::AbstractVector{T} where T<:Number` or `x::AbstractArray{T,2} where T<:Number`: Input
@@ -253,7 +259,7 @@ xw = wpt(x, wt)
 """
 function Wavelets.Transforms.wpt(x::AbstractArray{T,2}, 
                                  wt::OrthoFilter, 
-                                 L::Integer = maxtransformlevels(x),
+                                 L::Integer = maxtransformlevels(x);
                                  standard::Bool = true) where T<:Number
     return wpt(x, wt, makequadtree(x, L, :full), standard=standard)
 end
@@ -268,20 +274,21 @@ end
 
 # 2D Wavelet Packet Transform with allocated output array
 """
-    wpt!(y, x, wt[, L])
-
-    wpt!(y, x, wt, tree)
-
     wpt!(y, x, wt[, L; standard])
-
     wpt!(y, x, wt, tree[; standard])
 
 Same as `wpt` but without array allocation.
 
+!!! note
+    Nonstandard transform is not yet available. Setting `standard = true` will currently
+    result in an error message.
+
 # Arguments
+- `y::AbstractVector{T} where T<:Number` or `y::AbstractArray{T,2} where T<:Number`:
+  Allocated output vector/matrix.
 - `x::AbstractVector{T} where T<:Number` or `x::AbstractArray{T,2} where T<:Number`: Input
-  vector/matrix. A vector input undergoes 1D wavelet decomposition whereas a matrix input
-  undergoes 2D wavelet decomposition.
+  vector/matrix. A vector input undergoes 1D wavelet packet transform whereas a matrix input
+  undergoes 2D wavelet packet transform.
 - `wt::OrthoFilter`: Wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels for wavelet
   decomposition.
@@ -354,6 +361,168 @@ function Wavelets.Transforms.wpt!(y::AbstractArray{T,2},
         end
     end
     return y
+end
+
+# ========== Inverse Wavelet Packet Transform ==========
+# 2D Inverse Wavelet Packet Transform without allocated output array
+"""
+    wpt(xw, wt[, L; standard])
+    wpt(xw, wt, tree[; standard])
+
+Returns the wavelet packet transform (WPT) for `L` levels or by given quadratic `tree`.
+
+!!! note
+    Nonstandard transform is not yet available. Setting `standard = true` will currently
+    result in an error message.
+
+# Arguments
+- `xw::AbstractVector{T} where T<:Number` or `xw::AbstractArray{T,2} where T<:Number`: Input
+  vector/matrix. A vector input undergoes 1D wavelet reconstruction whereas a matrix input
+  undergoes 2D wavelet reconstruction.
+- `wt::OrthoFilter`: Wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels for wavelet
+  decomposition.
+- `tree::BitVector`: Quadtree to transform to be computed accordingly.
+- `standard::Bool`: (Default: `true`) Whether to compute the standard or non-standard
+  wavelet transform. Only applicable for 2D signals.
+
+# Returns
+- `::Array{T,1}` or `::Array{T,2}`: Transformed signal. 
+
+# Examples:
+```
+using Wavelets, WaveletsExt
+
+# 1D wavelet decomposition
+x = randn(8)
+wt = wavelet(WT.haar)
+xw = wpt(x, wt)
+
+# 1D wavelet reconstruction
+y = iwpt(xw, wt)
+
+# 2D wavelet decomposition
+x = randn(8,8)
+wt = wavelet(WT.haar)
+xw = wpt(x, wt)
+
+# 2D wavelet reconstruction
+y = iwpt(xw, wt)
+```
+
+**See also:** [`iwpt!`](@ref), [`wpt!`](@ref), [`makequadtree`](@ref)
+"""
+function Wavelets.Transforms.iwpt(xw::AbstractArray{T,2},
+                                  wt::OrthoFilter,
+                                  L::Integer = maxtransformlevels(xw);
+                                  standard::Bool = true) where T<:Number
+    return iwpt(xw, wt, makequadtree(xw, L, :full), standard=standard)
+end
+
+function Wavelets.Transforms.iwpt(xw::AbstractArray{T,2},
+                                  wt::OrthoFilter,
+                                  tree::BitVector;
+                                  standard::Bool = true) where T<:Number
+    x̂ = similar(xw)
+    return iwpt!(x̂, xw, wt, tree, standard=standard)
+end
+
+# 2D Inverse Wavelet Packet Transform with allocated output array
+"""
+    iwpt!(x̂, xw, wt[, L; standard])
+    iwpt!(x̂, xw, wt, tree[; standard])
+
+Same as `wpt` but without array allocation.
+
+!!! note
+    Nonstandard transform is not yet available. Setting `standard = true` will currently
+    result in an error message.
+
+# Arguments
+- `x̂::AbstractVector{T} where T<:Number` or `x̂::AbstractArray{T,2} where T<:Number`:
+  Allocated output vector/matrix.
+- `xw::AbstractVector{T} where T<:Number` or `xw::AbstractArray{T,2} where T<:Number`: Input
+  vector/matrix. A vector input undergoes 1D wavelet packet reconstruction whereas a matrix
+  input undergoes 2D wavelet packet reconstruction.
+- `wt::OrthoFilter`: Wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels for wavelet
+  decomposition.
+- `tree::BitVector`: Quadtree to transform to be computed accordingly.
+- `standard::Bool`: (Default: `true`) Whether to compute the standard or non-standard
+  wavelet transform. Only applicable for 2D signals.
+
+# Returns
+- `::Array{T,1}` or `::Array{T,2}`: Reconstructed signal. 
+
+# Examples:
+```
+using Wavelets, WaveletsExt
+
+# 1D wavelet decomposition
+x = randn(8)
+xw = similar(x)
+wt = wavelet(WT.haar)
+wpt!(xw, x, wt)
+
+# 1D wavelet reconstruction
+y = similar(x)
+iwpt!(y, xw, wt)
+
+# 2D wavelet decomposition
+x = randn(8,8)
+xw = similar(x)
+wt = wavelet(WT.haar)
+wpt!(xw, x, wt)
+
+# 2D wavelet reconstruction
+y = similar(x)
+iwpt!(y, xw, wt)
+```
+
+**See also:** [`iwpt`](@ref), [`wpt!`](@ref) [`makequadtree`](@ref)
+"""
+function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},
+                                   xw::AbstractArray{T,2},
+                                   wt::OrthoFilter,
+                                   L::Integer = maxtransformlevels(xw);
+                                   standard::Bool = true) where T<:Number
+    return iwpt!(x̂, xw, wt, makequadtree(xw, L, :full), standard=standard)
+end
+
+function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},
+                                   xw::AbstractArray{T,2},
+                                   wt::OrthoFilter,
+                                   tree::BitVector;
+                                   standard::Bool = true) where T<:Number
+    # Sanity check
+    # TODO: define isvalidquadtree
+    # @assert isvalidquadtree(xw, tree)
+    @assert size(x̂) == size(xw)
+
+    # ----- Allocation and setup to match Wavelets.jl's function requirements -----
+    m, n = size(xw)
+    fw = false
+    si = Vector{T}(undef, length(wt)-1)                     # temp filter vector
+    scfilter, dcfilter = WT.makereverseqmfpair(wt, fw, T)   # low & high pass filters
+    temp = copy(xw)                                         # temp array
+    # ----- Compute transforms based on tree -----
+    for i in reverse(eachindex(tree))
+        # Reconstruct to node i if it has children
+        if tree[i]
+            # Extract parent node
+            rng_row = getrowrange(m, i)
+            rng_col = getcolrange(n, i)
+            @inbounds nodeₚ = @view x̂[rng_row, rng_col]         # Parent node
+            @inbounds nodeᵣ = @view temp[rng_row, rng_col]      # Children nodes
+            # Perform 1 level of wavelet reconstruction
+            idwt_step!(nodeₚ, nodeᵣ, wt, dcfilter, scfilter, si, standard=standard)
+            # If current range not at final iteration, copy to temp
+            (i>1) && (temp[rng_row, rng_col] = x̂[rng_row, rng_col])
+        else
+            continue
+        end
+    end
+    return x̂
 end
 
 include("wt_one_level.jl")
