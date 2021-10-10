@@ -13,7 +13,7 @@ using
     Plots
 
 using 
-    ..WPD,
+    ..DWT,
     ..SWT,
     ..ACWT,
     ..Utils

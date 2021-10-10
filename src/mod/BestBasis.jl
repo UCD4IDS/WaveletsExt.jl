@@ -35,7 +35,7 @@ using
 
 using 
     ..Utils,
-    ..WPD,
+    ..DWT,
     ..SIWPD
 
 

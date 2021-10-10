@@ -231,7 +231,6 @@ end
 # ----- Wavelet Packet Decomposition on a set of signals -----
 """
     wpdall(x, wt[, L])
-
     wpdall(x, wt[, L; standard])
 
 Computes the wavelet packet decomposition (WPD) on each slice of signal. Signals are sliced

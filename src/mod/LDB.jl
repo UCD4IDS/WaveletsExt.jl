@@ -39,7 +39,7 @@ using AverageShiftedHistograms,
       StatsBase
 
 using ..Utils,
-      ..WPD,
+      ..DWT,
       ..BestBasis
 
 

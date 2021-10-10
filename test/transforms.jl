@@ -26,7 +26,7 @@ end
 @testset "SWT" begin
     x = randn(8)
     wt = wavelet(WT.db4)
-    g, h = WT.makeqmfpair(wt)
+    g, h = WT.makereverseqmfpair(wt)
     tree = maketree(x, :dwt)
     sm = 3
     @test isdwt(sdwt(x, wt, 3), wt) ≈ x

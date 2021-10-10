@@ -26,7 +26,7 @@ wt = wavelet(WT.haar)
 g, h = WT.makereverseqmfpair(wt, true)
 
 # One step of SDWT
-WPD.dwt_step(v, 0, h, g)
+DWT.dwt_step(v, 0, h, g)
 ```
 
 **See also:** [`dwt_step!`](@ref)
@@ -71,7 +71,7 @@ w₁ = zeros(8)
 w₂ = zeros(8)
 
 # One step of SDWT
-WPD.dwt_step!(w₁, w₂, v, 0, h, g)
+DWT.dwt_step!(w₁, w₂, v, 0, h, g)
 ```
 
 **See also:** [`dwt_step`](@ref)
@@ -134,10 +134,10 @@ wt = wavelet(WT.haar)
 g, h = WT.makereverseqmfpair(wt, true)
 
 # One step of SDWT
-w₁, w₂ = WPD.dwt_step(v, h, g)
+w₁, w₂ = DWT.dwt_step(v, h, g)
 
 # One step of ISDWT
-v̂ = WPD.idwt_step(w₁, w₂, h, g)
+v̂ = DWT.idwt_step(w₁, w₂, h, g)
 ```
 
 **See also:** [`idwt_step!`](@ref)
@@ -181,10 +181,10 @@ wt = wavelet(WT.haar)
 g, h = WT.makereverseqmfpair(wt, true)
 
 # One step of SDWT
-w₁, w₂ = WPD.dwt_step(v, h, g)
+w₁, w₂ = DWT.dwt_step(v, h, g)
 
 # One step of ISDWT
-WPD.idwt_step!(v̂, w₁, w₂, h, g)
+DWT.idwt_step!(v̂, w₁, w₂, h, g)
 ```
 
 **See also:** [`idwt_step`](@ref)

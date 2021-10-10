@@ -1,4 +1,4 @@
-module WPD
+module DWT
 export 
     wpd,
     wpd!,
@@ -154,15 +154,15 @@ function wpd!(y::AbstractArray{T,2},
 
     # Wavelet Decomposition
     for i in 0:(L-1)
-        np = nodelength(n, i)                   # Parent node length
+        nₚ = nodelength(n, i)                   # Parent node length
         for j in 0:((1<<i)-1)
             colₚ = i+1                          # Parent column
-            rngₚ = (j*nₚ+1):((j+1)*np)           # Parent range
+            rngₚ = (j*nₚ+1):((j+1)*nₚ)           # Parent range
             @inbounds v = @view y[rngₚ, colₚ]    # Parent node
             colᵣ = colₚ+1                       # Child column
-            nc = np÷2                           # Child node length
-            rng₁ = (2*j*nc+1):((2*j+1)*nc)      # Approx coef range
-            rng₂ = ((2*j+1)*nc+1):(2*(j+1)*nc)  # Detail coef range
+            nᵣ = nₚ÷2                           # Child node length
+            rng₁ = (2*j*nᵣ+1):((2*j+1)*nᵣ)      # Approx coef range
+            rng₂ = ((2*j+1)*nᵣ+1):(2*(j+1)*nᵣ)  # Detail coef range
             @inbounds w₁ = @view y[rng₁, colᵣ]  # Approx coef node
             @inbounds w₂ = @view y[rng₂, colᵣ]  # Detail coef node
             dwt_step!(w₁, w₂, v, h, g)          # Decompose
@@ -525,7 +525,7 @@ function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},
     return x̂
 end
 
-include("wt_one_level.jl")
-include("wt_all.jl")
+include("dwt_one_level.jl")
+include("dwt_all.jl")
 
 end # end module
