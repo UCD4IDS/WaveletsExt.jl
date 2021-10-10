@@ -1,7 +1,81 @@
 # ========== Perform 1 step of discrete wavelet transform ==========
 # ----- 1 step of dwt for 1D signals -----
-# TODO: Documentation
-# ! g,h is built from WT.makereverseqmfpair(wt,true)
+"""
+    dwt_step(v, h, g)
+
+Perform one level of the discrete wavelet transform (DWT) on the vector `v`, which is the
+`d`-th level scaling coefficients (Note the 0th level scaling coefficients is the raw
+signal). The vectors `h` and `g` are the detail and scaling filters.
+
+# Arguments
+- `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+
+# One step of SDWT
+WPD.dwt_step(v, 0, h, g)
+```
+
+**See also:** [`dwt_step!`](@ref)
+"""
+function dwt_step(v::AbstractVector{T}, h::Array{S,1}, g::Array{S,1}) where 
+                 {T<:Number, S<:Number}
+    n = length(v)
+    w₁ = zeros(T, n÷2)
+    w₂ = zeros(T, n÷2)
+
+    dwt_step!(w₁, w₂, v, h, g)
+    return w₁, w₂
+end
+
+"""
+    dwt_step!(w₂, w₂, v, h, g)
+
+Same as `dwt_step` but without array allocation.
+
+# Arguments
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+- `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+w₁ = zeros(8)
+w₂ = zeros(8)
+
+# One step of SDWT
+WPD.dwt_step!(w₁, w₂, v, 0, h, g)
+```
+
+**See also:** [`dwt_step`](@ref)
+"""
 function dwt_step!(w₁::AbstractVector{T},
                    w₂::AbstractVector{T},
                    v::AbstractVector{T},
@@ -32,8 +106,89 @@ function dwt_step!(w₁::AbstractVector{T},
     return w₁, w₂
 end
 
-# TODO: Documentation
-# ! g,h is built from WT.makereverseqmfpair(wt,true)
+"""
+    idwt_step(w₁, w₂, h, g)
+
+Perform one level of the inverse discrete wavelet transform (IDWT) on the vectors `w₁` and
+`w₂`, which are the scaling and detail coefficients. The vectors `h` and `g` are the detail
+and scaling filters.
+
+# Arguments
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `v::Vector{T}`: Reconstructed coefficients.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+
+# One step of SDWT
+w₁, w₂ = WPD.dwt_step(v, h, g)
+
+# One step of ISDWT
+v̂ = WPD.idwt_step(w₁, w₂, h, g)
+```
+
+**See also:** [`idwt_step!`](@ref)
+"""
+function idwt_step(w₁::AbstractVector{T}, 
+                   w₂::AbstractVector{T}, 
+                   h::Array{S,1}, 
+                   g::Array{S,1}) where {T<:Number, S<:Number}
+    n = length(w₁)
+    v = Vector{T}(undef, 2*n)
+    idwt_step!(v, w₁, w₂, h, g)
+    return v
+end
+
+"""
+    idwt_step!(v, w₁, w₂, h, g)
+
+Same as `idwt_step` but without array allocation.
+
+# Arguments
+- `v::AbstractVector{T} where T<:Number`: Vector allocation for reconstructed coefficients.
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `v::Vector{T}`: Reconstructed coefficients.
+
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+v̂ = similar(v)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+
+# One step of SDWT
+w₁, w₂ = WPD.dwt_step(v, h, g)
+
+# One step of ISDWT
+WPD.idwt_step!(v̂, w₁, w₂, h, g)
+```
+
+**See also:** [`idwt_step`](@ref)
+"""
 function idwt_step!(v::AbstractVector{T},
                     w₁::AbstractVector{T},
                     w₂::AbstractVector{T},
@@ -55,13 +210,13 @@ function idwt_step!(v::AbstractVector{T},
         j₂ = mod1(i+1,2)    # Index for high pass filter h
         k₁ = (i+1)>>1       # Index for approx coefs w₁
         k₂ = (i+1)>>1       # Index for detail coefs w₂
-        v[i] = g[j₁] * w₁[k₁] + h[j₂] * w₂[k₂]
+        @inbounds v[i] = g[j₁] * w₁[k₁] + h[j₂] * w₂[k₂]
         for j in (j₀+2):2:filtlen
             j₁ = filtlen-j+1
             j₂ = j + isodd(j) - iseven(j)
             k₁ = k₁-1 |> k₁ -> k₁≤0 ? mod1(k₁,n₁) : k₁
             k₂ = k₂+1 |> k₂ -> k₂>n₁ ? mod1(k₂,n₁) : k₂
-            v[i] += g[j₁] * w₁[k₁] + h[j₂] * w₂[k₂]
+            @inbounds v[i] += g[j₁] * w₁[k₁] + h[j₂] * w₂[k₂]
         end
     end
     return v

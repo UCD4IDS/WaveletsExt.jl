@@ -19,8 +19,8 @@ using ..Utils
     sdwt_step(v, d, h, g)
 
 Perform one level of the stationary discrete wavelet transform (SDWT) on the vector `v`,
-which is the `d`-th level scaling coefficients (Note the 0th level scaling coefficients is the
-raw signal). The vectors `h` and `g` are the detail and scaling filters.
+which is the `d`-th level scaling coefficients (Note the 0th level scaling coefficients is
+the raw signal). The vectors `h` and `g` are the detail and scaling filters.
 
 # Arguments
 - `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
@@ -62,7 +62,7 @@ function sdwt_step(v::AbstractVector{T}, d::Integer, h::Array{S,1}, g::Array{S,1
 end
 
 """
-    sdwt_step!(v1, w1, v, j, h, g)
+    sdwt_step!(w₁, w₂, v, d, h, g)
 
 Same as `sdwt_step` but without array allocation.
 
@@ -103,20 +103,25 @@ function sdwt_step!(w₁::AbstractVector{T},
                     d::Integer, 
                     h::Array{S,1},
                     g::Array{S,1}) where {T<:Number, S<:Number}
+    # Sanity check
+    @assert length(w₁) == length(w₂) == length(v)
+    @assert length(h) == length(g)
+    
     # Setup
     n = length(v)                   # Signal length
     filtlen = length(h)             # Filter length
 
     # One step of stationary transform
     for i in 1:n
-        k = i
-        @inbounds w₁[i] = g[1] * v[k]
-        @inbounds w₂[i] = h[1] * v[k]
+        k₁ = mod1(i-(1<<d),n)       # Start index for low pass filtering
+        k₂ = i                      # Start index for high pass filtering
+        @inbounds w₁[i] = g[end] * v[k₁]
+        @inbounds w₂[i] = h[1] * v[k₂]
         for j in 2:filtlen
-            k += 1 << d
-            k = k > n ? mod1(k,n) : k
-            @inbounds w₁[i] += g[j] * v[k]
-            @inbounds w₂[i] += h[j] * v[k]
+            k₁ = k₁+(1<<d) |> k₁ -> k₁>n ? mod1(k₁,n) : k₁
+            k₂ = k₂-(1<<d) |> k₂ -> k₂≤0 ? mod1(k₂,n) : k₂
+            @inbounds w₁[i] += g[end-j+1] * v[k₁]
+            @inbounds w₂[i] += h[j] * v[k₂]
         end
     end
     return w₁, w₂
@@ -149,8 +154,7 @@ filters.
 - `g::Vector{S} where S<:Number`: Low pass filter.
 
 # Returns
-- `w₁::Vector{T}`: Output from the low pass filter.
-- `w₂::Vector{T}`: Output from the high pass filter.
+- `v::Vector{T}`: Reconstructed coefficients.
 
 # Examples
 ```julia
@@ -209,6 +213,7 @@ end
 Same as `isdwt_step` but without array allocation.
 
 # Arguments
+- `v::AbstractVector{T} where T<:Number`: Vector allocation for reconstructed coefficients.
 - `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
   filter.
 - `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
@@ -220,8 +225,7 @@ Same as `isdwt_step` but without array allocation.
 - `g::Vector{S} where S<:Number`: Low pass filter.
 
 # Returns
-- `w₁::Vector{T}`: Output from the low pass filter.
-- `w₂::Vector{T}`: Output from the high pass filter.
+- `v::Vector{T}`: Reconstructed coefficients.
 
 # Examples
 ```julia
@@ -238,8 +242,8 @@ g, h = WT.makereverseqmfpair(wt, true)
 w₁, w₂ = SWT.sdwt_step(v, 0, h, g)
 
 # One step of ISDWT
-SWT.isdwt_step(v̂, w₁, w₂, 0, h, g)          # Average based
-SWT.isdwt_step(ṽ, w₁, w₂, 0, 0, 1, h, g)    # Shift based
+SWT.isdwt_step!(v̂, w₁, w₂, 0, h, g)          # Average based
+SWT.isdwt_step!(ṽ, w₁, w₂, 0, 0, 1, h, g)    # Shift based
 ```
 
 **See also:** [`isdwt_step`](@ref)
@@ -265,15 +269,19 @@ function isdwt_step!(v::AbstractVector{T},
     
     # One step of inverse SDWT
     for (t, m) in enumerate(ip:sp:n)
-        i = mod1(t,2)
-        j = sw == sv ? m : mod1(m+sp, n)        # Circshift needed if sw > sv
-        k = (ceil(Int, t/2) - 1) * sc + ic      # Child start index for calculating v[j]
-        v[j] = h[i] * w₂[k] + g[i] * w₁[k]      # Calculation of v[j]
-        while i + 2 ≤ filtlen
-            k -= 1 << (d+1)
-            k = k ≤ 0 ? mod1(k,n) : k
-            i += 2
-            v[j] += h[i] * w₂[k] + g[i] * w₁[k]
+        i₀ = mod1(t,2)                                  # Pivot point for filter
+        i₁ = filtlen-i₀+1                               # Index for low pass filter g
+        i₂ = mod1(t+1,2)                                # Index for high pass filter h
+        j = sw==sv ? mod1(m-1<<d,n) : mod1(m+sp-1<<d,n) # Position of v, shift needed if sw≠sv
+        k₁ = ((t-1)>>1) * sc + ic                       # Index for approx coefs w₁
+        k₂ = ((t-1)>>1) * sc + ic                       # Index for detail coefs w₂
+        @inbounds v[j] = g[i₁] * w₁[k₁] + h[i₂] * w₂[k₂]
+        for i in (i₀+2):2:filtlen
+            i₁ = filtlen-i+1
+            i₂ = i + isodd(i) - iseven(i)
+            k₁ = k₁-(1<<(d+1)) |> k₁ -> k₁≤0 ? mod1(k₁,n) : k₁
+            k₂ = k₂+(1<<(d+1)) |> k₂ -> k₂>n ? mod1(k₂,n) : k₂
+            @inbounds v[j] += g[i₁] * w₁[k₁] + h[i₂] * w₂[k₂]
         end
     end
     return v
@@ -317,7 +325,7 @@ function sdwt(x::AbstractVector{T},
     @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
 
     # Setup
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     n = length(x)
     w = Matrix{T}(undef, (n, L+1))
     w[:,end] = x
@@ -375,7 +383,7 @@ function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter, sm::Integer) where T<:Nu
     @assert 0 ≤ log2(sm) < L
 
     # Setup
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     sd = Utils.main2depthshift(sm, L)
     v = xw[:, 1]
 
@@ -392,7 +400,7 @@ end
 # Average-based ISDWT
 function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
     # Setup
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     _, k = size(xw)
     v = xw[:,1]
     L = k-1
@@ -444,7 +452,7 @@ function swpt(x::AbstractVector{T},
     @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
 
     # Setup
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     n = length(x)
     xw = Matrix{T}(undef, (n, 1<<L))
     xw[:,1] = x
@@ -511,7 +519,7 @@ function iswpt(xw::AbstractArray{T,2}, wt::OrthoFilter, sm::Integer) where T<:Nu
             throw(ArgumentError("Number of nodes in `xw` is more than possible number of nodes at any depth for signal of length `n`"))
 
     # Setup
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     temp = copy(xw)                         # Temp. array to store intermediate outputs
     L = ndyadicscales(m)                    # Number of decompositions from xw
     sd = Utils.main2depthshift(sm, L)       # Shifts at each depth
@@ -545,7 +553,7 @@ function iswpt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
             throw(ArgumentError("Number of nodes in `xw` is more than possible number of nodes at any depth for signal of length `n`"))
 
     # Setup
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     temp = copy(xw)                         # Temp. array to store intermediate outputs
     L = ndyadicscales(m)                    # Number of decompositions from xw
 
@@ -604,7 +612,7 @@ function swpd(x::AbstractVector{T},
     @assert L >= 1 || throw(ArgumentError("L must be >= 1"))
 
     # Setup
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     n = length(x)                       # Size of signal
     n₀ = 1<<(L+1)-1                     # Total number of nodes
     n₁ = n₀ - (1<<L)                    # Total number of nodes excluding leaf nodes
@@ -698,7 +706,7 @@ function iswpd(xw::AbstractArray{T,2}, wt::OrthoFilter, tree::BitVector, sm::Int
 
     # Setup
     _, m = size(xw)
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     tmp = copy(xw)                          # Temp. array to store intermediate outputs
     L = floor(Int, log2(m))                 # Number of decompositions from xw
     sd = Utils.main2depthshift(sm, L)       # Shifts at each depth
@@ -728,7 +736,7 @@ function iswpd(xw::AbstractArray{T,2}, wt::OrthoFilter, tree::BitVector) where T
     @assert isvalidtree(xw[:,1], tree)
 
     # Setup
-    g, h = WT.makeqmfpair(wt, true)
+    g, h = WT.makereverseqmfpair(wt, true)
     tmp = copy(xw)
 
     # iSWPD
