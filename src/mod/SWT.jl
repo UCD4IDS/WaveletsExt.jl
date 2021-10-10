@@ -180,19 +180,9 @@ function isdwt_step(w₁::AbstractVector{T},
                     d::Integer,
                     h::Array{S,1},
                     g::Array{S,1}) where {T<:Number, S<:Number}
-    # Setup
-    v₁ = similar(w₁)        # Allocation for isdwt_step of w₁, w₂ with no additional shift
-    v₂ = similar(w₁)        # Allocation for isdwt_step of w₁, w₂ with additional shift
-    nd = 1 << d             # Number of blocks for parent node
-
-    # isdwt_step for each shift
-    for sv in 0:(nd-1)
-        sw₁ = sv            # Shift of w₁, w₂ with no additional shift
-        sw₂ = sv + 1<<d     # Shift of w₁, w₂ with addtional shift
-        isdwt_step!(v₁, w₁, w₂, d, sv, sw₁, h, g)   # Without shift
-        isdwt_step!(v₂, w₁, w₂, d, sv, sw₂, h, g)   # With shift
-    end
-    return (v₁+v₂)/2        # Average the results of v₁, v₂
+    v = similar(w₁)
+    isdwt_step!(v, w₁, w₁, d, h, g)
+    return v
 end
 
 function isdwt_step(w₁::AbstractVector{T}, 
@@ -208,7 +198,8 @@ function isdwt_step(w₁::AbstractVector{T},
 end
 
 """
-    isdwt_step!(v, w₁, w₂, d, sv, sw, h, g)
+    isdwt_step!(v, w₁, w₂, d, h, g)
+    isdwt_step!(v, w₁, w₂, d, sv, sw, h, g[; add2out])
 
 Same as `isdwt_step` but without array allocation.
 
@@ -223,6 +214,10 @@ Same as `isdwt_step` but without array allocation.
 - `sw::Integer`: Shift of children nodes `w₁` and `w₂`.
 - `h::Vector{S} where S<:Number`: High pass filter.
 - `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Keyword Arguments
+- `add2out::Bool`: (Default: `false`) Whether to add computed result directly to output `v`
+  or rewrite computed result to `v`.
 
 # Returns
 - `v::Vector{T}`: Reconstructed coefficients.
@@ -248,6 +243,28 @@ SWT.isdwt_step!(ṽ, w₁, w₂, 0, 0, 1, h, g)    # Shift based
 
 **See also:** [`isdwt_step`](@ref)
 """
+function isdwt_step!(v::AbstractVector{T},
+                     w₁::AbstractVector{T},
+                     w₂::AbstractVector{T},
+                     d::Integer,
+                     h::Array{S,1},
+                     g::Array{S,1}) where {T<:Number, S<:Number}
+    nd = 1 << d             # Number of blocks for parent node
+
+    # isdwt_step for each shift
+    for sv in 0:(nd-1)
+        sw₁ = sv            # Shift of w₁, w₂ with no additional shift
+        sw₂ = sv + 1<<d     # Shift of w₁, w₂ with addtional shift
+        isdwt_step!(v, w₁, w₂, d, sv, sw₁, h, g)                 # Without shift
+        isdwt_step!(v, w₁, w₂, d, sv, sw₂, h, g, add2out=true)   # With shift
+    end
+    
+    # Get average output of shift vs no shift
+    for i in eachindex(v)
+        @inbounds v[i] /= 2
+    end
+end
+
 function isdwt_step!(v::AbstractVector{T}, 
                      w₁::AbstractVector{T}, 
                      w₂::AbstractVector{T}, 
@@ -255,7 +272,8 @@ function isdwt_step!(v::AbstractVector{T},
                      sv::Integer, 
                      sw::Integer,
                      h::Array{S,1}, 
-                     g::Array{S,1}) where {T<:Number, S<:Number}
+                     g::Array{S,1};
+                     add2out::Bool = false) where {T<:Number, S<:Number}
     # Sanity check
     @assert sw ≥ sv
 
@@ -275,13 +293,13 @@ function isdwt_step!(v::AbstractVector{T},
         j = sw==sv ? mod1(m-1<<d,n) : mod1(m+sp-1<<d,n) # Position of v, shift needed if sw≠sv
         k₁ = ((t-1)>>1) * sc + ic                       # Index for approx coefs w₁
         k₂ = ((t-1)>>1) * sc + ic                       # Index for detail coefs w₂
-        @inbounds v[j] = g[i₁] * w₁[k₁] + h[i₂] * w₂[k₂]
+        @inbounds v[j] = add2out ? v[j]+g[i₁]*w₁[k₁]+h[i₂]*w₂[k₂] : g[i₁]*w₁[k₁]+h[i₂]*w₂[k₂]
         for i in (i₀+2):2:filtlen
             i₁ = filtlen-i+1
             i₂ = i + isodd(i) - iseven(i)
             k₁ = k₁-(1<<(d+1)) |> k₁ -> k₁≤0 ? mod1(k₁,n) : k₁
             k₂ = k₂+(1<<(d+1)) |> k₂ -> k₂>n ? mod1(k₂,n) : k₂
-            @inbounds v[j] += g[i₁] * w₁[k₁] + h[i₂] * w₂[k₂]
+            @inbounds v[j] += g[i₁]*w₁[k₁]+h[i₂]*w₂[k₂]
         end
     end
     return v
@@ -409,7 +427,7 @@ function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
     for d in reverse(0:(L-1))
         w₁ = copy(v)
         @inbounds w₂ = @view xw[:,L-d+1]
-        @inbounds v = isdwt_step(w₁, w₂, d, h, g)
+        @inbounds isdwt_step!(v, w₁, w₂, d, h, g)
     end
     return v
 end
@@ -565,10 +583,11 @@ function iswpt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
             nc = np÷2                       # Child node length
             j₁ = (2*b)*nc + 1               # Parent and (scaling) child index
             j₂ = (2*b+1)*nc + 1             # Detail child index
+            @inbounds v = @view temp[:,j₁]  # Parent node
             @inbounds w₁ = temp[:,j₁]       # Scaling node
             @inbounds w₂ = @view temp[:,j₂] # Detail node
             # Overwrite output of iSWPT directly onto temp
-            @inbounds temp[:,j₁] = isdwt_step(w₁, w₂, d, h, g)
+            @inbounds isdwt_step!(v, w₁, w₂, d, h, g)
         end
     end
     return temp[:,1]
@@ -746,10 +765,11 @@ function iswpd(xw::AbstractArray{T,2}, wt::OrthoFilter, tree::BitVector) where T
             d = floor(Int, log2(i))         # Parent depth
             j₁ = left(i)                    # Scaling child index
             j₂ = right(i)                   # Detail child index
+            @inbounds v = @view tmp[:,i]
             @inbounds w₁ = @view tmp[:,j₁]  # Scaling child node
             @inbounds w₂ = @view tmp[:,j₂]  # Detail child node
             # Inverse transform
-            @inbounds tmp[:,i] = isdwt_step(w₁, w₂, d, h, g)
+            @inbounds isdwt_step!(v, w₁, w₂, d, h, g)
         end
     end
     return tmp[:,1]
