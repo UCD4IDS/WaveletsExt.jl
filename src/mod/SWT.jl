@@ -462,7 +462,7 @@ xw = swpt(x, wt)
 **See also:** [`sdwt`](@ref), [`swpd`](@ref)
 """
 function swpt(x::AbstractVector{T}, 
-              wt::DiscreteWavelet,                        
+              wt::OrthoFilter,                        
               L::Integer = maxtransformlevels(x)) where T<:Number
     # Sanity check
     @assert L ≤ maxtransformlevels(x) ||
@@ -481,8 +481,8 @@ function swpt(x::AbstractVector{T},
         for b in 0:(nn-1)
             np = (1<<L)÷nn      # Parent node length
             nc = np÷2           # Child node length
-            j₁ = (2*b)*nc + 1               # Parent and (scaling) child index
-            j₂ = (2*b+1)*nc + 1             # Detail child index
+            j₁ = (2*b)*nc + 1   # Parent and (scaling) child index
+            j₂ = (2*b+1)*nc + 1 # Detail child index
             v = xw[:,j₁]
             w₁ = @view xw[:,j₁]
             w₂ = @view xw[:,j₂]
