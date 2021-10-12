@@ -16,16 +16,16 @@ makedocs(
             "Local Discriminant Basis" => "manual/localdiscriminantbasis.md"
         ],
         "API" => Any[
+            "DWT" => "api/dwt.md",
             "ACWT" => "api/acwt.md",
+            "SWT" => "api/swt.md",
+            "TIWT" => "api/tiwt.md",
             "Best Basis" => "api/bestbasis.md",
             "Denoising" => "api/denoising.md",
             "LDB" => "api/ldb.md",
             "SIWPD" => "api/siwpd.md",
-            "SWT" => "api/swt.md",
-            "TIWT" => "api/tiwt.md",
             "Utils" => "api/utils.md",
             "Visualizations" => "api/visualizations.md",
-            "WPD" => "api/wpd.md",
         ]
     ]
 )

@@ -28,8 +28,9 @@ x = x₀ + 0.8*randn(256)
 wt = wavelet(WT.db4)
 
 # best basis tree
-bt = bestbasistree(wpd(x, wt), BB())
-y = bestbasiscoef(x, wt, bt)
+xw = wpd(x, wt)
+bt = bestbasistree(xw, BB())
+y = bestbasiscoef(xw, bt)
 
 # denoise
 x̂ = denoise(y, :wpt, wt, tree=bt)

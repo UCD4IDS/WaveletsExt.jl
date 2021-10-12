@@ -591,7 +591,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
             @inbounds x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
         end
         # reconstruction
-        y = iacwpt(x̃, tree)
+        y = iacwpd(x̃, tree)
     end
     return y
 end

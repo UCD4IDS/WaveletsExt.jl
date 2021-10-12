@@ -62,7 +62,7 @@ y = wpd(x, wt)      # Decompose into L levels
 nothing # hide
 ```
 
-In the case where there are multiple signals to transform, one may opt for [`dwtall`](@ref WaveletsExt.WPD.dwtall), [`wptall`](@ref WaveletsExt.WPD.wptall), and [`wpdall`](@ref WaveletsExt.WPD.wpdall).
+In the case where there are multiple signals to transform, one may opt for [`dwtall`](@ref WaveletsExt.DWT.dwtall), [`wptall`](@ref WaveletsExt.DWT.wptall), and [`wpdall`](@ref WaveletsExt.DWT.wpdall).
 
 ### [Stationary Wavelet Transforms] (@id s_transforms)
 The stationary wavelet transform is a redundant type of wavelet transform. This means that there are no downsampling involved unlike the standard transforms, resulting in an exponentially larger number of coefficients compared to that of the standard transforms. A strength of the stationary wavelet transform is its ability to retain more information, thereby being more useful in certain signal analysis applications such as denoising. However, it also takes an exponentially larger amount of time and space to decompose a signal compared to the standard transforms.

@@ -22,7 +22,7 @@ the ``n``-th dimension for an ``n``-dimensional input `x`.
 signal `x`.
 
 # Examples
-```
+```julia
 using Wavelets, WaveletsExt
 
 # Generate random signals
@@ -75,7 +75,7 @@ sliced on the ``n``-th dimension for an ``n``-dimensional input `xw`.
 `xw`.
 
 # Examples
-```
+```julia
 using Wavelets, WaveletsExt
 
 # Generate random signals
@@ -129,6 +129,8 @@ the ``n``-th dimension for an ``n``-dimensional input `x`.
   decomposition. 
 - `tree::BitVector`: (Default: `Wavelets.maketree(xᵢ, :full)`) Tree to follow for wavelet
   decomposition. Default value is only applicable for 1D signals.
+
+# Keyword Arguments
 - `standard::Bool`: (Default: `true`) Whether to compute the standard or non-standard
   wavelet transform. Only applicable for 2D signals.
 
@@ -137,7 +139,7 @@ the ``n``-th dimension for an ``n``-dimensional input `x`.
 signal `x`.
 
 # Examples
-```
+```julia
 using Wavelets, WaveletsExt
 
 # Generate random signals
@@ -186,6 +188,8 @@ sliced on the ``n``-th dimension for an ``n``-dimensional input `xw`.
   decomposition. 
 - `tree::BitVector`: (Default: `Wavelets.maketree(xᵢ, :full)`) Tree to follow for wavelet
   decomposition. Default value is only applicable for 1D signals.
+
+# Keyword Arguments
 - `standard::Bool`: (Default: `true`) Whether to compute the standard or non-standard
   wavelet transform. Only applicable for 2D signals.
 
@@ -194,7 +198,7 @@ sliced on the ``n``-th dimension for an ``n``-dimensional input `xw`.
 signal `x`.
 
 # Examples
-```
+```julia
 using Wavelets, WaveletsExt
 
 # Generate random signals
@@ -213,7 +217,7 @@ x̂ = iwptall(xw, wt)
 """
 function iwptall(xw::AbstractArray{T}, args...; kwargs...) where T<:Number
     # Sanity check
-    @assert ndims(x) > 1
+    @assert ndims(xw) > 1
 
     # Setup
     y = similar(xw)      # Allocation for output
@@ -230,13 +234,10 @@ end
 
 # ----- Wavelet Packet Decomposition on a set of signals -----
 """
-    wpdall(x, wt[, L])
     wpdall(x, wt[, L; standard])
 
 Computes the wavelet packet decomposition (WPD) on each slice of signal. Signals are sliced
 on the ``n``-th dimension for an ``n``-dimensional input `x`.
-
-*Note:* `wpd` is currently available for 1-D signals only.
 
 # Arguments
 - `x::AbstractArray{T} where T<:Number`: Input signals, where each slice corresponds to
@@ -245,6 +246,8 @@ on the ``n``-th dimension for an ``n``-dimensional input `x`.
 - `wt::OrthoFilter`: Wavelet used.
 - `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
   decomposition. 
+
+# Keyword Arguments
 - `standard::Bool`: (Default: `true`) Whether to compute the standard or non-standard
   wavelet transform. Only applicable for 2D signals.
 
@@ -252,7 +255,7 @@ on the ``n``-th dimension for an ``n``-dimensional input `x`.
 `::Array{T}`: Array of decomposed signals. Signals are sliced by the final dimension.
 
 # Examples
-```
+```julia
 using Wavelets, WaveletsExt
 
 # Generate random signals
@@ -272,7 +275,7 @@ function wpdall(x::AbstractArray{T},
                 kwargs...) where T<:Number
     # Sanity check
     @assert ndims(x) > 1
-    @assert 0 ≤ L ≤ maxtransformlevels(x,1)
+    @assert 0 ≤ L ≤ maxtransformlevels(selectdim(x, ndims(x), 1))
        
     # Allocate space for transform
     sz = size(x)[begin:end-1]  # Signal size
@@ -290,8 +293,62 @@ function wpdall(x::AbstractArray{T},
     return y
 end
 
-# TODO: Build iwpdall function for formality purposes. Should get basiscoef -> iwpt for each
-# TODO: signal
-function iwpdall()
-    return
+"""
+    iwpdall(xw, wt[, L; standard])
+    iwpdall(xw, wt, tree[; standard])
+
+Computes the inverse wavelet packet decomposition (IWPD) on each slice of signal. Signals
+are sliced on the ``n``-th dimension for an ``n``-dimensional input `xw`.
+
+# Arguments
+- `xw::AbstractArray{T} where T<:Number`: Input signals, where each slice corresponds to one
+  signal decomposition. For a set of input signals `x` of dimension ``n``, `xw` is sliced on
+  the ``n``-th dimension.
+- `wt::OrthoFilter`: Wavelet used.
+- `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
+  decomposition. 
+
+# Keyword Arguments
+- `standard::Bool`: (Default: `true`) Whether to compute the standard or non-standard
+  wavelet transform. Only applicable for 2D signals.
+
+# Returns
+`::Array{T}`: Array of decomposed signals. Signals are sliced by the final dimension.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Generate random signals
+x = randn(32, 5)
+# Create wavelet
+wt = wavelet(WT.db4)
+
+# WPD on all signals in x
+xw = wpdall(x, wt)
+
+# IWPD on all signals
+x̂ = iwpdall(xw, wt)
+```
+
+**See also:** [`wptall`](@ref), [`dwtall`](@ref), [`wpd`](@ref), [`wpd!`](@ref)
+"""
+function iwpdall(xw::AbstractArray{T}, args...; kwargs...) where T<:Number
+    # Sanity check
+    @assert ndims(xw) > 2
+
+    # Setup
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x̂ = Array{T}(undef, (sz...,N))
+    # Dimension to slice
+    dim_xw = ndims(xw)
+    dim_x̂ = ndims(x̂)
+    # Compute transforms
+    @inbounds begin
+        @views for (x̂ᵢ, xwᵢ) in zip(eachslice(x̂, dims=dim_x̂), eachslice(xw, dims=dim_xw))
+            iwpd!(x̂ᵢ, Array(xwᵢ), args..., kwargs...)
+        end
+    end
+    return x̂
 end

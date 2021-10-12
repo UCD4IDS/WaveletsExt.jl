@@ -23,10 +23,6 @@ which is the `d`-th level scaling coefficients (Note the 0th level scaling coeff
 the raw signal). The vectors `h` and `g` are the detail and scaling filters.
 
 # Arguments
-- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
-  filter.
-- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
-  filter.
 - `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
 - `d::Integer`: Depth level of `v`.
 - `h::Vector{S} where S<:Number`: High pass filter.
@@ -500,7 +496,7 @@ end
 Computes the inverse stationary wavelet packet transform (iSWPT) on `xw`.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: TIDWT-transformed array.
+- `xw::AbstractArray{T,2} where T<:Number`: SWPT-transformed array.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
@@ -670,6 +666,7 @@ Computes the inverse stationary wavelet packet transform (iSWPT) on `xw`.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition used
   for reconstruction.
+    - `tree::BitVector`: Binary tree for inverse transform to be computed accordingly. 
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.

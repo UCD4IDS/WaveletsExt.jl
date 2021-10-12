@@ -7,10 +7,7 @@ export
     # Inverse autocorrelation wavelet transform
     iacdwt,
     iacwpt,
-    iacwpd, 
-    # Functions to be deprecated
-    acwt,
-    iacwt
+    iacwpd
 
 using ..Utils
 using LinearAlgebra, Wavelets
@@ -97,7 +94,28 @@ Performs one level of the autocorrelation discrete wavelet transform (acdwt) on 
 `v`, which is the j-th level scaling coefficients (Note the 0th level scaling coefficients
 is the raw signal). The vectors `h` and `g` are the detail and scaling filters.
 
-Returns a tuple `(v, w)` of the scaling and detail coefficients at level `j+1`.
+# Arguments
+- `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
+- `j::Integer`: Depth level of `v`.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.make_acreverseqmfpair(wt)
+
+# One step of ACDWT
+ACWT.acdwt_step(v, 0, h, g)
+```
 
 **See also:** [`acdwt`](@ref), [`iacdwt`](@ref)
 """
@@ -111,6 +129,42 @@ function acdwt_step(v::AbstractVector{T}, d::Integer, h::Array{S,1}, g::Array{S,
     return w₁, w₂
 end
 
+"""
+    acdwt_step!(w₁, w₂, v, j, h, g)
+
+Same with `acdwt_step` but without array allocation.
+
+# Arguments
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+- `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
+- `d::Integer`: Depth level of `v`.
+- `h::Vector{S} where S<:Number`: High pass filter.
+- `g::Vector{S} where S<:Number`: Low pass filter.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+w₁ = similar(v)
+w₂ = similar(v)
+wt = wavelet(WT.haar)
+g, h = WT.make_acreverseqmfpair(wt)
+
+# One step of ACDWT
+ACWT.acdwt_step!(w₁, w₂, v, 0, h, g)
+```
+
+**See also:** [`acdwt_step!`](@ref), [`acdwt`](@ref), [`iacdwt`](@ref)
+"""
 function acdwt_step!(w₁::AbstractVector{T},
                      w₂::AbstractVector{T},
                      v::AbstractVector{T}, 
@@ -140,12 +194,80 @@ function acdwt_step!(w₁::AbstractVector{T},
     return w₁, w₂
 end
 
+"""
+    iacdwt_step(w₁, w₂)
+
+Perform one level of the inverse autocorrelation discrete wavelet transform (IACDWT) on the
+vectors `w₁` and `w₂`, which are the `j+1`-th level scaling coefficients (Note that the 0th
+level scaling coefficients is the raw signal).
+
+# Arguments
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+
+# Returns
+- `v::Vector{T}`: Reconstructed coefficients.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.make_acreverseqmfpair(wt)
+
+# One step of ACDWT
+w₁, w₂ = ACWT.acdwt_step(v, 0, h, g)
+
+# One step of IACDWT
+v̂ = ACWT.iacdwt_step(w₁, w₂)
+```
+
+**See also:** [`iacdwt_step!`](@ref), [`acdwt_step`](@ref), [`iacdwt`](@ref)
+"""
 function iacdwt_step(w₁::AbstractVector{T}, w₂::AbstractVector{T}) where T<:Number
     v = similar(w₁)
     iacdwt_step!(v, w₁, w₂)
     return v
 end
 
+"""
+    iacdwt_step!(v, w₁, w₂)
+
+Same as `iacdwt_step` but without array allocation.
+
+# Arguments
+- `v::AbstractVector{T} where T<:Number`: Vector allocation for reconstructed coefficients.
+- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
+  filter.
+
+# Returns
+- `v::Vector{T}`: Reconstructed coefficients.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8)
+wt = wavelet(WT.haar)
+g, h = WT.make_acreverseqmfpair(wt)
+
+# One step of ACDWT
+w₁, w₂ = ACWT.acdwt_step(v, 0, h, g)
+
+# One step of IACDWT
+v̂ = similar(v)
+ACWT.iacdwt_step!(v̂, w₁, w₂)
+```
+
+**See also:** [`iacdwt_step`](@ref), [`acdwt_step`](@ref), [`iacdwt`](@ref)
+"""
 function iacdwt_step!(v::AbstractVector{T}, 
                       w₁::AbstractVector{T}, 
                       w₂::AbstractVector{T}) where T<:Number
@@ -156,19 +278,34 @@ function iacdwt_step!(v::AbstractVector{T},
 end
 
 # ========== Autocorrelation Discrete Wavelet Transform ==========
-"""
-	acdwt(x, wt[, L=maxtransformlevels(x)])
+@doc raw"""
+	acdwt(x, wt[, L])
     acdwt(x, wt[, Lrow=maxtransformlevels(x[1,:]), Lcol=maxtransformlevels(x[:,1])])
 
 Performs a discrete autocorrelation wavelet transform for a given signal `x`.
 The signal can be 1D or 2D. The wavelet type `wt` determines the transform type.
 Refer to Wavelet.jl for a list of available methods.
 
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+    \in \mathbb{N}``.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
+
+# Returns
+`::Matrix{T}`: Output from SDWT on `x`.
+
 # Examples
 ```julia
-acdwt(x, wavelet(WT.db4))
+using Wavelets, WaveletsExt
 
-acdwt(x, wavelet(WT.db4), 4) # level 4 decomposition
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# ACDWT
+acdwt(x, wt)
+acdwt(x, wt, 4) # level 4 decomposition
 ```
 
 **See also:** [`acdwt_step`](@ref), [`iacdwt`](@ref)
@@ -247,13 +384,40 @@ function acdwt(x::AbstractArray{T,2}, wt::OrthoFilter,
 end
 
 """
-	iacdwt(xw::AbstractArray{<:Number,2})
-    iacdwt(xw::AbstractArray{<:Number,4})
+    iacdwt(xw[, wt])
 
-Performs the inverse autocorrelation discrete wavelet transform. 
-Can be used for both the 1D and 2D case.
+Performs the inverse autocorrelation discrete wavelet transform. Can be used for both the 1D
+and 2D case.
 
-**See also:** [`iacdwt!`](@ref), [`acdwt`](@ref)
+!!! note
+    The inverse autocorrelation transform does not require any wavelet filter, but an
+    optional `wt` positional argument is included for the standardization of syntax with
+    `dwt` and `sdwt`, but is ignored during the reconstruction of signals.
+
+# Arguments
+- `xw::AbstractArray{T,2} where T<:Number` or `xw::AbstractArray{T,4}`: ACDWT-transformed
+  array.
+- `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
+
+# Returns
+`::Vector{T}`: Inverse transformed signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# ACDWT
+xw = acdwt(x, wt)
+
+# IACDWT
+x̃ = iacdwt(xw)
+```
+
+**See also:** [`acdwt`](@ref), [`iacdwt_step!`](@ref)
 """
 function iacdwt(xw::AbstractArray{<:Number,2}, wt::Union{OrthoFilter,Nothing} = nothing)
     # Setup
@@ -270,7 +434,8 @@ function iacdwt(xw::AbstractArray{<:Number,2}, wt::Union{OrthoFilter,Nothing} = 
     return v
 end
 
-function iacdwt(xw::AbstractArray{T,4}) where T<:Number
+function iacdwt(xw::AbstractArray{T,4}, wt::Union{OrthoFilter,Nothing} = nothing) where 
+                T<:Number
     nrow, ncol, _, Lcol = size(xw)
     W4d = permutedims(xw,[4,2,3,1])
     W3d = Array{T,3}(undef, nrow, Lcol, ncol)
@@ -287,6 +452,34 @@ function iacdwt(xw::AbstractArray{T,4}) where T<:Number
 end
 
 # ========== Autocorrelation Wavelet Packet Transform ==========
+@doc raw"""
+    acwpt(x, wt[, L])
+
+Computes `L` levels of autocorrelation wavelet packet transforms (ACWPT) on `x`.
+
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+  \in \mathbb{N}``.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
+
+# Returns
+`::Matrix{T}`: Output from ACWPT on `x`.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# ACWPT
+xw = acwpt(x, wt)
+```
+
+**See also:** [`iacwpt`](@ref), [`acdwt`](@ref), [`acwpd`](@ref)
+"""
 function acwpt(x::AbstractVector{T},
                wt::OrthoFilter,
                L::Integer = maxtransformlevels(x)) where T<:Number
@@ -319,6 +512,40 @@ function acwpt(x::AbstractVector{T},
     return xw
 end
 
+"""
+    iacwpt(xw[, wt])
+
+Computes the inverse autocorrelation wavelet packet transform (IACWPT) on `xw`.
+
+!!! note 
+    The inverse autocorrelation transform does not require any wavelet filter, but an
+    optional `wt` positional argument is included for the standardization of syntax with
+    `wpt` and `swpt`, but is ignored during the reconstruction of signals.
+
+# Arguments
+- `xw::AbstractArray{T,2} where T<:Number`: ACWPT-transformed array.
+- `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
+
+# Returns
+`::Vector{T}`: Inverse transformed signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# ACWPT
+xw = acwpt(x, wt)
+
+# IACWPT
+x̃ = iacwpt(xw)
+```
+
+**See also:** [`iacdwt`](@ref), [`acwpt`](@ref)
+"""
 function iacwpt(xw::AbstractArray{<:Number,2}, wt::Union{OrthoFilter,Nothing} = nothing)
     # Sanity check
     n, m = size(xw)
@@ -349,20 +576,36 @@ function iacwpt(xw::AbstractArray{<:Number,2}, wt::Union{OrthoFilter,Nothing} = 
 end
 
 # ========== Autocorrelation Wavelet Packet Decomposition ==========
-"""
-    acwpd(x, wt[, L=maxtransformlevels(x)])
+@doc raw"""
+    acwpd(x, wt[, L])
 
 Performs a discrete autocorrelation wavelet packet transform for a given signal `x`.
 The wavelet type `wt` determines the transform type. Refer to Wavelet.jl for a list of available methods.
 
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+  \in \mathbb{N}``.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
+
+# Returns
+`::Matrix{T}`: Output from ACWPD on `x`.
+
 # Examples
 ```julia
-acwpd(x, wavelet(WT.db4))
+using Wavelets, WaveletsExt
 
-acwpd(x, wavelet(WT.db4), 4)
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# ACWPD
+acwpd(x, wt)
+
+acwpd(x, wt, 4)
 ```
 
-**See also:** [`acdwt`](@ref), [`acwpt_step`](@ref), [`iacwpt`](@ref)
+**See also:** [`iacwpd`](@ref), [`acdwt`](@ref), [`acdwt_step`](@ref)
 """
 function acwpd(x::AbstractVector{T}, 
                wt::OrthoFilter, 
@@ -394,10 +637,47 @@ function acwpd(x::AbstractVector{T},
 end
 
 """
-    iacwpd(xw, tree, i)
+    iacwpd(xw, L)
+    iacwpd(xw[, wt, L])
+    iacwpd(xw, tree)
+    iacwpd(xw, wt, tree)
 
-Performs the inverse autocorrelation discrete wavelet packet transform,
-with respect to a decomposition tree.
+Performs the inverse autocorrelation discrete wavelet packet transform, with respect to a
+decomposition tree.
+
+!!! note The inverse autocorrelation transform does not require any wavelet filter, but an
+    optional `wt` positional argument is included for the standardization of syntax with
+    `wpt` and `swpt`, but is ignored during the reconstruction of signals.
+
+!!! note This function might not be very useful if one is looking to reconstruct a raw
+    decomposed signal. The purpose of this function would be better utilized in applications
+    such as denoising, where a signal is decomposed (`swpd`) and thresholded
+    (`denoise`/`denoiseall`) before being reconstructed.
+
+# Arguments
+- `xw::AbstractArray{T,2} where T<:Number`: ACWPD-transformed array.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition used
+  for reconstruction.
+- `tree::BitVector`: Binary tree for inverse transform to be computed accordingly. 
+
+# Returns
+`::Vector{T}`: Inverse transformed signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# ACWPD
+xw = acwpd(x, wt)
+
+# IACWPD
+x̂ = iacwpd(xw, 4)
+```
 
 **See also:** [`acwpd`](@ref)
 """
@@ -451,32 +731,5 @@ end
 #   v₁ = iacwpt(xw,tree,3)
 #   return (v₀ + v₁) / √2
 # end
-
-# ========== Deprecated Functions ==========================================================
-# Functions that will be completely deleted by v0.2.0
-function acwt(args...)
-    Base.depwarn("`acwt` is deprecated, use `acdwt` instead.", :acwt, force=true)
-    return acdwt(args...)
-end
-
-function iacwt(args...)
-    Base.depwarn("`iacwt` is deprecated, use `iacdwt` instead.", :iacwt, force=true)
-    return iacdwt(args...)
-end
-
-function vacwt(args...)
-    Base.depwarn("`vacwt` is deprecated, use `vacdwt` instead.", :acwt, force=true)
-    return vacdwt(args...)
-end
-
-function hacwt(args...)
-    Base.depwarn("`hacwt` is deprecated, use `hacdwt` instead.", :acwt, force=true)
-    return hacdwt(args...)
-end
-
-function acwpt(args...)
-    Base.depwarn("`acwpt` is deprecated, use `acwpd` instead.", :acwpt, force=true)
-    return acwpd(args...)
-end
 
 end # end module

@@ -25,11 +25,11 @@ v = randn(8)
 wt = wavelet(WT.haar)
 g, h = WT.makereverseqmfpair(wt, true)
 
-# One step of SDWT
+# One step of DWT
 DWT.dwt_step(v, 0, h, g)
 ```
 
-**See also:** [`dwt_step!`](@ref)
+**See also:** [`dwt_step!`](@ref), [`idwt_step`](@ref)
 """
 function dwt_step(v::AbstractVector{T}, h::Array{S,1}, g::Array{S,1}) where 
                  {T<:Number, S<:Number}
@@ -70,11 +70,11 @@ g, h = WT.makereverseqmfpair(wt, true)
 w₁ = zeros(8)
 w₂ = zeros(8)
 
-# One step of SDWT
+# One step of DWT
 DWT.dwt_step!(w₁, w₂, v, 0, h, g)
 ```
 
-**See also:** [`dwt_step`](@ref)
+**See also:** [`dwt_step`](@ref), [`idwt_step`](@ref)
 """
 function dwt_step!(w₁::AbstractVector{T},
                    w₂::AbstractVector{T},
@@ -223,6 +223,7 @@ function idwt_step!(v::AbstractVector{T},
 end
 
 # ----- 1 step of dwt for 2D signals -----
+# TODO: Speed this up by using the functions from above
 """
     dwt_step!(y, x, filter, dcfilter, scfilter, si[; standard])
 
@@ -239,6 +240,7 @@ Compute 1 step of 2D discrete wavelet transform (DWT).
 # Returns
 
 """
+
 function dwt_step!(y::AbstractArray{T,2},
                    x::AbstractArray{T,2},
                    filter::OrthoFilter,
