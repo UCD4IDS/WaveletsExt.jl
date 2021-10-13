@@ -13,7 +13,7 @@ the ``n``-th dimension for an ``n``-dimensional input `x`.
 - `x::AbstractArray{T} where T<:Number`: Input signals, where each slice corresponds to
   one signal. For a set of input signals `x` of dimension ``n``, signals are sliced on the
   ``n``-th dimension.
-- `wt::OrthoFilter`: Wavelet used.
+- `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
   transforms. 
 

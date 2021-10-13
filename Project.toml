@@ -1,12 +1,11 @@
 name = "WaveletsExt"
 uuid = "8f464e1e-25db-479f-b0a5-b7680379e03f"
 authors = ["Zeng Fung Liew <lzfliew@ucdavis.edu>", "Shozen Dan <shodan@ucdavis.edu>"]
-version = "0.1.9"
+version = "0.1.10"
 
 [deps]
 AverageShiftedHistograms = "77b51b56-6f8f-5c3a-9cb4-d71f9594ea6e"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-GR = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
 ImageQualityIndexes = "2996bd0c-7a13-11e9-2da2-2f5ce47296a9"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
@@ -20,7 +19,6 @@ Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
 [compat]
 AverageShiftedHistograms = "0.8.6"
 Distributions = "0.24, 0.25"
-GR = "0.59"
 ImageQualityIndexes = "0.2"
 Parameters = "0.12.2"
 Plots = "1.20"
