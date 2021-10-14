@@ -1,13 +1,19 @@
 module ACWT
 export
     # Autocorrelation wavelet transform
-    acdwt, 
+    acdwt,
+    acdwt!,
     acwpt,
+    acwpt!,
     acwpd,
+    acwpd!,
     # Inverse autocorrelation wavelet transform
     iacdwt,
+    iacdwt!,
     iacwpt,
+    iacwpt!,
     iacwpd,
+    iacwpd!,
     # Transform on all signals
     acdwtall,
     acwptall,
@@ -18,79 +24,6 @@ export
 
 using ..Utils
 using LinearAlgebra, Wavelets
-
-# ========== ACWT Utilities ==========
-"""
-    autocorr(f::OrthoFilter)
-
-Generates the autocorrelation filter for a given wavelet filter.
-"""
-function autocorr(f::OrthoFilter)
-    H = WT.qmf(f)
-    l = length(H)
-    result = zeros(l - 1)
-    for k in 1:(l - 1)
-        for i in 1:(l - k)
-            @inbounds result[k] += H[i] * H[i + k]
-        end
-        result[k] *= 2
-    end
-    return result
-end
-
-"""
-    pfilter(f::OrthoFilter)
-
-Generates the high-pass autocorrelation filter
-
-**See also:** [`qfilter`](@ref), [`autocorr`](@ref)
-"""
-function pfilter(f::OrthoFilter)
-    a = autocorr(f)
-    c1 = 1 / sqrt(2)
-    c2 = c1 / 2
-    b = c2 * a
-    return vcat(reverse(b), c1, b)
-end
-
-"""
-    qfilter(f::OrthoFilter)
-
-Generates the low-pass autocorrelation filter.
-
-**See also:** [`pfilter`](@ref), [`autocorr`](@ref)
-"""
-function qfilter(f::OrthoFilter)
-    a = autocorr(f)
-    c1 = 1 / sqrt(2)
-    c2 = c1 / 2
-    b = -c2 * a
-    return vcat(reverse(b), c1, b)
-end
-
-"""
-    make_acqmfpair(f::OrthoFilter)
-
-Generates the autocorrelation quadratic mirror filters.
-
-**See also:** [`make_acreverseqmfpair`](@ref), [`pfilter`](@ref), [`qfilter`](@ref)
-"""
-function make_acqmfpair(f::OrthoFilter)
-    pmfilter, qmfilter = pfilter(f), qfilter(f)
-    return pmfilter, qmfilter
-end
-
-"""
-    make_acreverseqmfpair(f::OrthoFilter)
-
-Generates the reverse autocorrelation quadratic mirror filters.
-
-**See also:** [`make_acqmfpair`](@ref), [`pfilter`](@ref), [`qfilter`](@ref)
-"""
-function make_acreverseqmfpair(f::OrthoFilter)
-    pmf, qmf = make_acqmfpair(f)
-    return reverse(pmf), reverse(qmf)
-end
 
 # ========== Autocorrelation Discrete Wavelet Transform ==========
 @doc raw"""
@@ -147,7 +80,7 @@ Same as `acdwt` but without array allocation.
 # Arguments
 - `xw::AbstractArray{T,2}`: An allocated array of dimension `(n,L+1)` to write the outputs
   of `x` onto.
-  - `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
   \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
@@ -165,7 +98,7 @@ wt = wavelet(WT.haar)
 
 # ACDWT
 xw = Matrix{Float64}(undef, (128,5))
-acdwt(xw, x, wt, 4)
+acdwt!(xw, x, wt, 4)
 ```
 
 **See also:** [`acdwt`](@ref)
@@ -685,11 +618,13 @@ end
 Performs the inverse autocorrelation discrete wavelet packet transform, with respect to a
 decomposition tree.
 
-!!! note The inverse autocorrelation transform does not require any wavelet filter, but an
+!!! note 
+    The inverse autocorrelation transform does not require any wavelet filter, but an
     optional `wt` positional argument is included for the standardization of syntax with
     `wpt` and `swpt`, but is ignored during the reconstruction of signals.
 
-!!! note This function might not be very useful if one is looking to reconstruct a raw
+!!! note 
+    This function might not be very useful if one is looking to reconstruct a raw
     decomposed signal. The purpose of this function would be better utilized in applications
     such as denoising, where a signal is decomposed (`swpd`) and thresholded
     (`denoise`/`denoiseall`) before being reconstructed.
@@ -847,6 +782,7 @@ end
 #   return (v₀ + v₁) / √2
 # end
 
+include("acwt_utils.jl")
 include("acwt_one_level.jl")
 include("acwt_all.jl")
 

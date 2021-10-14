@@ -108,4 +108,41 @@ end
     yₙ = cat(y,y,y, dims=3)
     @test wpdall(xₙ, wt, 3) ≈ yₙ
     @test iwpdall(yₙ, wt, 3) ≈ xₙ
+
+    # acdwt
+    y = acdwt(x, wt)
+    yₙ = cat(y,y,y, dims=3)
+    @test acdwtall(xₙ, wt) == yₙ
+    @test iacdwtall(yₙ, wt) ≈ xₙ
+
+    # acwpt
+    y = acwpt(x, wt)
+    yₙ = cat(y,y,y, dims=3)
+    @test acwptall(xₙ, wt) == yₙ
+    @test iacwptall(yₙ, wt) ≈ xₙ
+
+    # acwpd
+    y = acwpd(x, wt)
+    yₙ = cat(y,y,y, dims=3)
+    @test acwpdall(xₙ, wt, 3) ≈ yₙ
+    @test iacwpdall(yₙ, wt, 3) ≈ xₙ
+
+    # sdwt
+    y = sdwt(x, wt)
+    yₙ = cat(y,y,y, dims=3)
+    @test sdwtall(xₙ, wt) == yₙ
+    @test isdwtall(yₙ, wt) ≈ xₙ
+
+    # swpt
+    y = swpt(x, wt)
+    yₙ = cat(y,y,y, dims=3)
+    @test swptall(xₙ, wt) == yₙ
+    @test iswptall(yₙ, wt) ≈ xₙ
+
+    # swpd
+    y = swpd(x, wt)
+    yₙ = cat(y,y,y, dims=3)
+    @test swpdall(xₙ, wt, 3) ≈ yₙ
+    @test iswpdall(yₙ, wt, 3) ≈ xₙ
+    @test iswpdall(yₙ, wt, 3, 4) ≈ xₙ
 end
