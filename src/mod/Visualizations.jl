@@ -74,7 +74,7 @@ function treenodes_matrix(x::BitVector)
 end
 
 """
-    plot_tfbdry(tree[; start, nodecolor])
+    plot_tfbdry(tree[; start, nd_col, ln_col, bg_col])
 
 Given a tree, output a visual representation of the leaf nodes, user will have the option to
 start the node count of each level with 0 or 1.
@@ -82,7 +82,9 @@ start the node count of each level with 0 or 1.
 # Arguments
 - `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
 - `start::Integer`: (Default: `0`) Whether to zero-index or one-index the root of the tree.
-- `nodecolor::Symbol`: (Default: `:white`) Color of the leaf nodes.
+- `nd_col::Symbol`: (Default: `:white`) Color of the leaf nodes.
+- `ln_col::Symbol`: (Default: `:white`) Color of lines in plot.
+- `bg_col::Symbol`: (Default: `:black`) Color of background.
 
 # Returns
 `::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
