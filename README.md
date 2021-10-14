@@ -29,7 +29,7 @@ Extension). It contains additional functionalities that complement Wavelets.jl, 
 ## Authors
 This package is written and maintained by Zeng Fung Liew and Shozen Dan under the supervision of Professor Naoki Saito at the University of California, Davis.
 
-## What's New (v0.1.9)
+## What's New (v0.1.10)
 - **Direct support for wavelet transform of multiple signals.** Since the current package deals
   a lot with multiple signals (eg. Joint Best Basis (JBB), group signal denoising, Local
   Discriminant Basis (LDB)), functions are added to transform all signals at once, allowing

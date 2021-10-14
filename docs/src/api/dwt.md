@@ -1,4 +1,4 @@
-# Wavelet Packet Decomposition
+# Standard Wavelet Transforms
 
 ```@index
 Modules = [DWT]
