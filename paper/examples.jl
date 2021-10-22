@@ -114,7 +114,7 @@ ldb = LocalDiscriminantBasis(wt=wt,
 X̂ = fit_transform(ldb, X, y)
 
 # Plot the best basis for feature extraction
-p2 = plot_tfbdry(ldb.tree, nd_col=:black, ln_col=:black, bg_col=:white)
+p2 = plot_tfbdry(ldb.tree, nd_col=:green, ln_col=:black, bg_col=:white)
 plot!(p2, title="Basis Selection using LDB")
 
 p = plot(p1, p2, size=(600,300))
