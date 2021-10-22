@@ -29,7 +29,7 @@ Julia's principle package for wavelets is `Wavelets.jl` [@JuliaDSP:2021], which 
 
 `WaveletsExt.jl` (Wavelets Extension) enlarges the wavelet toolbox for Julia by providing a host of wavelet routines such as Stationary Wavelet Transform [@Nason:1995], Autocorrelation Wavelet Transform [@Saito:1993], Local Discriminant Basis [@Saito:1995], and Shift-invariant Wavelet Packet Decomposition [@Cohen:1995]. The package also contains denoising utilities such as SureShrink [@Donoho:1995a] and Relative Error Shrink [@Irion:2017] as well as several data visualization features.
 
-One of the most distinguishing features of `WaveletsExt.jl` is the presence of algorithms for handling an ensemble of input signals. Currently, `Wavelets.jl` implements best basis selection utilities for wavelet packets for single inputs. However, it does not include methods for selecting a single best basis for a set of inputs with similar properties (e.g., signals or images belonging to the same class), which is valuable for feature extraction and data compression. To address this, `WaveletsExt.jl` implements the Joint Best Basis (JBB) [@Wickerhauser:1996] and the Least Statistically Dependent Basis (LSDB) [@Saito:2001], which are approximations of the Principal Component Analysis (PCA) and Independent Component Analysis (ICA) respectively, obtained via a dictionary of orthonormal bases.
+One of the most distinguishing features of `WaveletsExt.jl` is the presence of algorithms for handling an ensemble of input signals. Currently, `Wavelets.jl` implements best basis selection utilities for wavelet packets for a single input. However, it does not include methods for selecting a single best basis for a set of inputs with similar properties (e.g., signals or images belonging to the same class), which is valuable for feature extraction and data compression. To address this, `WaveletsExt.jl` implements the Joint Best Basis (JBB) [@Wickerhauser:1996] and the Least Statistically Dependent Basis (LSDB) [@Saito:2001], which are approximations of the Principal Component Analysis (PCA) and Independent Component Analysis (ICA) respectively, obtained via a dictionary of orthonormal bases.
 
 # Examples
 ## 1. Redundant Wavelet Transforms
@@ -83,10 +83,10 @@ p2 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |>
 p = plot(p1, p2, layout=(1,2), size=(600,300))
 savefig(p, "bestbasis.png")
 ```
-![The best basis trees of 100 noisy Heavy Sine signals selected by the JBB and LSDB algorithms. \label{fig:bestbasis}](bestbasis.png)
+![The best basis trees of 100 noisy HeaviSine (A sinusoid + two Heaviside step functions) [@Donoho:1995a; @Donoho1995b] signals selected by the JBB and LSDB algorithms. \label{fig:bestbasis}](bestbasis.png)
 
 ## Denoising Algorithms
-`WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single signal whereas the latter denoises a set of signals simultaneously. For more examples of denoising using `WaveletsExt.jl`, refer to [@Liew:2021].
+`WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single signal whereas the latter denoises a set of signals simultaneously. For more examples of denoising algorithms in `WaveletsExt.jl`, refer to [@Liew:2021].
 
 ```julia
 using Plots, Wavelets, WaveletsExt
@@ -122,10 +122,10 @@ wiggle!(x̂, sc=0.7, FaceColor=:white, ZDir=:reverse)
 p = plot(p1, p2, layout=(1,2), size=(600,300))
 savefig(p, "denoising.png")
 ```
-![Left: Heavy Sine signals with Gaussian noise. Right: Simultaneously denoised signals.  \label{fig:denoising}](denoising.png)
+![Left: HeaviSine signals with Gaussian noise. Right: Simultaneously denoised signals.  \label{fig:denoising}](denoising.png)
 
 ## Feature Extraction
-Users can extract distinguishing features of signals localized in time and frequency using the Local Discriminant Basis (LDB) algorithm. Further details can be found in the original paper by Saito (1995) [@Saito:1995] and the interactive tutorial [@Dan:2021].
+Users can extract distinguishing features of signals localized in time and frequency using the Local Discriminant Basis (LDB) algorithm. Further details can be found in the original papers by Saito and his collaborators [@Saito:1995; @Saito:2002] as well as the interactive tutorial [@Dan:2021].
 
 ```julia
 using Plots, Wavelets, WaveletsExt
