@@ -10,17 +10,17 @@ using Plots,
 #    (Beylkin, Saito), Stationary Wavelet Transforms (Nason, Silverman), and Shift Invariant
 #    Wavelet Transforms (Cohen, Raz, Malah).
 
-x = zeros(1<<8)                         # Generate heavysine signal of length 2⁸
+x = zeros(1<<8)
 x[128] = 1
 wt = wavelet(WT.db4)                    # Construct Daubechies 4-tap wavelet filter
 
 # ----- Autocorrelation Wavelet Transforms -----
-y = acwt(x, wt)
-p1 = wiggle(y) |> p -> plot!(p, title="Autocorrelation WT")
+y = acdwt(x, wt)
+p1 = wiggle(y) |> p -> plot!(p, yticks=1:9, title="Autocorrelation WT")
 
 # ----- Stationary Wavelet Transforms -----
 y = sdwt(x, wt)
-p2 = wiggle(y) |> p -> plot!(p, title="Stationary WT")
+p2 = wiggle(y) |> p -> plot!(p, yticks=1:9, title="Stationary WT")
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
@@ -35,15 +35,17 @@ savefig(p, "transforms.png")
 # Generate 100 noisy heavysine signals of length 2⁸
 x = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 100, 2, true, 0.5)
 # Wavelet packet decomposition of all signals
-xw = [wpd(xᵢ, wt) for xᵢ in eachcol(x)] |> xw -> cat(xw..., dims=3)
+xw = wpdall(x, wt)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
-p1 = plot_tfbdry(tree) |> p -> plot!(p, title="JBB")
+p1 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |> 
+     p -> plot!(p, title="JBB")
 
 # ----- Least Statistically Dependent Basis (LSDB)
 tree = bestbasistree(xw, LSDB())
-p2 = plot_tfbdry(tree) |> p -> plot!(p, title="LSDB")
+p2 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |> 
+     p -> plot!(p, title="LSDB")
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
@@ -59,7 +61,7 @@ x₀ = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 6, 2, false)
 x = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 6, 2, true, 0.8)
 
 # Decompose each noisy signal
-xw = [wpd(xᵢ, wt) for xᵢ in eachcol(x)] |> xw -> cat(xw..., dims=3)
+xw = wpdall(x, wt)
 
 # Get best basis tree from the decomposition of signals
 bt = bestbasistree(xw, JBB())
@@ -90,13 +92,12 @@ savefig(p, "denoising.png")
 X, y = generateclassdata(ClassData(:cbf, 100, 100, 100))
 # View sample signals and how each class differs from one another
 cylinder = wiggle(X[:,1:5], sc=0.3)
-plot!(cylinder, title="Cylinder signals")
+plot!(cylinder, yticks=1:5, title="Cylinder signals")
 bell = wiggle(X[:,101:105], sc=0.3)
-plot!(bell, title="Bell signals")
+plot!(bell, yticks=1:5, title="Bell signals")
 funnel = wiggle(X[:,201:205], sc=0.3)
-plot!(funnel, title="Funnel signals")
-p = plot(cylinder, bell, funnel, layout=(3,1))
-savefig(p, "cyl_bel_fun.png")
+plot!(funnel, yticks=1:5, title="Funnel signals")
+p1 = plot(cylinder, bell, funnel, layout=(3,1))
 
 # Define Local Discriminant Basis object (`n_features` can be tweaked depending on the
 # number of desired features to be used as input into classification model)
@@ -113,5 +114,8 @@ ldb = LocalDiscriminantBasis(wt=wt,
 X̂ = fit_transform(ldb, X, y)
 
 # Plot the best basis for feature extraction
-p = plot_tfbdry(ldb.tree)
+p2 = plot_tfbdry(ldb.tree, nd_col=:black, ln_col=:black, bg_col=:white)
+plot!(p2, title="Basis Selection using LDB")
+
+p = plot(p1, p2, size=(600,300))
 savefig(p, "ldb.png")
