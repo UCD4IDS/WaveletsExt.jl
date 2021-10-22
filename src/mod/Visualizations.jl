@@ -13,8 +13,46 @@ using
 """
     treenodes_matrix(x) 
 
-Given a `BitVector` of nodes in a binary tree, output the matrix representation 
-of the nodes.
+Given a `BitVector` of nodes in a binary tree, output the matrix representation of the
+nodes.
+
+# Arguments
+- `x::BitVector`: BitVector representing a binary tree, where an input is 1 if the
+  corresponding node exists and has children, and 0 if the corresponding node does not
+  exist/does not have children.
+
+# Returns
+`::BitMatrix`: BitMatrix representation of the tree, where each column corresponds to a
+level of the binary tree. The inputs in the matrix are 1 if the corresponding node exists
+and has children, and 0 if the corresponding node does not exist/does not have children.
+
+# Visualization
+```
+# Binary tree
+      x
+     / \\
+    x   o
+   / \\
+  x   o
+ / \\
+o   o
+
+# BitVector representation
+[1,1,0,1,0,0,0]
+
+# BitMatrix representation
+[1 1 1 1;
+ 1 1 0 0;
+ 1 0 0 0]
+```
+
+# Examples
+```@repl
+using Wavelets, WaveletsExt
+
+tree = maketree(8, 3, :dwt)
+WaveletsExt.Visualizations.treenodes_matrix(tree)
+```
 """
 function treenodes_matrix(x::BitVector)  
     n = (length(x) + 1) >> 1
@@ -36,7 +74,7 @@ function treenodes_matrix(x::BitVector)
 end
 
 """
-    plot_tfbdry(tree[; start, nodecolor])
+    plot_tfbdry(tree[; start, nd_col, ln_col, bg_col])
 
 Given a tree, output a visual representation of the leaf nodes, user will have the option to
 start the node count of each level with 0 or 1.
@@ -44,13 +82,15 @@ start the node count of each level with 0 or 1.
 # Arguments
 - `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
 - `start::Integer`: (Default: `0`) Whether to zero-index or one-index the root of the tree.
-- `nodecolor::Symbol`: (Default: `:white`) Color of the leaf nodes.
+- `nd_col::Symbol`: (Default: `:white`) Color of the leaf nodes.
+- `ln_col::Symbol`: (Default: `:white`) Color of lines in plot.
+- `bg_col::Symbol`: (Default: `:black`) Color of background.
 
 # Returns
 `::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
 
 # Examples
-```
+```julia
 using Wavelets, WaveletsExt
 
 # Build a tree using Wavelets `maketree`
@@ -60,8 +100,11 @@ tree = maketree(128, 7, :dwt)
 plot_tfbdry(tree)
 ```
 """
-function plot_tfbdry(tree::BitVector; start::Integer=0, 
-        nodecolor::Symbol=:white)
+function plot_tfbdry(tree::BitVector; 
+                     start::Integer = 0, 
+                     nd_col::Symbol = :white,
+                     ln_col::Symbol = :white,
+                     bg_col::Symbol = :black)
 
     @assert 0 <= start <= 1
     leaf = getleaf(tree)
@@ -70,27 +113,27 @@ function plot_tfbdry(tree::BitVector; start::Integer=0,
     nrow = Int(log2(ncol)) + 1
     mat = treenodes_matrix(leaf)
 
-    p = heatmap(start:(ncol+start-1), 0:(nrow-1), mat, 
-        color = [:black, nodecolor], legend = false, 
-        background_color = :black)
+    p = heatmap(start:(ncol+start-1), 0:(nrow-1), mat, color = [bg_col, nd_col], 
+                legend = false, background_color = bg_col)
 
-    plot!(p, xlims = (start-0.5, ncol+start-0.5), 
-        ylims = (-0.5, nrow-0.5), yticks = 0:nrow)
+    plot!(p, xlims = (start-0.5, ncol+start-0.5), ylims = (-0.5, nrow-0.5), yticks = 0:nrow)
     # plot horizontal lines
     for j in 0:(nrow-1)
-        plot!(p, (start-0.5):(ncol+start-0.5), (j-0.5)*ones(ncol+1), 
-            color = :white, legend = false)
+        x_rng = (start-0.5):(ncol+start-0.5)
+        y_val = (j-0.5)*ones(ncol+1)
+        plot!(p, x_rng, y_val, color = ln_col, legend = false)
     end
 
     # plot vertical lines
     for j in 1:(nrow-1)
         for jj in 1:2^(j-1)
-            vpos = (ncol/2^j)*(2*jj-1)+start-0.5;
-            plot!(p, vpos*ones(nrow-j+1), j-0.5:nrow-0.5, color = :white)
+            x_val = (ncol/2^j)*(2*jj-1)+start-0.5;
+            y_rng = j-0.5:nrow-0.5
+            plot!(p, x_val*ones(nrow-j+1), y_rng, color = ln_col)
         end
     end
-    plot!(p, (ncol+start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = :white)
-    plot!(p, (start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = :white)
+    plot!(p, (ncol+start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = ln_col)
+    plot!(p, (start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = ln_col)
     plot!(p, yaxis = :flip)
 
     return p
@@ -98,11 +141,15 @@ end
 
 """
     wiggle(wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
+    wiggle(plt, wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
 
 Plots a set of shaded wiggles.
 
 # Arguments
+- `plt::Plots.Plot`: Input plot to plot shaded wiggles.
 - `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+
+# Keyword Arguments
 - `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
 - `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
 - `sc::Real`: (Default: `1`) Scale factor/magnification.
@@ -122,14 +169,20 @@ Plots a set of shaded wiggles.
 `::Plots.Plot`: Shaded wiggles on top of current plot object.
 
 # Examples
-```
+```julia
 using Plots, WaveletsExt
 
 # Generate random signals
 x = randn(16, 5)
 
-# Build wiggles
+# ----- Build wiggles -----
+# Method 1
 wiggle(x)
+
+# Method 2
+p = Plot()
+wiggle(p, x)
+```
 
 Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito. The previous MATLAB
 version contributors are Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC).  
@@ -138,67 +191,23 @@ Revised by Naoki Saito, Feb. 05, 2018. Maintained by Zeng Fung Liew for newest J
 compatibility. 
 
 **See also:** [`wiggle!`](@ref)
-```
 """
 wiggle(args...; kwargs...) = wiggle!(Plots.Plot(), args...; kwargs...)
-
-"""
-    wiggle(plt, wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
-
-Plots a set of shaded wiggles on top of the existing plot `plt` and return the output in a
-newly generated plot object.
-
-# Arguments
-- `plt::Plots.Plot`: Input plot to plot shaded wiggles.
-- `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
-- `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
-- `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
-- `sc::Real`: (Default: `1`) Scale factor/magnification.
-- `EdgeColor::Symbol`: (Default: `:black`) Sets edge of wiggles color.
-- `FaceColor::Symbol`: (Default: `:black`) Sets shading color of wiggles.
-- `Overlap::Bool`: (Default: `true`) How signals are scaled.
-    - `true`  - Signals overlap (default);
-    - `false` - Signals are scaled so they do not overlap.
-- `Orient::Symbol`: (Default: `:across`) Controls orientation of wiggles.
-    - `:across` - from left to right
-    - `:down`   - from top to down
-- `ZDir::Symbol`: (Default: `:normal`) Direction of space axis.
-    - `:normal`  - First signal at bottom (default)
-    - `:reverse` - First signal at top.
-
-# Returns
-`::Plots.Plot`: Same plot object with shaded wiggles.
-
-# Examples
-```
-using Plots, WaveletsExt
-
-# Generate random signals
-x = randn(16, 5)
-
-# Build wiggles on top of `plt`
-plt = plot()
-plt_new = wiggle(plt, x)    # plt remains the way it is
-```
-
-Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito. The previous MATLAB
-version contributors are Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC).
-
-Revised by Naoki Saito, Feb. 05, 2018. Maintained by Zeng Fung Liew for newest Julia version
-compatibility. 
-
-**See also:** [`wiggle!`](@ref)
-"""
 wiggle(plt::Plots.Plot, args...; kwargs...) = wiggle!(deepcopy(plt), args...; kwargs...)
 
 """
     wiggle!(wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
+    wiggle!(plt, wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
 
-Plot a set of shaded wiggles on the current displayed graphics. If there are no displayed
-graphics currently available, a new `Plots.Plot` object is generated to plot the shaded wiggles.
+Plot a set of shaded wiggles on the current displayed graphics or on top of `plt`. If there
+are no displayed graphics currently available, a new `Plots.Plot` object is generated to
+plot the shaded wiggles.
 
 # Arguments
+- `plt::Plots.Plot`: Input plot to plot shaded wiggles.
 - `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+
+# Keyword Arguments
 - `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
 - `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
 - `sc::Real`: (Default: `1`) Scale factor/magnification.
@@ -218,15 +227,19 @@ graphics currently available, a new `Plots.Plot` object is generated to plot the
 `::Plots.Plot`: Shaded wiggles on top of current plot object.
 
 # Examples
-```
+```julia
 using Plots, WaveletsExt
 
 # Generate random signals
 x = randn(16, 5)
 
-# Build wiggles on `plt`
+# ----- Build wiggles -----
+# Build onto existing plot
 plt = plot()
 wiggle!(x)
+
+# Build onto a specified plot
+wiggle!(plt, x)
 ```
 
 Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito. The previous MATLAB
@@ -248,52 +261,6 @@ function wiggle!(args...; kwargs...)
     wiggle!(current(), args...; kwargs...)
 end
 
-"""
-    wiggle!(plt, wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
-
-Plot a set of shaded wiggles onto `plt`.
-
-# Arguments
-- `plt::Plots.Plot`: Input plot to plot shaded wiggles.
-- `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
-- `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
-- `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
-- `sc::Real`: (Default: `1`) Scale factor/magnification.
-- `EdgeColor::Symbol`: (Default: `:black`) Sets edge of wiggles color.
-- `FaceColor::Symbol`: (Default: `:black`) Sets shading color of wiggles.
-- `Overlap::Bool`: (Default: `true`) How signals are scaled.
-    - `true`  - Signals overlap (default);
-    - `false` - Signals are scaled so they do not overlap.
-- `Orient::Symbol`: (Default: `:across`) Controls orientation of wiggles.
-    - `:across` - from left to right
-    - `:down`   - from top to down
-- `ZDir::Symbol`: (Default: `:normal`) Direction of space axis.
-    - `:normal`  - First signal at bottom (default)
-    - `:reverse` - First signal at top.
-
-# Returns
-`plt::Plots.Plot`: Same plot object with shaded wiggles.
-
-# Examples
-```
-using Plots, WaveletsExt
-
-# Generate random signals
-x = randn(16, 5)
-
-# Build wiggles on `plt`
-plt = plot()
-wiggle!(plt, x)
-```
-
-Translated by Nicholas Hausch -- MATLAB file provided by Naoki Saito. The previous MATLAB
-version contributors are Anthony K. Booer (SLB) and Bradley Marchand (NSWC-PC).  
-
-Revised by Naoki Saito, Feb. 05, 2018. Maintained by Zeng Fung Liew for newest Julia version
-compatibility. 
-
-**See also:** [`wiggle`](@ref)
-"""
 function wiggle!(plt::Plots.Plot,
                  wav::AbstractArray{T,2};
                  taxis::AbstractVector=1:size(wav,1),

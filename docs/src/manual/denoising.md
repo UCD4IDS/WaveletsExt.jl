@@ -1,7 +1,7 @@
 # [Signal Denoising](@id denoising_manual)
 Wavelet denoising is an important step in signal analysis as it helps remove unnecessary high frequency noise while maintaining the most important features of the signal. Intuitively, signal denoising comes in the following simple steps:
 1. Decompose a signal or a group of signals. One can choose to decompose signals into its best basis tree for more optimal results.
-2. Find a suitable threshold value. There are many ways to do so, with VisuShrink method by D. Donoho and I. Johnstone being one of the most popular approaches. The VisuShrink implementation in Wavelets.jl, along with the RelErrorShrink and the SureShrink implementations in WaveletsExt.jl give users more threshold selection options.
+2. Find a suitable threshold value. There are many ways to do so, with VisuShrink (D. Donoho, I. Johnstone) being one of the most popular approaches. The VisuShrink implementation in Wavelets.jl, along with the RelErrorShrink and the SureShrink implementations in WaveletsExt.jl give users more threshold selection options.
 3. Threshold the wavelet coefficients. There are various thresholding methods implemented in Wavelets.jl for this purpose, with Hard and Soft thresholding being the usual go-to method due to its simplistic approach.
 4. Reconstruct the original signals using the thresholded coefficients.
 
@@ -28,16 +28,17 @@ x = x₀ + 0.8*randn(256)
 wt = wavelet(WT.db4)
 
 # best basis tree
-bt = bestbasistree(wpd(x, wt), BB())
-y = bestbasiscoef(x, wt, bt)
+xw = wpd(x, wt)
+bt = bestbasistree(xw, BB())
+y = bestbasiscoef(xw, bt)
 
 # denoise
 x̂ = denoise(y, :wpt, wt, tree=bt)
 
 # plot results
 nothing # hide
-# plot([x₀ x x̂], title="Denoising Example", label=["original" "noisy" "denoised"],
-#      lw=[3 1 2], lc=[:black :grey :red])
+plot([x₀ x x̂], title="Denoising Example", label=["original" "noisy" "denoised"],
+     lw=[3 1 2], lc=[:black :grey :red])
 ```
 
 ## Denoising a group of signals
@@ -66,8 +67,8 @@ X̂ = denoiseall(Y, :wpt, wt, tree=bt)
 
 # plot results
 nothing # hide
-# wiggle(X₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
-# wiggle!(X, sc=0.7, EdgeColor=:grey, FaceColor=:white, ZDir=:reverse)
-# wiggle!(X̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
-# plot!(title="Group Denoising Example")
+wiggle(X₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
+wiggle!(X, sc=0.7, EdgeColor=:grey, FaceColor=:white, ZDir=:reverse)
+wiggle!(X̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
+plot!(title="Group Denoising Example")
 ```

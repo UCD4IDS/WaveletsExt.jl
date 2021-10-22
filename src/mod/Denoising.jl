@@ -4,9 +4,7 @@ export
     RelErrorShrink,
     SureShrink,
     denoiseall,
-    surethreshold,
-    relerrorthreshold,
-    relerrorplot
+    relerrorthreshold
     
 using 
     Wavelets, 
@@ -15,73 +13,425 @@ using
     Plots
 
 using 
-    ..WPD,
+    ..DWT,
     ..SWT,
     ..ACWT,
     ..Utils
 
-# DENOISING
+# ========== Threshold Determination Methods ==========
 """
-    RelErroShrink(th, t) <: DNFT
+    RelErrorShrink(th, t) <: DNFT
 
-Relative Error Shrink method used in their paper "Efficient Approximation and 
-Denoising of Graph Signals using the Multiscale Basis Dictionary" for IEEE 
-Transactions on Signal and Information Processing over Networks, Vol 0, No. 0, 
-2016.
+Relative Error Shrink method used in their paper "Efficient Approximation and Denoising of
+Graph Signals using the Multiscale Basis Dictionary" for IEEE Transactions on Signal and
+Information Processing over Networks, Vol 0, No. 0, 2016.
+
+# Attributes
+- `th::Wavelets.Threshold.THType`: (Default: `Wavelets.HardTH()`) Threshold type.
+- `t::AbstractFloat`: (Default: 1.0) Threshold size.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+RelErrorShrink()                    # Using default th and t values
+RelErrorShrink(SoftTH())            # Using default t value
+RelErrorShrink(HardTH(), 0.5)       # Using user input th and t values
+```
+
+**See also:** [`SureShrink`](@ref), [`VisuShrink`](@ref)
 """
 struct RelErrorShrink <: DNFT
+    # Attributes
     th::Wavelets.Threshold.THType
     t::AbstractFloat
-    RelErrorShrink(th, t) = new(th, t)
+    # Constructor
+    RelErrorShrink(th = HardTH(), t = 1.0) = new(th, t)
 end
 
 """
     SureShrink(th, t) <: DNFT
 
 Stein's Unbiased Risk Estimate (SURE) Shrink
+
+# Attributes
+- `th::Wavelets.Threshold.THType`: (Default: `Wavelets.HardTH()`) Threshold type.
+- `t::AbstractFloat`: (Default: 1.0) Threshold size.
+
+**See also:** [`RelErrorShrink`](@ref), [`VisuShrink`](@ref)
 """
-struct SureShrink <: DNFT 
+struct SureShrink <: DNFT
+    # Attributes
     th::Wavelets.Threshold.THType
     t::AbstractFloat
+    # Constructor
     SureShrink(th, t) = new(th, t)
+end
+
+"""
+    SureShrink(xw[, redundant, tree, th])
+
+Struct constructor for `SureShrink` based on the signal coefficients `xw`.
+
+# Arguments
+- `xw::AbstractArray{T} where T<:Number`: Decomposed signal.
+- `redundant::Bool`: (Default: `false`) Whether the transform type of `xw` is a redundant
+  transform. Autocorrelation and stationary wavelet transforms are examples of redundant
+  transforms.
+- `tree::Union{BitVector, Nothing}`: (Default: `nothing`) The basis tree for decomposing
+  `xw`. Must be provided if `xw` is decomposed using `wpt`, `swpd`, or `acwpd`.
+- `th::Wavelets.Threshold.THType`: (Default: `HardTH()`) Threshold type.
+
+# Returns
+`::SureShrink`: SUREShrink object.
+
+# Examples
+```julia
+SureShrink(xw)                  # `xw` is output of dwt, wpt
+SureShrink(xw, true)            # `xw` is output of sdwt, acdwt, swpt, acwpt
+SureShrink(xw, true, tree)      # `xw` is output of swpd, acwpd
+```
+
+**See also:** [`SureShrink`](@ref), [`surethreshold`](@ref)
+"""
+function SureShrink(xw::AbstractArray{T}, 
+                    redundant::Bool = false,
+                    tree::Union{BitVector, Nothing} = nothing,
+                    th::Threshold.THType = HardTH()) where T<:Number
+    t = surethreshold(xw, redundant, tree)
+    return SureShrink(th, t)
 end
 
 """
     VisuShrink(n, th)
 
 Extension to the `VisuShrink` struct constructor from `Wavelets.jl`.
+
+# Arguments
+- `n::Integer`: Signal length.
+- `th::Wavelets.Threshold.THType`: Threshold type.
+
+# Returns
+`::Wavelets.Threshold.VisuShrink`: VisuShrink object.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+VisuShrink(128, SoftTH())
+```
 """
-function Wavelets.Threshold.VisuShrink(n::Integer, 
-        th::Wavelets.Threshold.THType)
+function Wavelets.Threshold.VisuShrink(n::Integer, th::Wavelets.Threshold.THType)
     return VisuShrink(th, sqrt(2*log(n)))
 end
 
 """
-    RelErrorShrink([th=HardTH()])
+    surethreshold(coef, redundant[, tree])
 
-Struct constructor for Relative Error Shrink.
+Determination of the `t` value used for `SureShrink`. `t` is defined as the threshold value
+when the standard deviation of the noisy signal is 1.
+
+# Arguments
+- `coef::AbstractArray{T} where T<:Number`: Coefficients of decomposed signal.
+- `redundant::Bool`: Whether the transform type of `xw` is a redundant transform.
+  Autocorrelation and stationary wavelet transforms are examples of redundant transforms.
+- `tree::Union{BitVector, Nothing}`: (Default: `nothing`) The basis tree for decomposing
+  `xw`. Must be provided if `xw` is decomposed using `wpt`, `swpd`, or `acwpd`.
+
+# Returns
+`::AbstractFloat`: `t` value used for `SureShrink`.
+
+**See also:** [`SureShrink`](@ref)
 """
-function RelErrorShrink(th::Wavelets.Threshold.THType=HardTH())
-    return RelErrorShrink(th, 1.0)
+function surethreshold(coef::AbstractArray{T}, 
+                       redundant::Bool,
+                       tree::Union{BitVector,Nothing} = nothing) where T<:Number
+    # extract necessary coefficients
+    if !redundant                              # dwt or wpt
+        y = coef
+    elseif redundant && isa(tree, Nothing)     # sdwt, acdwt, swpt, or acwpt
+        y = reshape(coef, :)
+    else                                       # swpd or acwpd
+        leaves = getleaf(tree)
+        y = reshape(coef[:, leaves], :)
+    end
+    a = sort(abs.(y)).^2
+    b = cumsum(a)
+    n = length(y)
+    c = collect(reverse(0:(n-1)))
+    s = b + c .* a
+    risk = (n .- (2*(1:n)) + s)/n
+    i = argmin(risk)
+    return sqrt(a[i])
+end
+
+# ========== Noise Estimation ==========
+"""
+    noisest(x, redundant[, tree])
+
+Extension to the `noisest` function from `Wavelets.jl`. Estimates the standard deviation of
+a signal's noise assuming that the noise is distributed normally. This function is generally
+used in combination with `VisuShrink` and `SureShrink` in the `denoise`/`denoiseall`
+functions. 
+
+# Arguments
+- `x::AbstractArray{T}`: Decomposed signal.
+- `redundant::Bool`: Whether the transform type of `xw` is a redundant transform.
+  Autocorrelation and stationary wavelet transforms are examples of redundant transforms.
+- `tree::Union{BitVector, Nothing}`: (Default: `nothing`) The basis tree for decomposing
+  `xw`. Must be provided if `xw` is decomposed using `wpt`, `swpd`, or `acwpd`.
+
+# Returns
+`::AbstractFloat`: Estimated standard deviation of the noise of the signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+x = randn(128)
+wt = wavelet(WT.haar)
+
+# noise estimate for dwt transformation
+y = dwt(x, wt)
+noise = noisest(y, false)
+
+# noise estimate for wpt transformation
+tree = maketree(x, :full)
+y = wpt(x, wt, tree)
+noise = noisest(y, false, tree)
+
+# noise estimate for sdwt transformation
+y = sdwt(x, wt)
+noise = noisest(y, true)
+
+# noise estimate for swpd transformation
+y = swpd(x, wt)
+noise = noisest(y, true, tree)
+```
+
+**See also:** [`relerrorthreshold`](@ref), [`VisuShrink`](@ref), [`SureShrink`](@ref)
+"""
+function Wavelets.Threshold.noisest(x::AbstractArray{T}, 
+                                    redundant::Bool,
+                                    tree::Union{BitVector,Nothing} = nothing) where T<:Number
+    # Sanity check
+    @assert isdyadic(size(x,1))
+
+    # Get detail coefficients
+    if !redundant && isa(tree, Nothing)        # regular dwt
+        n₀ = size(x,1) ÷ 2
+        dr = x[(n₀+1):end]
+    elseif !redundant && isa(tree, BitVector)  # regular wpt
+        dr = x[finestdetailrange(x, tree)]
+    elseif redundant && isa(tree, Nothing)     # redundant dwt
+        dr = x[:,end]
+    else                                       # redundant wpd
+        dr = x[finestdetailrange(x, tree, true)...]
+    end
+    return Wavelets.Threshold.mad!(dr)/0.6745
 end
 
 """
-    SureShrink(x[, tree=nothing, th=SteinTH()])
+    relerrorthreshold(coef, [redundant, tree, elbows; makeplot])
 
-Struct constructor for `SureShrink` based on the signal coefficients `x`.
+Takes in a set of expansion coefficients, 'plot' the threshold vs relative error curve and
+select the best threshold value based on the elbow method. If one wants to see the resulting
+plot from this computation, simply set `makeplot=true`.
 
-**See also:** [`surethreshold`](@ref)
+# Arguments
+- `coef::AbstractArray{T} where T<:Number`: Decomposed signal.
+- `redundant::Bool`: (Default: `false`) Whether the transform type of `xw` is a redundant
+  transform. Autocorrelation and stationary wavelet transforms are examples of redundant
+  transforms.
+- `tree::Union{BitVector, Nothing}`: (Default: `nothing`) The basis tree for decomposing
+  `xw`. Must be provided if `xw` is decomposed using `swpd` or `acwpd`.
+- `elbows::Integer`: (Default: 2) Number of elbows used to determine the best threshold
+  value.
+
+# Keyword Arguments
+- `makeplot::Bool`: (Default: `false`) Whether to return the plot that was used to determine
+  the best threshold value.
+
+# Returns
+- `::AbstractFloat`: Best threshold value.
+- `::GR.Plot`: Plot that was used to determine the best threshold value. Only returned if
+  `makeplot = true`.
+
+# Examples
+```julia
+x = randn(128)
+wt = wavelet(WT.haar)
+
+# noise estimate for dwt transformation
+y = dwt(x, wt)
+noise = relerrorthreshold(y, false)
+
+# noise estimate for wpt transformation
+tree = maketree(x, :full)
+y = wpt(x, wt, tree)
+noise = relerrorthreshold(y, false, tree)
+
+# noise estimate for sdwt transformation
+y = sdwt(x, wt)
+noise = relerrorthreshold(y, true)
+
+# noise estimate for swpd transformation
+y = swpd(x, wt)
+noise = relerrorthreshold(y, true, tree)
+```
+
+**See also:** [`noisest`](@ref), [`RelErrorShrink`](@ref)
 """
-function SureShrink(x::AbstractArray{<:Number}, 
-        tree::Union{BitVector, Nothing}=nothing,
-        th::Wavelets.Threshold.THType=SteinTH())
-
-    t = ndims(x)==1 ? surethreshold(x, false) : surethreshold(x, true, tree)
-    return SureShrink(th, t)
+function relerrorthreshold(coef::AbstractArray{T}, 
+                           redundant::Bool = false,
+                           tree::Union{BitVector,Nothing} = nothing, 
+                           elbows::Integer = 2;
+                           makeplot::Bool = false) where T<:Number
+    # Sanity check
+    @assert elbows >= 1
+    # extract necessary coefficients
+    if !redundant                              # dwt or wpt
+        c = coef
+    elseif redundant && isa(tree, Nothing)     # sdwt
+        c = reshape(coef, :)
+    else                                       # swpd
+        leaves = getleaf(tree)
+        c = reshape(coef[:, leaves], :)
+    end
+    # the magnitudes of the coefficients
+    x = sort(abs.(c), rev = true)
+    # compute the relative error curve
+    r = orth2relerror(c)
+    # shift the data points
+    push!(x, 0)
+    pushfirst!(r, r[1])
+    # reorder the data points
+    xmax = maximum(x)
+    ymax = maximum(r)
+    x = x[end:-1:1]/xmax
+    y = r[end:-1:1]/ymax
+    # compute elbow method 
+    ix = Vector{Integer}(undef, elbows)
+    A = Vector{Vector{T}}(undef, elbows)
+    v = Vector{Vector{T}}(undef, elbows)
+    ix[1], A[1], v[1] = findelbow(x,y)          # First elbow point
+    for i in 2:elbows                           # Second elbow point and beyond
+        @inbounds (ix[i], A[i], v[i]) = findelbow(x[1:ix[i-1]], y[1:ix[i-1]]) 
+    end
+    # plot relative error curve
+    if makeplot
+        p = relerrorplot(x*xmax, y*ymax, ix, A, v)
+        return x[ix[end]]*xmax, p
+    else
+        return x[ix[end]]*xmax
+    end
 end
 
-                                                                                # TODO: add additional threshold determination methods
+"""
+    orth2relerror(orth)
 
+Given a vector 'orth' of orthonormal expansion coefficients, return a vector of relative
+approximation errors when retaining the 1,2,...,N largest coefficients in magnitude.
+
+# Arguments
+- `orth::AbstractVector{T} where T<:Number`: Vector of coefficients.
+
+# Returns
+`::Vector{T}`: Relative errors.
+
+**See also:** [`RelErrorShrink`](@ref), [`relerrorthreshold`](@ref), [`findelbow`](@ref)
+"""
+function orth2relerror(orth::AbstractVector{T}) where T<:Number
+    # sort the coefficients
+    orth = sort(orth.^2, rev = true)
+    # compute the relative errors
+    return ((abs.(sum(orth) .- cumsum(orth))).^0.5) / sum(orth).^0.5
+end
+
+"""
+    findelbow(x, y)
+
+Given the x and y coordinates of a curve, return the elbow.
+
+# Arguments
+- `x::AbstractVector{T} where T<:Number`: x-coordinates.
+- `y::AbstractVector{T} where T<:Number`: y-coordinates.
+
+# Returns
+- `::Integer`: Index of the elbow point.
+- `::Vector{T}`: Length of adjacent sides.
+- `::Vector{T}`: The y-coordinates going in the direction of (x₁, y₁) to (xₙ, yₙ)
+
+**See also:** [`RelErrorShrink`](@ref), [`relerrorthreshold`](@ref), [`orth2relerror`](@ref)
+"""
+function findelbow(x::AbstractVector{T}, y::AbstractVector{T}) where T<:Number
+    # a unit vector pointing from (x1,y1) to (xN,yN)
+    v = [x[end] - x[1], y[end] - y[1]]
+    v = v/norm(v,2)
+    # subtract (x1,y1) from the coordinates
+    xy = [x.-x[1] y.-y[1]]
+    # the hypothenuse
+    H = reshape((sum(xy.^2, dims = 2)).^0.5, :)
+    # the adjacent side
+    A = xy * v
+    # the opposite side
+    O = abs.(H.^2 - A.^2).^0.5       
+    # return the largest distance
+    return (findmax(O)[2], A, v)
+end
+
+"""
+    relerrorplot(x, y, ix, A, v)
+
+Relative error plot used for threshold determination using the elbow rule.
+
+# Arguments
+- `x::Vector{T} where T<:Number`: x-coordinates.
+- `y::Vector{T} where T<:Number`: y-coordinates.
+- `ix::Vector{<:Integer}`: Indices for elbow points.
+- `A::Vector{S} where {S<:Vector{T}, T<:Number}`: Length of adjacent sides.
+- `v::Vector{S} where {S<:Vector{T}, T<:Number}`: The y-coordinates going in the direction
+  of (x[1], y[1]) to (x[ix], y[ix])
+
+# Returns
+`::Plot`: Relative error plot.
+
+**See also:** [`relerrorthreshold`](@ref), [`findelbow`](@ref)
+"""
+function relerrorplot(x::Vector{T}, 
+                      y::Vector{T}, 
+                      ix::Vector{<:Integer}, 
+                      A::Vector{S}, 
+                      v::Vector{S}) where {T<:Number, S<:Vector{T}}
+    @assert length(ix) == length(A) == length(v)
+    elbows = length(ix)
+    # rescale x and y values
+    xmax = maximum(x)
+    ymax = maximum(y)
+    # relative error line
+    p = plot(x, y, lw = 2, color = :blue, legend = false)
+    plot!(p, xlims = (0, 1.004*xmax), ylims = (0, 1.004*ymax))
+    for i in 1:elbows
+        col = i + 1
+        # diagonal line
+        endpoint = i > 1 ? ix[i-1] : length(x)
+        plot!([x[1], 1.004*x[endpoint]], [y[1], 1.004*y[endpoint]], lw = 2, 
+            color = col)
+        # perpendicular line
+        dropto = [x[1], y[1]] + A[i][ix[i]]*(v[i].*[xmax, ymax])
+        plot!(p, [x[ix[i]], dropto[1]], [y[ix[i]], dropto[2]], lw = 2, 
+            color = col)
+        # highlight point
+        scatter!(p, [x[ix[i]]], [y[ix[i]]], color = col)
+    end
+    # add plot labels
+    plot!(p, xlabel = "Threshold", ylabel = "Relative Error")
+    return p
+end
+
+# TODO: add additional threshold determination methods
+
+# ========== Denoising ==========
 """
     denoise(x, inputtype, wt[; L=maxtransformlevels(size(x,1)),
         tree=maketree(size(x,1), L, :dwt), dnt=VisuShrink(size(x,1)),
@@ -208,7 +558,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
             @inbounds x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
         end
         # reconstruction
-        y = wt === nothing ? x̃ : iswpt(x̃, wt, tree)
+        y = wt === nothing ? x̃ : iswpd(x̃, wt, tree)
     elseif inputtype == :acwt               # autocorrelation dwt
         @assert ndims(x) > 1
         # noise estimation
@@ -222,7 +572,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
             x̃ = [x[:,1] threshold!(temp, dnt.th, σ*dnt.t)]
         end
         # reconstruction
-        y = iacwt(x̃)
+        y = iacdwt(x̃)
 
     else                                    # autocorrelation wpt
         @assert ndims(x) > 1
@@ -241,7 +591,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
             @inbounds x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
         end
         # reconstruction
-        y = iacwpt(x̃, tree)
+        y = iacwpd(x̃, tree)
     end
     return y
 end
@@ -359,233 +709,6 @@ function denoiseall(x::AbstractArray{T1},
         end
     end
     return y
-end
-
-# BEST THRESHOLD VALUES
-"""
-    noisest(x, redundant[, tree=nothing])
-
-Extension to the `noisest` function from `Wavelets.jl`. Estimates the noise of
-a signal from its coefficients.
-
-# Examples
-```julia
-x = randn(128)
-wt = wavelet(WT.haar)
-
-# noise estimate for dwt transformation
-y = dwt(x, wt)
-noise = noisest(y, false)
-
-# noise estimate for wpt transformation
-tree = maketree(x, :full)
-y = wpt(x, wt, tree)
-noise = noisest(y, false, tree)
-
-# noise estimate for sdwt transformation
-y = sdwt(x, wt)
-noise = noisest(y, true)
-
-# noise estimate for swpd transformation
-y = swpd(x, wt)
-noise = noisest(y, true, tree)
-```
-
-**See also:** [`relerrorthreshold`](@ref), [`VisuShrink`](@ref), 
-    [`SureShrink`](@ref)
-"""
-function Wavelets.Threshold.noisest(x::AbstractArray{T}, redundant::Bool,
-        tree::Union{BitVector,Nothing}=nothing) where T<:Number
-
-    @assert isdyadic(size(x,1))
-    if !redundant && isa(tree, Nothing)        # regular dwt
-        n₀ = size(x,1) ÷ 2
-        dr = x[(n₀+1):end]
-    elseif !redundant && isa(tree, BitVector)  # regular wpt
-        dr = x[finestdetailrange(x, tree)]
-    elseif redundant && isa(tree, Nothing)     # redundant dwt
-        dr = x[:,end]
-    else                                       # redundant wpd
-        dr = x[finestdetailrange(x, tree, true)...]
-    end
-    return Wavelets.Threshold.mad!(dr)/0.6745
-end
-
-"""
-    surethreshold(coef, redundant[, tree=nothing])
-
-Determination of the `t` value used for `SureShrink`.
-
-**See also:** [`SureShrink`](@ref)
-"""
-function surethreshold(coef::AbstractArray{T}, redundant::Bool,
-        tree::Union{BitVector,Nothing}=nothing) where T<:Number
-
-    # extract necessary coefficients
-    if !redundant                              # dwt or wpt
-        y = coef
-    elseif redundant && isa(tree, Nothing)     # sdwt
-        y = reshape(coef, :)
-    else                                       # swpd
-        leaves = getleaf(tree)
-        y = reshape(coef[:, leaves], :)
-    end
-    a = sort(abs.(y)).^2
-    b = cumsum(a)
-    n = length(y)
-    c = collect(n-1:-1:0)
-    s = b + c .* a
-    risk = (n .- (2 * (1:n)) + s)/n
-    i = argmin(risk)
-    return sqrt(a[i])
-end
-
-"""
-    relerrorthreshold(coef, redundant[, tree, elbows=2; makeplot=false])
-
-Takes in a set of expansion coefficients, 'plot' the threshold vs relative error 
-curve and select the best threshold value based on the elbow method. If one 
-wants to see the resulting plot from this computation, simply set 
-`makeplot=true`.
-
-# Examples
-```julia
-x = randn(128)
-wt = wavelet(WT.haar)
-
-# noise estimate for dwt transformation
-y = dwt(x, wt)
-noise = relerrorthreshold(y, false)
-
-# noise estimate for wpt transformation
-tree = maketree(x, :full)
-y = wpt(x, wt, tree)
-noise = relerrorthreshold(y, false, tree)
-
-# noise estimate for sdwt transformation
-y = sdwt(x, wt)
-noise = relerrorthreshold(y, true)
-
-# noise estimate for swpd transformation
-y = swpd(x, wt)
-noise = relerrorthreshold(y, true, tree)
-```
-
-**See also:** [`noisest`](@ref), [`RelErrorShrink`](@ref)
-"""
-function relerrorthreshold(coef::AbstractArray{T}, redundant::Bool,
-        tree::Union{BitVector,Nothing}=nothing, elbows::Integer=2;
-        makeplot::Bool=false) where T<:Number
-
-    @assert elbows >= 1
-    # extract necessary coefficients
-    if !redundant                              # dwt or wpt
-        c = coef
-    elseif redundant && isa(tree, Nothing)     # sdwt
-        c = reshape(coef, :)
-    else                                       # swpd
-        leaves = getleaf(tree)
-        c = reshape(coef[:, leaves], :)
-    end
-    # the magnitudes of the coefficients
-    x = sort(abs.(c), rev = true)
-    # compute the relative error curve
-    r = orth2relerror(c)
-    # shift the data points
-    push!(x, 0)
-    pushfirst!(r, r[1])
-    # reorder the data points
-    xmax = maximum(x)
-    ymax = maximum(r)
-    x = x[end:-1:1]/xmax
-    y = r[end:-1:1]/ymax
-    # compute elbow method 
-    ix = Vector{Integer}(undef, elbows)
-    A = Vector{Vector{T}}(undef, elbows)
-    v = Vector{Vector{T}}(undef, elbows)
-    ix[1], A[1], v[1] = findelbow(x,y)
-    for i in 2:1:elbows
-        (ix[i], A[i], v[i]) = findelbow(x[1:ix[i-1]], y[1:ix[i-1]]) 
-    end
-    # plot relative error curve
-    if makeplot
-        p = relerrorplot(x*xmax, y*ymax, ix, A, v)
-        return x[ix[end]]*xmax, p
-    else
-        return x[ix[end]]*xmax
-    end
-end
-
-"""
-    orth2relerror(orth)
-
-Given a vector 'orth' of orthonormal expansion coefficients, return a 
-vector of relative approximation errors when retaining the 1,2,...,N 
-largest coefficients in magnitude.
-
-**See also:** [`RelErrorShrink`](@ref), [`relerrorthreshold`](@ref), 
-    [`findelbow`](@ref)
-"""
-function orth2relerror(orth::AbstractVector{T}) where T<:Number
-    # sort the coefficients
-    orth = sort(orth.^2, rev = true)
-    # compute the relative errors
-    return ((abs.(sum(orth) .- cumsum(orth))).^0.5) / sum(orth).^0.5
-end
-
-"""
-    findelbow(x, y)
-
-Given the x and y coordinates of a curve, return the elbow.
-
-**See also:** [`RelErrorShrink`](@ref), [`relerrorthreshold`](@ref),
-    [`orth2relerror`](@ref)
-"""
-function findelbow(x::AbstractVector{T}, y::AbstractVector{T}) where T<:Number
-    # a unit vector pointing from (x1,y1) to (xN,yN)
-    v = [x[end] - x[1], y[end] - y[1]]
-    v = v/norm(v,2)
-    # subtract (x1,y1) from the coordinates
-    xy = [x.-x[1] y.-y[1]]
-    # the hypothenuse
-    H = reshape((sum(xy.^2, dims = 2)).^0.5, :)
-    # the adjacent side
-    A = xy * v
-    # the opposite side
-    O = abs.(H.^2 - A.^2).^0.5       
-    # return the largest distance
-    return (findmax(O)[2], A, v)
-end
-
-# threshold vs relative error curve
-function relerrorplot(x::Vector{<:Number}, 
-        y::Vector{<:Number}, ix::Vector{<:Integer}, 
-        A::Vector{<:Vector{<:Number}}, v::Vector{<:Vector{<:Number}})
-
-    @assert length(ix) == length(A) == length(v)
-    elbows = length(ix)
-    # rescale x and y values
-    xmax = maximum(x)
-    ymax = maximum(y)
-    # relative error line
-    p = plot(x, y, lw = 2, color = :blue, legend = false)
-    plot!(p, xlims = (0, 1.004*xmax), ylims = (0, 1.004*ymax))
-    for i in 1:elbows
-        col = i + 1
-        # diagonal line
-        endpoint = i > 1 ? ix[i-1] : length(x)
-        plot!([x[1], 1.004*x[endpoint]], [y[1], 1.004*y[endpoint]], lw = 2, 
-            color = col)
-        # perpendicular line
-        dropto = [x[1], y[1]] + A[i][ix[i]]*(v[i].*[xmax, ymax])
-        plot!(p, [x[ix[i]], dropto[1]], [y[ix[i]], dropto[2]], lw = 2, 
-            color = col)
-        # highlight point
-        scatter!(p, [x[ix[i]]], [y[ix[i]]], color = col)
-    end
-    # add plot labels
-    plot!(p, xlabel = "Threshold", ylabel = "Relative Error")
-    return p
 end
 
 end # end module

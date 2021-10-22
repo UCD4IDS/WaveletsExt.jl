@@ -1,17 +1,17 @@
-# Utils
+# Translation-Invariant Wavelet Transform
 
 ```@index
-Modules = [Utils]
+Modules = [TIWT]
 ```
 
 ## Public API
 ```@autodocs
-Modules = [Utils]
+Modules = [TIWT]
 Private = false
 ```
 
 ## Private API
 ```@autodocs
-Modules = [Utils]
+Modules = [TIWT]
 Public = false
 ```

@@ -16,6 +16,10 @@
     @test finestdetailrange(4, tree) == 3:4
     @test finestdetailrange(x, tree, true) == (1:4, 3)
     @test finestdetailrange(4, tree, true) == (1:4, 3)
+
+    @test getquadtreelevel(1) == 0
+    @test getquadtreelevel(3) == 1
+    @test getquadtreelevel(21) == 2
 end
 
 @testset "Error Rates" begin

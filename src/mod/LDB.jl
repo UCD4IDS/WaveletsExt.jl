@@ -31,18 +31,16 @@ export
     inverse_transform,
     change_nfeatures
 
-using
-    AverageShiftedHistograms,
-    LinearAlgebra,
-    Wavelets,
-    Parameters,
-    Statistics,
-    StatsBase
+using AverageShiftedHistograms,
+      LinearAlgebra,
+      Wavelets,
+      Parameters,
+      Statistics,
+      StatsBase
 
-using 
-    ..Utils,
-    ..WPD,
-    ..BestBasis
+using ..Utils,
+      ..DWT,
+      ..BestBasis
 
 
 

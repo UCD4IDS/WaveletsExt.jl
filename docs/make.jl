@@ -1,4 +1,6 @@
-using Documenter, WaveletsExt
+ENV["GKSwstype"] = "100"
+ENV["PLOTS_TEST"] = "true"
+using Documenter, Wavelets, WaveletsExt
 
 makedocs(
     sitename = "WaveletsExt.jl",
@@ -9,19 +11,21 @@ makedocs(
         "Home" => "index.md",
         "Manual" => Any[
             "Transforms" => "manual/transforms.md",
+            "Best Basis" => "manual/bestbasis.md",
             "Denoising" => "manual/denoising.md",
             "Local Discriminant Basis" => "manual/localdiscriminantbasis.md"
         ],
         "API" => Any[
+            "DWT" => "api/dwt.md",
             "ACWT" => "api/acwt.md",
+            "SWT" => "api/swt.md",
+            "TIWT" => "api/tiwt.md",
             "Best Basis" => "api/bestbasis.md",
             "Denoising" => "api/denoising.md",
             "LDB" => "api/ldb.md",
             "SIWPD" => "api/siwpd.md",
-            "SWT" => "api/swt.md",
             "Utils" => "api/utils.md",
             "Visualizations" => "api/visualizations.md",
-            "WPD" => "api/wpd.md",
         ]
     ]
 )

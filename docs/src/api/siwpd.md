@@ -4,6 +4,8 @@
 Modules = [SIWPD]
 ```
 
+## Public API
 ```@autodocs
 Modules = [SIWPD]
+Private = false
 ```
