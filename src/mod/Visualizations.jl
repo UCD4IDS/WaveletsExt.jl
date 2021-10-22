@@ -100,7 +100,8 @@ tree = maketree(128, 7, :dwt)
 plot_tfbdry(tree)
 ```
 """
-function plot_tfbdry(tree::BitVector; 
+function plot_tfbdry(tree::BitVector;
+                     depth::Integer = log2(length(tree)+1), 
                      start::Integer = 0, 
                      nd_col::Symbol = :white,
                      ln_col::Symbol = :white,
@@ -109,11 +110,11 @@ function plot_tfbdry(tree::BitVector;
     @assert 0 <= start <= 1
     leaf = getleaf(tree)
 
-    ncol = (length(leaf) + 1) >> 1
-    nrow = Int(log2(ncol)) + 1
-    mat = treenodes_matrix(leaf)
+    ncol = 1 << (depth-1)
+    nrow = depth
+    mat = treenodes_matrix(leaf[1:(1<<depth-1)])
 
-    p = heatmap(start:(ncol+start-1), 0:(nrow-1), mat, color = [bg_col, nd_col], 
+    p = heatmap(0:(ncol-1), start:(nrow+start-1), mat, color = [bg_col, nd_col], 
                 legend = false, background_color = bg_col)
 
     plot!(p, xlims = (start-0.5, ncol+start-0.5), ylims = (-0.5, nrow-0.5), yticks = 0:nrow)

@@ -35,16 +35,16 @@ savefig(p, "transforms.png")
 # Generate 100 noisy heavysine signals of length 2⁸
 x = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 100, 2, true, 0.5)
 # Wavelet packet decomposition of all signals
-xw = wpdall(x, wt)
+xw = wpdall(x, wt, 6)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
-p1 = plot_tfbdry(tree, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p1 = plot_tfbdry(tree, depth=7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="JBB")
 
 # ----- Least Statistically Dependent Basis (LSDB)
 tree = bestbasistree(xw, LSDB())
-p2 = plot_tfbdry(tree, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p2 = plot_tfbdry(tree, depth=7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="LSDB")
 
 # Combine and save plot
@@ -74,11 +74,11 @@ x̂ = denoiseall(y, :wpt, wt, tree=bt)
 # Plot results
 p1 = plot(title="Noisy Signals")
 wiggle!(x₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
-wiggle!(x, sc=0.7, FaceColor=:white, ZDir=:reverse)
+wiggle!(x, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
 
 p2 = plot(title="Denoised Signals")
 wiggle!(x₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
-wiggle!(x̂, sc=0.7, FaceColor=:white, ZDir=:reverse)
+wiggle!(x̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
@@ -103,7 +103,7 @@ p1 = plot(cylinder, bell, funnel, layout=(3,1))
 # number of desired features to be used as input into classification model)
 wt = wavelet(WT.coif4)
 ldb = LocalDiscriminantBasis(wt=wt,
-                             max_dec_level=7,
+                             max_dec_level=6,
                              dm=SymmetricRelativeEntropy(),
                              en=TimeFrequency(),
                              dp=BasisDiscriminantMeasure(),
@@ -114,7 +114,7 @@ ldb = LocalDiscriminantBasis(wt=wt,
 X̂ = fit_transform(ldb, X, y)
 
 # Plot the best basis for feature extraction
-p2 = plot_tfbdry(ldb.tree, nd_col=:green, ln_col=:black, bg_col=:white)
+p2 = plot_tfbdry(ldb.tree, depth=7, nd_col=:green, ln_col=:black, bg_col=:white)
 plot!(p2, title="Basis Selection using LDB")
 
 p = plot(p1, p2, size=(600,300))
