@@ -81,6 +81,10 @@ start the node count of each level with 0 or 1.
 
 # Arguments
 - `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
+- `depth::Integer`: (Default: `log2(length(tree)+1)-1 |> Int`) Maximum depth to be
+  displayed.
+
+# Keyword Arguments
 - `start::Integer`: (Default: `0`) Whether to zero-index or one-index the root of the tree.
 - `nd_col::Symbol`: (Default: `:white`) Color of the leaf nodes.
 - `ln_col::Symbol`: (Default: `:white`) Color of lines in plot.
@@ -100,8 +104,8 @@ tree = maketree(128, 7, :dwt)
 plot_tfbdry(tree)
 ```
 """
-function plot_tfbdry(tree::BitVector;
-                     depth::Integer = log2(length(tree)+1), 
+function plot_tfbdry(tree::BitVector,
+                     depth::Integer = log2(length(tree)+1)-1 |> Int;
                      start::Integer = 0, 
                      nd_col::Symbol = :white,
                      ln_col::Symbol = :white,
@@ -110,9 +114,9 @@ function plot_tfbdry(tree::BitVector;
     @assert 0 <= start <= 1
     leaf = getleaf(tree)
 
-    ncol = 1 << (depth-1)
-    nrow = depth
-    mat = treenodes_matrix(leaf[1:(1<<depth-1)])
+    ncol = 1 << depth
+    nrow = depth+1
+    mat = treenodes_matrix(leaf[1:(1<<(depth+1)-1)])
 
     p = heatmap(0:(ncol-1), start:(nrow+start-1), mat, color = [bg_col, nd_col], 
                 legend = false, background_color = bg_col)

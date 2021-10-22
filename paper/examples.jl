@@ -39,17 +39,17 @@ xw = wpdall(x, wt, 6)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
-p1 = plot_tfbdry(tree, depth=7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p1 = plot_tfbdry(tree, 7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="JBB")
 
 # ----- Least Statistically Dependent Basis (LSDB)
 tree = bestbasistree(xw, LSDB())
-p2 = plot_tfbdry(tree, depth=7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p2 = plot_tfbdry(tree, 7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="LSDB")
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
-savefig(p, "bestbasis.png")
+savefig(p, "paper/bestbasis.png")
 
 # 3. Denoising Algorithms ------------------------------------------------------------------
 #    There are two functions available: `denoise` and `denoiseall`. The former denoises one
@@ -78,11 +78,11 @@ wiggle!(x, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
 
 p2 = plot(title="Denoised Signals")
 wiggle!(x₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
-wiggle!(x̂, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
+wiggle!(x̂, sc=0.7, EdgeColor=:blue, FaceColor=:white, ZDir=:reverse)
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
-savefig(p, "denoising.png")
+savefig(p, "paper/denoising.png")
 
 # 4. Feature Extraction Algorithm For Signals ----------------------------------------------
 #    The feature extraction algorithm implemented in WaveletsExt.jl is the Local
@@ -114,8 +114,8 @@ ldb = LocalDiscriminantBasis(wt=wt,
 X̂ = fit_transform(ldb, X, y)
 
 # Plot the best basis for feature extraction
-p2 = plot_tfbdry(ldb.tree, depth=7, nd_col=:green, ln_col=:black, bg_col=:white)
+p2 = plot_tfbdry(ldb.tree, 7, nd_col=:green, ln_col=:black, bg_col=:white)
 plot!(p2, title="Basis Selection using LDB")
 
 p = plot(p1, p2, size=(600,300))
-savefig(p, "ldb.png")
+savefig(p, "paper/ldb.png")
