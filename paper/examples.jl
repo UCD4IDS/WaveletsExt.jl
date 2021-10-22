@@ -39,12 +39,12 @@ xw = wpdall(x, wt)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
-p1 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |> 
+p1 = plot_tfbdry(tree, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="JBB")
 
 # ----- Least Statistically Dependent Basis (LSDB)
 tree = bestbasistree(xw, LSDB())
-p2 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |> 
+p2 = plot_tfbdry(tree, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="LSDB")
 
 # Combine and save plot
