@@ -188,12 +188,12 @@ function wpd!(y::AbstractArray{T,3},
     @assert 0 ≤ L ≤ maxtransformlevels(x)
     @assert size(y) == (m, n,L+1)
 
-    # ----- Allocations and setup to match Wavelets.jl's function requirements -----
-    fw = true                                               # forward transform
-    si = Vector{T}(undef, length(wt)-1)                     # temp filter vector
-    scfilter, dcfilter = WT.makereverseqmfpair(wt, fw, T)   # low & high pass filters
+    # Setup
+    g, h = WT.makereverseqmfpair(wt, true)   # low & high pass filters
+    temp = Array{T,2}(undef, (m,n))
+
     # First slice of y is level 0, ie. original signal
-    y[:,:,1] = x
+    @inbounds y[:,:,1] = x
     # ----- Compute L levels of decomposition -----
     for i in 0:(L-1)
         # Parent node width and height
@@ -207,12 +207,19 @@ function wpd!(y::AbstractArray{T,3},
                 sliceₚ = i+1
                 rng_row = (j*mₚ+1):((j+1)*mₚ)
                 rng_col = (k*nₚ+1):((k+1)*nₚ)
-                @inbounds nodeₚ = @view y[rng_row, rng_col, sliceₚ]
+                @inbounds v = @view y[rng_row, rng_col, sliceₚ]
                 # Extract children nodes of current parent
                 sliceᵣ = sliceₚ+1
-                @inbounds nodeᵣ = @view y[rng_row, rng_col, sliceᵣ]
+                mᵣ = mₚ÷2
+                nᵣ = nₚ÷2
+                @inbounds w₁ = @view y[(2*j*mᵣ+1):((2*j+1)*mᵣ), (2*k*nᵣ+1):((2*k+1)*nᵣ), sliceᵣ]
+                @inbounds w₂ = @view y[(2*j*mᵣ+1):((2*j+1)*mᵣ), ((2*k+1)*nᵣ+1):(2*(k+1)*nᵣ), sliceᵣ]
+                @inbounds w₃ = @view y[((2*j+1)*mᵣ+1):(2*(j+1)*mᵣ), (2*k*nᵣ+1):((2*k+1)*nᵣ), sliceᵣ]
+                @inbounds w₄ = @view y[((2*j+1)*mᵣ+1):(2*(j+1)*mᵣ), ((2*k+1)*nᵣ+1):(2*(k+1)*nᵣ), sliceᵣ]
+                # Extract temp subarray (Same size as parent node)
+                @inbounds tempₖ = @view temp[rng_row, rng_col]
                 # Perform 1 level of wavelet decomposition
-                dwt_step!(nodeᵣ, nodeₚ, wt, dcfilter, scfilter, si, standard=standard)
+                @inbounds dwt_step!(w₁, w₂, w₃, w₄, v, h, g, tempₖ, standard=standard)
             end
         end
     end
@@ -377,8 +384,7 @@ function iwpd!(x̂::AbstractVector{T},
     @assert size(x̂,1) == size(xw,1)
     @assert isvalidtree(x̂, tree)
     # Get basis coefficients then compute iwpt
-    # TODO: get basis coefficients for 1D transforms, currently using wrong but hacky fix
-    w = xw[:,end]; tree = maketree(length(x̂), maxtransformlevels(x̂), :full)
+    w = getbasiscoef(xw, tree)
     iwpt!(x̂, w, wt, tree)
     return x̂
 end
@@ -529,24 +535,36 @@ function Wavelets.Transforms.wpt!(y::AbstractArray{T,2},
 
     # ----- Allocation and setup to match Wavelets.jl's function requirements -----
     m, n = size(x)
-    fw = true
-    si = Vector{T}(undef, length(wt)-1)                     # temp filter vector
-    scfilter, dcfilter = WT.makereverseqmfpair(wt, fw, T)   # low & high pass filters
-    temp = copy(x)                                          # temp array
+    g, h = WT.makereverseqmfpair(wt, true)      # low & high pass filters
+    yₜ = copy(x)                                 # Placeholder of y
+    temp = Array{T,2}(undef, (m,n))             # Temp array
     # ----- Compute transforms based on tree -----
     for i in eachindex(tree)
         # Decompose if node i has children
         if tree[i]
             # Extract parent node
-            rng_row = getrowrange(m, i)
-            rng_col = getcolrange(n, i)
-            @inbounds nodeₚ = @view temp[rng_row, rng_col]
+            rows = getrowrange(m, i)
+            cols = getcolrange(n, i)
+            @inbounds v = @view yₜ[rows, cols]
             # Extract children nodes of current parent
-            @inbounds nodeᵣ = @view y[rng_row, rng_col]
+            rows₁ = getrowrange(m, getchildindex(i,:topleft))
+            cols₁ = getcolrange(n, getchildindex(i,:topleft))
+            rows₂ = getrowrange(m, getchildindex(i,:topright))
+            cols₂ = getcolrange(n, getchildindex(i,:topright))
+            rows₃ = getrowrange(m, getchildindex(i,:bottomleft))
+            cols₃ = getcolrange(n, getchildindex(i,:bottomleft))
+            rows₄ = getrowrange(m, getchildindex(i,:bottomright))
+            cols₄ = getcolrange(n, getchildindex(i,:bottomright))
+            @inbounds w₁ = @view y[rows₁, cols₁]
+            @inbounds w₂ = @view y[rows₂, cols₂]
+            @inbounds w₃ = @view y[rows₃, cols₃]
+            @inbounds w₄ = @view y[rows₄, cols₄]
+            # Extract temp subarray (Same size as parent node)
+            @inbounds tempᵢ = @view temp[rows, cols]
             # Perform 1 level of wavelet decomposition
-            dwt_step!(nodeᵣ, nodeₚ, wt, dcfilter, scfilter, si, standard=standard)
-            # If current range not at final iteration, copy to temp
-            (4*i<length(tree)) && (temp[rng_row, rng_col] = y[rng_row, rng_col])
+            @inbounds dwt_step!(w₁, w₂, w₃, w₄, v, h, g, tempᵢ, standard=standard)
+            # If current range not at final iteration, copy to yₜ
+            (4*i<length(tree)) && (yₜ[rows, cols] = @view y[rows, cols])
         else
             continue
         end

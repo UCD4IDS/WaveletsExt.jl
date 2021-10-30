@@ -1,19 +1,25 @@
 module Utils
 export 
+    # Traverse tree
+    getchildindex,
+    getparentindex,
+    getleaf,
     makequadtree,
     getquadtreelevel,
+    # Extraction
+    getbasiscoef,
+    getbasiscoefall,
     getrowrange,
     getcolrange,
-    left,
-    right,
     nodelength,
-    getleaf,
     coarsestscalingrange,
     finestdetailrange,
+    # Metrics
     relativenorm,
     psnr,
     snr,
     ssim,
+    # Datasets
     duplicatesignals,
     generatesignals,
     ClassData,
@@ -64,50 +70,130 @@ function Wavelets.Util.maxtransformlevels(x::AbstractArray, dims::Integer)
     return maxtransformlevels(size(x)[dims])
 end
 
-# Left and right node index of a binary tree
 """
-    left(i)
+    getbasiscoef(Xw, tree)
 
-Given the node index `i`, returns the index of its left node.
+Get the basis coefficients for the decomposed signal `Xw` with respect to the tree `tree`.
 
 # Arguments
-- `i::Integer`: Index of the node of interest.
+- `Xw::AbstractArray{T,2} where T<:Number`: Decomposed 1D-signal.
+- `tree::BitVector`: The corresponding basis tree.
 
 # Returns
-`::Integer`: Index of left child.
+- `::Array{T,1}`: Basis coefficients of signal.
 
 # Examples
-```@repl
+```julia
 using Wavelets, WaveletsExt
 
-left(3)     # 6
+# Generate signal and wavelet
+x = generatesignals(:heavysine)
+wt = wavelet(WT.db4)
+
+# Decompose signal
+Xw = iwpd(x, wt)
+tree = maketree(128, 6, :dwt)
+
+# Get basis coefficients
+xw = getbasiscoef(Xw, tree)
 ```
-
-**See also:** [`right`](@ref)
 """
-left(i::Integer) = i<<1
+function getbasiscoef(Xw::AbstractArray{T,2}, 
+                      tree::BitVector) where T<:Number
+    # Setup and Sanity Check
+    n, _ = size(Xw)
+    nₜ = length(tree)
+    leaf = getleaf(tree)
+    @assert n == nₜ+1
+    @assert nₜ+n == length(leaf)
+    xw = Array{T,1}(undef, n)
+
+    # Extract basis coefficients
+    for (i, isleaf) in enumerate(leaf)
+        if isleaf
+            d = floor(Int, log2(i))         # Depth of node (0 for root node)
+            nn = i-1<<d                     # Node number (0 for leftmost node)
+            n₀ = nodelength(n, d)           # Length of node
+            rng = (nn*n₀+1):((nn+1)*n₀)
+            @inbounds xw[rng] = @view Xw[rng, d+1]
+        end
+    end
+    return xw
+end
 
 """
-    right(i)
+    getbasiscoefall(Xw, tree)
 
-Given the node index `i`, returns the index of its right node.
+Get the basis coefficients for all decomposed signals in `Xw` with respect to the tree(s)
+`tree`.
 
 # Arguments
-- `i::Integer`: Index of the node of interest.
+- `Xw::AbstractArray{T,3} where T<:Number`: A set of decomposed 1D-signals.
+- `tree::BitVector` or `tree::BitArray{2}`: The corresponding basis tree(s). If input is a
+  `BitMatrix`, each column corresponds to a signal in `Xw`, and therefore the number of
+  columns must be equal to the number of signals.
 
 # Returns
-`::Integer`: Index of right child.
+- `::Array{T,2}`: Basis coefficients of signals.
 
 # Examples
-```@repl
+```julia
 using Wavelets, WaveletsExt
 
-left(3)     # 7
-```
+# Generate signals and wavelet
+c = ClassData(:cbf, 10, 10, 10)
+X = generateclassdata(c)
+wt = wavelet(WT.db4)
 
-**See also:** [`left`](@ref)
+# Decompose signals
+Xw = iwpdall(X, wt)
+tree = maketree(128, 6, :dwt)
+
+# Get basis coefficients
+getbasiscoefall(Xw, tree)
+```
 """
-right(i::Integer) = i<<1 + 1
+function getbasiscoefall(Xw::AbstractArray{T,3}, tree::BitVector) where T<:Number
+    # Setup and Sanity Check
+    n, _, m = size(Xw)
+    nₜ = length(tree)
+    leaf = getleaf(tree)
+    @assert n == nₜ+1
+    @assert nₜ+n == length(leaf)
+    xw = Array{T,2}(undef, (n,m))
+
+    # Extract basis coefficients
+    for (i, isleaf) in enumerate(leaf)
+        if isleaf
+            d = floor(Int, log2(i))         # Depth of node (0 for root node)
+            nn = i-1<<d                     # Node number (0 for leftmost node)
+            n₀ = nodelength(n, d)           # Length of node
+            rng = (nn*n₀+1):((nn+1)*n₀)
+            @inbounds xw[rng,:] = @view Xw[rng, d+1,:]
+        end
+    end
+    return xw
+end
+
+function getbasiscoefall(Xw::AbstractArray{T,3}, tree::BitArray{2}) where T<:Number
+    # Setup and Sanity Check
+    n, _, m = size(Xw)
+    nₜ, mₜ = size(tree)
+    @assert m == mₜ
+    @assert n == nₜ+1
+    xw = Array{T,2}(undef, (n,m))
+
+    # Extract basis coefficients
+    for i in eachcol(tree)
+        xwᵢ = @view xw[:,i]
+        Xwᵢ = @view Xw[:,:,i]
+        treeᵢ = tree[:,i]
+        @inbounds xwᵢ = getbasiscoef(Xwᵢ, treeᵢ)
+    end
+    return xw
+end
+
+
 
 # Length of node at level L
 """
@@ -124,45 +210,6 @@ decomposition. Level L == 0 corresponds to the original input signal.
 `::Integer`: Length of nodes at level `L`.
 """
 nodelength(N::Integer, L::Integer) = N >> L
-
-# Get leaf nodes in the form of a BitVector
-"""
-    getleaf(tree)
-
-Returns the leaf nodes of a tree.
-
-# Arguments
-- `tree::BitVector`: BitVector to represent binary tree.
-
-# Returns
-`::BitVector`: BitVector that can represent a binary tree, but only the leaves are labeled
-1, the rest of the nodes are labeled 0.
-
-# Examples
-```@repl
-using Wavelets, WaveletsExt
-
-tree = maketree(4, 2, :dwt)     # [1,1,0]
-getleaf(tree)                   # [0,0,1,1,1,0,0]
-```
-"""
-function getleaf(tree::BitVector)
-    @assert isdyadic(length(tree) + 1)
-
-    result = falses(2*length(tree) + 1)
-    result[1] = 1
-    for i in 1:length(tree)
-        if tree[i] == 0
-            continue
-        else
-            result[i] = 0
-            result[left(i)] = 1
-            result[right(i)] = 1
-        end
-    end
-    
-    return result
-end
 
 # Packet table Indexing
 """
@@ -275,14 +322,14 @@ function coarsestscalingrange(n::Integer, tree::BitVector, redundant::Bool=false
         i = 1
         j = 0
         while i<length(tree) && tree[i]       # has children
-            i = left(i)
+            i = getchildindex(i,:left)
             j += 1
         end
         rng = 1:(n>>j) 
     else                   # redundant wt
         i = 1
         while i<length(tree) && tree[i]       # has children
-            i = left(i)
+            i = getchildindex(i,:left)
         end
         rng = (1:n, i)
     end
@@ -351,103 +398,6 @@ function finestdetailrange(n::Integer, tree::BitVector, redundant::Bool=false)
         rng = (1:n, i)
     end
     return rng
-end
-
-# Build a quadtree
-"""
-    makequadtree(x, L[, s])
-
-Build quadtree for 2D wavelet transform. Indexing of the quadtree are as follows:
-
-```
-Level 0                 Level 1                 Level 2             ...
-_________________       _________________       _________________
-|               |       |   2   |   3   |       |_6_|_7_|10_|11_|
-|       1       |       |_______|_______|       |_8_|_9_|12_|13_|   ...
-|               |       |   4   |   5   |       |14_|15_|18_|19_|
-|_______________|       |_______|_______|       |16_|17_|20_|21_|
-```
-
-# Arguments
-- `x::AbstractArray{T,2} where T<:Number`: Input array.
-- `L::Integer`: Number of decomposition levels.
-- `s::Symbol`: (Default: `:full`) Type of quadtree. Available types are `:full` and `:dwt`.
-
-# Returns
-`::BitVector`: Quadtree representation.
-
-# Examples
-```@repl
-using WaveletsExt
-
-x = randn(16,16)
-makequadtree(x, 3)
-```
-"""
-function makequadtree(x::AbstractArray{T,2}, L::Integer, s::Symbol = :full) where T<:Number
-    ns = maxtransformlevels(x)      # Max transform levels of x
-    # TODO: Find a mathematical formula to define this rather than sum things up to speed up
-    # TODO: process.
-    nq = sum(4 .^ (0:ns))           # Quadtree size
-    @assert 0 ≤ L ≤ ns
-
-    # Construct quadtree
-    q = BitArray(undef, nq)
-    fill!(q, false)
-
-    # Fill in true values depending on input `s`
-    if s == :full
-        # TODO: Find a mathematical formula to define this
-        rng = 4 .^ (0:(L-1)) |> sum |> x -> 1:x
-        for i in rng
-            @inbounds q[i] = true
-        end
-    elseif s == :dwt
-        q[1] = true     # Root node
-        for i in 0:(L-2)
-            # TODO: Find a mathematical formula to define this
-            idx = 4 .^ (0:i) |> sum |> x -> x+1     # Subsequent LL subspace nodes
-            @inbounds q[idx] = true
-        end
-    else
-        throw(ArgumentError("Unknown symbol."))
-    end
-    return q
-end
-
-# Get level of a particular index in a tree
-"""
-    getquadtreelevel(idx)
-
-Get level of `idx` in the quadtree.
-
-# Arguments
-- `idx::T where T<:Integer`: Index of a quadtree.
-
-# Returns
-`::T`: Level of `idx`.
-
-# Examples
-```@repl
-using WaveletsExt
-
-getquadtreelevel(1)     # 0
-getquadtreelevel(3)     # 1
-```
-
-**See also:** [`makequadtree`](@ref)
-"""
-function getquadtreelevel(idx::T) where T<:Integer
-    # TODO: Get a mathematical solution to this
-    @assert idx > 0
-    # Root node => level 0
-    if idx == 1
-        return 0
-    # Node level is 1 level lower than parent node
-    else
-        parent_idx = floor(T, (idx+2)/4)
-        return 1 + getquadtreelevel(parent_idx)
-    end
 end
 
 # TODO: Build a generalizable function `getslicerange` that does the same thing as
@@ -554,6 +504,7 @@ function getcolrange(n::Integer, idx::T) where T<:Integer
     end
 end
 
+include("utils_tree.jl")
 include("utils_metrics.jl")
 include("utils_dataset.jl")
 

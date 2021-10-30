@@ -26,7 +26,7 @@ wt = wavelet(WT.haar)
 g, h = WT.makereverseqmfpair(wt, true)
 
 # One step of DWT
-DWT.dwt_step(v, 0, h, g)
+DWT.dwt_step(v, h, g)
 ```
 
 **See also:** [`dwt_step!`](@ref), [`idwt_step`](@ref)
@@ -223,86 +223,236 @@ function idwt_step!(v::AbstractVector{T},
 end
 
 # ----- 1 step of dwt for 2D signals -----
-# TODO: Speed this up by using the functions from above
 """
-    dwt_step!(y, x, filter, dcfilter, scfilter, si[; standard])
+    dwt_step(v, h, g[; standard])
 
 Compute 1 step of 2D discrete wavelet transform (DWT).
 
 # Arguments
-- `y::AbstactArray{T,2} where T<:Number`:
-- `x::AbstactArray{T,2} where T<:Number`:
-- `filter::OrthoFilter`
+- `v::AbstractArray{T,2} where T<:Number`: Array of coefficients of size ``(n,m)``.
+- `h::Array{S,1} where S<:Number`: High pass filter.
+- `g::Array{S,1} where S<:Number`: Low pass filter.
 
 # Keyword Arguments
 - `standard::Bool`: (Default: `true`) Whether to perform the standard wavelet transform.
 
 # Returns
+- `w₁::Array{T,2}`: Top left output. Result of low pass filter on columns + low pass filter
+  on rows.
+- `w₂::Array{T,2}`: Top left output. Result of low pass filter on columns + high pass filter
+  on rows.
+- `w₃::Array{T,2}`: Top left output. Result of high pass filter on columns + low pass filter
+  on rows.
+- `w₄::Array{T,2}`: Top left output. Result of high pass filter on columns + high pass filter
+  on rows.
 
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8,8)
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+
+# One step of DWT
+DWT.dwt_step(v, h, g)
+```
+
+**See also:** [`dwt_step`](@ref), [`dwt_step!](@ref), [`idwt_step`](@ref)
 """
-
-function dwt_step!(y::AbstractArray{T,2},
-                   x::AbstractArray{T,2},
-                   filter::OrthoFilter,
-                   dcfilter::StridedVector{S},
-                   scfilter::StridedVector{S},
-                   si::StridedVector{S};
-                   standard::Bool = true) where {T<:Number, S<:Number}
-    # Sanity check
-    @assert size(x) == size(y)
-
-    # Setup
-    fw = true           # Is forward transform
-    temp = similar(x)   # Temporary matrix
-
-    # Transform
-    if standard
-        # Compute dwt for all rows
-        @views for (tempᵢ, xᵢ) in zip(eachrow(temp), eachrow(x))
-            Transforms.unsafe_dwt1level!(tempᵢ, xᵢ, filter, fw, dcfilter, scfilter, si)
-        end
-        # Compute dwt for all columns
-        @views for (yⱼ, tempⱼ) in zip(eachcol(y), eachcol(temp))
-            Transforms.unsafe_dwt1level!(yⱼ, tempⱼ, filter, fw, dcfilter, scfilter, si)
-        end
-    else
-        # TODO: Implement non-standard transform
-        error("Non-standard transform not implemented yet.")
-    end
-    return y
+function dwt_step(v::AbstractArray{T,2}, h::Array{S,1}, g::Array{S,1}; 
+                  standard::Bool = true) where {T<:Number, S<:Number}
+    n,m = size(v)
+    n₁ = n÷2
+    m₁ = m÷2
+    w₁ = Array{T,2}(undef, (n₁,m₁))
+    w₂ = Array{T,2}(undef, (n₁,m₁))
+    w₃ = Array{T,2}(undef, (n₁,m₁))
+    w₄ = Array{T,2}(undef, (n₁,m₁))
+    temp = Array{T,2}(undef, (n,m))
+    dwt_step!(w₁, w₂, w₃, w₄, v, h, g, temp, standard=standard)
+    return w₁, w₂, w₃, w₄
 end
 
-function idwt_step!(y::AbstractArray{T,2},
-                    x::AbstractArray{T,2},
-                    filter::OrthoFilter,
-                    dcfilter::StridedVector{S},
-                    scfilter::StridedVector{S},
-                    si::StridedVector{S};
-                    standard::Bool = true) where {T<:Number, S<:Number}
+"""
+    dwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp[; standard])
+
+Same as 2D version of `dwt_step` but without array allocation.
+
+# Arguments
+- `w₁::AbstractArray{T,2} where T<:Number`: Array allocation for top left output.
+- `w₂::AbstractArray{T,2} where T<:Number`: Array allocation for top right output.
+- `w₃::AbstractArray{T,2} where T<:Number`: Array allocation for bottom left output.
+- `w₄::AbstractArray{T,2} where T<:Number`: Array allocation for bottom right output.
+- `v::AbstractArray{T,2} where T<:Number`: Array of coefficients to be transformed.
+- `h::Array{S,1} where S<:Number`: High pass filter.
+- `g::Array{S,1} where S<:Number`: Low pass filter.
+- `temp::AbstractArray{T,2} where T<:Number`: Array allocation for intermediate
+  computations.
+
+# Keyword Arguments
+- `standard::Bool`: (Default: `true`) Whether to perform the standard wavelet transform.
+
+# Returns
+- `w₁::Array{T,2}`: Top left output. Result of low pass filter on columns + low pass filter
+  on rows.
+- `w₂::Array{T,2}`: Top left output. Result of low pass filter on columns + high pass filter
+  on rows.
+- `w₃::Array{T,2}`: Top left output. Result of high pass filter on columns + low pass filter
+  on rows.
+- `w₄::Array{T,2}`: Top left output. Result of high pass filter on columns + high pass filter
+  on rows.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+v = randn(8,8)
+temp = similar(v)
+w₁ = Array{Float64,2}(undef, (4,4))
+w₂ = Array{Float64,2}(undef, (4,4))
+w₃ = Array{Float64,2}(undef, (4,4))
+w₄ = Array{Float64,2}(undef, (4,4))
+wt = wavelet(WT.haar)
+g, h = WT.makereverseqmfpair(wt, true)
+
+# One step of DWT
+DWT.dwt_step!(w₁, w₂, w₃, w₄, v, h, g, temp)
+```
+"""
+function dwt_step!(w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
+                   w₃::AbstractArray{T,2}, w₄::AbstractArray{T,2},
+                   v::AbstractArray{T,2},
+                   h::Array{S,1}, g::Array{S,1},
+                   temp::AbstractArray{T,2};
+                   standard::Bool = true) where {T<:Number, S<:Number}
     # Sanity check
-    @assert size(x) == size(y)
+    @assert size(v) == size(temp)
+    @assert size(w₁) == size(w₂) == size(w₃) == size(w₄)
+    # @assert size(w₁,1)*2 = size(v,1)
+    # @assert size(w₁,2)*2 == size(v,2)
 
     # Setup
-    fw = false          # Is inverse transform
-    temp = similar(x)   # Temporary matrix
+    n,m = size(w₁)
 
     # Transform
     if standard
-        @inbounds begin
-            # Compute dwt for all rows
-            @views for (tempᵢ, xᵢ) in zip(eachrow(temp), eachrow(x))
-                Transforms.unsafe_dwt1level!(tempᵢ, xᵢ, filter, fw, dcfilter, scfilter, si)
-            end
-            # Compute dwt for all columns
-            @views for (yⱼ, tempⱼ) in zip(eachcol(y), eachcol(temp))
-                Transforms.unsafe_dwt1level!(yⱼ, tempⱼ, filter, fw, dcfilter, scfilter, si)
-            end
+        # Compute dwt for all columns
+        for j in 1:(2*m)
+            temp₁ⱼ = @view temp[1:n,j]
+            temp₂ⱼ = @view temp[(n+1):end,j]
+            vⱼ = @view v[:,j]
+            dwt_step!(temp₁ⱼ, temp₂ⱼ, vⱼ, h, g)
+        end
+        # Compute dwt for all rows
+        for i in 1:n
+            temp₁ᵢ = @view temp[i,:]
+            w₁ᵢ = @view w₁[i,:]
+            w₂ᵢ = @view w₂[i,:]
+            dwt_step!(w₁ᵢ, w₂ᵢ, temp₁ᵢ, h, g)
+            
+            temp₂ᵢ = @view temp[n+i,:]
+            w₃ᵢ = @view w₃[i,:]
+            w₄ᵢ = @view w₄[i,:]
+            dwt_step!(w₃ᵢ, w₄ᵢ, temp₂ᵢ, h, g)
         end
     else
-        # TODO: Implement non-standard transform
         error("Non-standard transform not implemented yet.")
     end
-    return y
+    return w₁, w₂, w₃, w₄
+end
+
+"""
+    idwt_step(w₁, w₂, w₃, w₄, h, g; standard)
+
+Computes one step of inverse discrete wavelet transform on 2D-signals.
+
+# Arguments
+- `w₁::AbstractArray{T,2} where T<:Number`: Top left child coefficients.
+- `w₂::AbstractArray{T,2} where T<:Number`: Top right child coefficients.
+- `w₃::AbstractArray{T,2} where T<:Number`: Bottom left child coefficients.
+- `w₄::AbstractArray{T,2} where T<:Number`: Bottom right child coefficients.
+- `h::Array{S,1} where S<:Number`: High pass filter.
+- `g::Array{S,1} where S<:Number`: Low pass filter.
+
+# Returns
+- `::Array{T,2}`: Reconstructed coefficients.
+"""
+function idwt_step(w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
+                   w₃::AbstractArray{T,2}, w₄::AbstractArray{T,2},
+                   h::Array{S,1}, g::Array{S,1};
+                   standard::Bool = true) where {T<:Number, S<:Number}
+    n,m = size(w₁)
+    v = Array{T,2}(undef, (2*n,2*m))
+    temp = Array{T,2}(undef, (2*n,2*m))
+    idwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp, standard=standard)
+    return v
+end
+
+"""
+    idwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp[; standard])
+
+Same as 2D version of `idwt_step` but without array allocation.
+
+# Arguments
+- `v::AbstractArray{T,2} where T<:Number`: Array allocation for inverse transformed output.
+- `w₁::AbstractArray{T,2} where T<:Number`: Array allocation for top left coefficients.
+- `w₂::AbstractArray{T,2} where T<:Number`: Array allocation for top right coefficients.
+- `w₃::AbstractArray{T,2} where T<:Number`: Array allocation for bottom left coefficients.
+- `w₄::AbstractArray{T,2} where T<:Number`: Array allocation for bottom right coefficients.
+- `h::Array{S,1} where S<:Number`: High pass filter.
+- `g::Array{S,1} where S<:Number`: Low pass filter.
+- `temp::AbstractArray{T,2} where T<:Number`: Array allocation for intermediate
+  computations.
+
+# Keyword Arguments
+- `standard::Bool`: (Default: `true`) Whether to perform the standard wavelet transform.
+
+# Returns
+- `v::Array{T,2}`: Reconstructed coefficients.
+"""
+function idwt_step!(v::AbstractArray{T,2},
+                    w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
+                    w₃::AbstractArray{T,2}, w₄::AbstractArray{T,2},
+                    h::Array{S,1}, g::Array{S,1},
+                    temp::AbstractArray{T,2};
+                    standard::Bool = true) where {T<:Number, S<:Number}
+    # Sanity check
+    @assert size(v) == size(temp)
+    @assert size(w₁) == size(w₂) == size(w₃) == size(w₄)
+    # @assert size(w₁,1)*2 = size(v,1)
+    # @assert size(w₁,2)*2 == size(v,2)
+
+    # Setup
+    n,m = size(w₁)
+
+    # Inverse transform
+    if standard
+        # Compute idwt for all rows
+        for i in 1:n
+            @inbounds temp₁ᵢ = @view temp[i,:]
+            @inbounds w₁ᵢ = @view w₁[i,:]
+            @inbounds w₂ᵢ = @view w₂[i,:]
+            @inbounds idwt_step!(temp₁ᵢ, w₁ᵢ, w₂ᵢ, h, g)
+
+            @inbounds temp₂ᵢ = @view temp[n+i,:]
+            @inbounds w₃ᵢ = @view w₃[i,:]
+            @inbounds w₄ᵢ = @view w₄[i,:]
+            @inbounds idwt_step!(temp₂ᵢ, w₃ᵢ, w₄ᵢ, h, g)
+        end
+        # Compute idwt for all columns
+        for j in 1:(2*m)
+            @inbounds vⱼ = @view v[:,j]
+            @inbounds temp₁ⱼ = @view temp[1:n,j]
+            @inbounds temp₂ⱼ = @view temp[(n+1):end,j]
+            @inbounds idwt_step!(vⱼ, temp₁ⱼ, temp₂ⱼ, h, g)
+        end
+    else
+        error("Non-standard transform not implemented yet.")
+    end
+    return v
 end
 
 # ----- 1 step of dwt for nD signals -----
