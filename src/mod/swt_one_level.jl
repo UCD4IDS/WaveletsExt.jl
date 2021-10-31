@@ -1,4 +1,5 @@
 # ========== Single Step Stationary Wavelet Transform ==========
+# ----- 1D SWT -----
 """
     sdwt_step(v, d, h, g)
 
@@ -161,7 +162,7 @@ function isdwt_step(w₁::AbstractVector{T},
                     h::Array{S,1},
                     g::Array{S,1}) where {T<:Number, S<:Number}
     v = similar(w₁)
-    isdwt_step!(v, w₁, w₁, d, h, g)
+    isdwt_step!(v, w₁, w₂, d, h, g)
     return v
 end
 
@@ -281,6 +282,157 @@ function isdwt_step!(v::AbstractVector{T},
             k₂ = k₂+(1<<(d+1)) |> k₂ -> k₂>n ? mod1(k₂,n) : k₂
             @inbounds v[j] += g[i₁]*w₁[k₁]+h[i₂]*w₂[k₂]
         end
+    end
+    return v
+end
+
+# ----- 2D SWT -----
+# Forward transform with allocation
+function sdwt_step(v::AbstractMatrix{T}, d::Integer, h::Vector{S}, g::Vector{S}) where
+                  {T<:Number, S<:Number}
+    n, m = size(v)
+    w₁ = Matrix{T}(undef, (n,m))
+    w₂ = Matrix{T}(undef, (n,m))
+    w₃ = Matrix{T}(undef, (n,m))
+    w₄ = Matrix{T}(undef, (n,m))
+    temp = Array{T,3}(undef, (n,m,2))
+    sdwt_step!(w₁, w₂, w₃, w₄, v, d, h, g, temp)
+    return w₁, w₂, w₃, w₄
+end
+# Forward transform without allocation
+function sdwt_step!(w₁::AbstractMatrix{T}, w₂::AbstractMatrix{T},
+                    w₃::AbstractMatrix{T}, w₄::AbstractMatrix{T},
+                    v::AbstractMatrix{T},
+                    d::Integer,
+                    h::Vector{S}, g::Vector{S},
+                    temp::AbstractArray{T,3}) where {T<:Number, S<:Number}
+    # Sanity check
+    @assert size(v) == size(w₁) == size(w₂) == size(w₃) == size(w₄)
+    @assert ndims(temp) == 3
+    @assert size(temp,1) == size(v,1)
+    @assert size(temp,2) == size(v,2)
+
+    # Setup
+    n, m = size(w₁)
+
+    # --- Transform ---
+    # Compute sdwt for all columns
+    for j in 1:m
+        @inbounds temp₁ⱼ = @view temp[:,j,1]
+        @inbounds temp₂ⱼ = @view temp[:,j,2]
+        @inbounds vⱼ = @view v[:,j]
+        @inbounds sdwt_step!(temp₁ⱼ, temp₂ⱼ, vⱼ, d, h, g)
+    end
+    # Compute sdwt for all rows
+    for i in 1:n
+        @inbounds temp₁ᵢ = @view temp[i,:,1]
+        @inbounds w₁ᵢ = @view w₁[i,:]
+        @inbounds w₂ᵢ = @view w₂[i,:]
+        @inbounds sdwt_step!(w₁ᵢ, w₂ᵢ, temp₁ᵢ, d, h, g)
+        
+        @inbounds temp₂ᵢ = @view temp[i,:,2]
+        @inbounds w₃ᵢ = @view w₃[i,:]
+        @inbounds w₄ᵢ = @view w₄[i,:]
+        @inbounds sdwt_step!(w₃ᵢ, w₄ᵢ, temp₂ᵢ, d, h, g)
+    end
+    return w₁, w₂, w₃, w₄
+end
+
+# Inverse transform (Average based) with allocation
+function isdwt_step(w₁::AbstractMatrix{T}, w₂::AbstractMatrix{T},
+                    w₃::AbstractMatrix{T}, w₄::AbstractMatrix{T},
+                    d::Integer,
+                    h::Array{S,1}, g::Array{S,1}) where {T<:Number, S<:Number}
+    n, m = size(w₁)
+    v = Matrix{T}(undef, (n,m))
+    temp = Array{T,2}(undef, (n,m))
+    isdwt_step!(v, w₁, w₂, w₃, w₄, d, h, g, temp)
+    return v
+end
+# Inverse transform (Shift based) with allocation
+function isdwt_step(w₁::AbstractMatrix{T}, w₂::AbstractMatrix{T},
+                    w₃::AbstractMatrix{T}, w₄::AbstractMatrix{T},
+                    d::Integer, sv::Integer, sw::Integer,
+                    h::Vector{S}, g::Vector{S}) where {T<:Number, S<:Number}
+    n, m = size(w₁)
+    v = Matrix{T}(undef, (n,m))
+    temp = Array{T,3}(undef, (n,m,2))
+    isdwt_step!(v, w₁, w₂, w₃, w₄, d, sv, sw, h, g, temp)
+    return v
+end
+# Inverse transform (Average based) without allocation
+function isdwt_step!(v::AbstractMatrix{T},
+                     w₁::AbstractMatrix{T}, w₂::AbstractMatrix{T},
+                     w₃::AbstractMatrix{T}, w₄::AbstractMatrix{T},
+                     d::Integer,
+                     h::Vector{S}, g::Vector{S},
+                     temp::AbstractArray{T,3}) where {T<:Number, S<:Number}
+    # Sanity check
+    @assert size(v) == size(w₁) == size(w₂) == size(w₃) == size(w₄)
+    @assert ndims(temp) == 3
+    @assert size(temp,1) == size(v,1)
+    @assert size(temp,2) == size(v,2)
+
+    # Setup
+    n, m = size(w₁)
+
+    # --- Transform ---
+    # Compute isdwt for all rows
+    for i in 1:n
+        @inbounds temp₁ᵢ = @view temp[i,:,1]
+        @inbounds w₁ᵢ = @view w₁[i,:]
+        @inbounds w₂ᵢ = @view w₂[i,:]
+        @inbounds isdwt_step!(temp₁ᵢ, w₁ᵢ, w₂ᵢ, d, h, g)
+        
+        @inbounds temp₂ᵢ = @view temp[i,:,2]
+        @inbounds w₃ᵢ = @view w₃[i,:]
+        @inbounds w₄ᵢ = @view w₄[i,:]
+        @inbounds isdwt_step!(temp₂ᵢ, w₃ᵢ, w₄ᵢ, d, h, g)
+    end
+    # Compute isdwt for all columns
+    for j in 1:m
+        @inbounds temp₁ⱼ = @view temp[:,j,1]
+        @inbounds temp₂ⱼ = @view temp[:,j,2]
+        @inbounds vⱼ = @view v[:,j]
+        @inbounds isdwt_step!(vⱼ, temp₁ⱼ, temp₂ⱼ, d, h, g)
+    end
+    return v
+end
+# Inverse transform (Shift based) without array allocation
+function isdwt_step!(v::AbstractMatrix{T},
+                     w₁::AbstractMatrix{T}, w₂::AbstractMatrix{T},
+                     w₃::AbstractMatrix{T}, w₄::AbstractMatrix{T},
+                     d::Integer, sv::Integer, sw::Integer,
+                     h::Vector{S}, g::Vector{S},
+                     temp::AbstractArray{T,3}) where {T<:Number, S<:Number}
+    # Sanity check
+    @assert size(v) == size(w₁) == size(w₂) == size(w₃) == size(w₄)
+    @assert ndims(temp) == 3
+    @assert size(temp,1) == size(v,1)
+    @assert size(temp,2) == size(v,2)
+
+    # Setup
+    n, m = size(w₁)
+
+    # --- Transform ---
+    # Compute isdwt for all rows
+    for i in 1:n
+        @inbounds temp₁ᵢ = @view temp[i,:,1]
+        @inbounds w₁ᵢ = @view w₁[i,:]
+        @inbounds w₂ᵢ = @view w₂[i,:]
+        @inbounds isdwt_step!(temp₁ᵢ, w₁ᵢ, w₂ᵢ, d, sv, sw, h, g)
+        
+        @inbounds temp₂ᵢ = @view temp[i,:,2]
+        @inbounds w₃ᵢ = @view w₃[i,:]
+        @inbounds w₄ᵢ = @view w₄[i,:]
+        @inbounds isdwt_step!(temp₂ᵢ, w₃ᵢ, w₄ᵢ, d, sv, sw, h, g)
+    end
+    # Compute isdwt for all columns
+    for j in 1:m
+        @inbounds temp₁ⱼ = @view temp[:,j,1]
+        @inbounds temp₂ⱼ = @view temp[:,j,2]
+        @inbounds vⱼ = @view v[:,j]
+        @inbounds isdwt_step!(vⱼ, temp₁ⱼ, temp₂ⱼ, d, sv, sw, h, g)
     end
     return v
 end

@@ -229,8 +229,8 @@ end
 # ========== Inverse Wavelet Packet Decomposition ==========
 # IWPD by level without allocation
 """
-    iwpd(xw, wt[, L; kwargs...])
-    iwpd(xw, wt, tree[; kwargs...])
+    iwpd(xw, wt[, L; standard])
+    iwpd(xw, wt, tree[; standard])
 
 Computes the inverse wavelet packet decomposition (IWPD) for `L` levels or by given `tree.`
 
@@ -287,7 +287,7 @@ function iwpd(xw::AbstractArray{T},
     @assert ndims(xw) ≥ 2
     dim = size(xw)[1:(end-1)]
     x̂ = Array{T}(undef, dim)
-    iwpd!(x̂, xw, wt, L)
+    iwpd!(x̂, xw, wt, L, kwargs...)
     return x̂
 end
 
@@ -299,14 +299,14 @@ function iwpd(xw::AbstractArray{T},
     @assert ndims(xw) ≥ 2
     dim = size(xw)[1:(end-1)]
     x̂ = Array{T}(undef, dim)
-    iwpd!(x̂, xw, wt, tree)
+    iwpd!(x̂, xw, wt, tree, kwargs...)
     return x̂
 end
 
 # 1D IWPD by level with allocation
 """
-    iwpd(x̂, xw, wt[, L; kwargs...])
-    iwpd(x̂, xw, wt, tree[; kwargs...])
+    iwpd(x̂, xw, wt[, L; standard])
+    iwpd(x̂, xw, wt, tree[; standard])
 
 Same as `iwpd` but without array allocation.
 
@@ -370,8 +370,8 @@ function iwpd!(x̂::AbstractArray{T,2},
                xw::AbstractArray{T,3},
                wt::OrthoFilter,
                L::Integer = maxtransformlevels(x̂);
-               kwargs...) where T<:Number
-    iwpd!(x̂, xw, wt, makequadtree(x̂, L, :full), kwargs...)
+               standard::Bool = true) where T<:Number
+    iwpd!(x̂, xw, wt, makequadtree(x̂, L, :full), standard=standard)
     return x̂
 end
 
@@ -394,15 +394,50 @@ function iwpd!(x̂::AbstractArray{T,2},
                xw::AbstractArray{T,3},
                wt::OrthoFilter,
                tree::BitVector;
-               kwargs...) where T<:Number
+               standard::Bool = true) where T<:Number
     # Sanity check
     @assert size(x̂,1) == size(xw,1)
     @assert size(x̂,2) == size(xw,2)
     # TODO: @assert isvalidquadtree
-    # Get basis coefficients then compute iwpt
-    # TODO: get basis coefficients for 2D transforms, currently using wrong but hacky fix
-    w = xw[:,:,end]; tree = makequadtree(x̂, maxtransformlevels(x̂), :full)
-    iwpt!(x̂, w, wt, tree, kwargs...)
+
+    # Setup
+    m, n, _ = size(xw)
+    g, h = WT.makereverseqmfpair(wt, true)
+    xwₜ = copy(xw)
+    temp = Array{T,2}(undef, (m,n))
+
+    # Inverse transform
+    # TODO: Change to extract basis coefficients and send to iwpt!
+    for i in reverse(eachindex(tree))
+        # Reconstruct node i if it has children
+        if tree[i]
+            # Extract parent node
+            d = getdepth(i,:quad)
+            rows = getrowrange(m, i)
+            cols = getcolrange(n, i)
+            @inbounds v = d == 0 ? x̂ : @view xwₜ[rows, cols, d+1]
+            # Extract children nodes of current parent
+            dᵣ = d+1
+            rows₁ = getrowrange(m, getchildindex(i,:topleft))
+            cols₁ = getcolrange(n, getchildindex(i,:topleft))
+            rows₂ = getrowrange(m, getchildindex(i,:topright))
+            cols₂ = getcolrange(n, getchildindex(i,:topright))
+            rows₃ = getrowrange(m, getchildindex(i,:bottomleft))
+            cols₃ = getcolrange(n, getchildindex(i,:bottomleft))
+            rows₄ = getrowrange(m, getchildindex(i,:bottomright))
+            cols₄ = getcolrange(n, getchildindex(i,:bottomright))
+            @inbounds w₁ = @view xwₜ[rows₁, cols₁, dᵣ+1]
+            @inbounds w₂ = @view xwₜ[rows₂, cols₂, dᵣ+1]
+            @inbounds w₃ = @view xwₜ[rows₃, cols₃, dᵣ+1]
+            @inbounds w₄ = @view xwₜ[rows₄, cols₄, dᵣ+1]
+            # Extract temp subarray (Same size as parent node)
+            @inbounds tempᵢ = @view temp[rows, cols]
+            # Perform 1 level of wavelet reconstruction
+            @inbounds idwt_step!(v, w₁, w₂, w₃, w₄, h, g, tempᵢ, standard=standard)
+        else
+            continue
+        end
+    end
     return x̂
 end
 
@@ -564,7 +599,9 @@ function Wavelets.Transforms.wpt!(y::AbstractArray{T,2},
             # Perform 1 level of wavelet decomposition
             @inbounds dwt_step!(w₁, w₂, w₃, w₄, v, h, g, tempᵢ, standard=standard)
             # If current range not at final iteration, copy to yₜ
-            (4*i<length(tree)) && (yₜ[rows, cols] = @view y[rows, cols])
+            if 4*i<length(tree)
+                @inbounds yₜ[rows, cols] = @view y[rows, cols]
+            end
         else
             continue
         end
@@ -711,25 +748,40 @@ function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},
     # @assert isvalidquadtree(xw, tree)
     @assert size(x̂) == size(xw)
 
-    # ----- Allocation and setup to match Wavelets.jl's function requirements -----
+    # ----- Setup -----
     m, n = size(xw)
-    fw = false
-    si = Vector{T}(undef, length(wt)-1)                     # temp filter vector
-    scfilter, dcfilter = WT.makereverseqmfpair(wt, fw, T)   # low & high pass filters
-    temp = copy(xw)                                         # temp array
+    g, h = WT.makereverseqmfpair(wt, true)      # low & high pass filters
+    xwₜ = copy(xw)                               # Placeholder for xw
+    temp = Array{T,2}(undef, (m,n))             # temp array
     # ----- Compute transforms based on tree -----
     for i in reverse(eachindex(tree))
         # Reconstruct to node i if it has children
         if tree[i]
             # Extract parent node
-            rng_row = getrowrange(m, i)
-            rng_col = getcolrange(n, i)
-            @inbounds nodeₚ = @view x̂[rng_row, rng_col]         # Parent node
-            @inbounds nodeᵣ = @view temp[rng_row, rng_col]      # Children nodes
+            rows = getrowrange(m, i)
+            cols = getcolrange(n, i)
+            @inbounds v = @view x̂[rows, cols]
+            # Extract children nodes of current parent
+            rows₁ = getrowrange(m, getchildindex(i,:topleft))
+            cols₁ = getcolrange(n, getchildindex(i,:topleft))
+            rows₂ = getrowrange(m, getchildindex(i,:topright))
+            cols₂ = getcolrange(n, getchildindex(i,:topright))
+            rows₃ = getrowrange(m, getchildindex(i,:bottomleft))
+            cols₃ = getcolrange(n, getchildindex(i,:bottomleft))
+            rows₄ = getrowrange(m, getchildindex(i,:bottomright))
+            cols₄ = getcolrange(n, getchildindex(i,:bottomright))
+            @inbounds w₁ = @view xwₜ[rows₁, cols₁]
+            @inbounds w₂ = @view xwₜ[rows₂, cols₂]
+            @inbounds w₃ = @view xwₜ[rows₃, cols₃]
+            @inbounds w₄ = @view xwₜ[rows₄, cols₄]
+            # Extract temp subarray (Same size as parent node)
+            @inbounds tempᵢ = @view temp[rows, cols]
             # Perform 1 level of wavelet reconstruction
-            idwt_step!(nodeₚ, nodeᵣ, wt, dcfilter, scfilter, si, standard=standard)
+            @inbounds idwt_step!(v, w₁, w₂, w₃, w₄, h, g, tempᵢ, standard=standard)
             # If current range not at final iteration, copy to temp
-            (i>1) && (temp[rng_row, rng_col] = x̂[rng_row, rng_col])
+            if i > 1
+                @inbounds xwₜ[rows, cols] = v
+            end
         else
             continue
         end

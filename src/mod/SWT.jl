@@ -28,6 +28,7 @@ using Wavelets
 using ..Utils
 
 # ========== Stationary DWT ==========
+# ----- 1D SDWT with allocation -----
 @doc raw"""
     sdwt(x, wt[, L])
 
@@ -69,7 +70,23 @@ function sdwt(x::AbstractVector{T},
     sdwt!(xw, x, wt, L)
     return xw
 end
+# ----- 2D SDWT with allocation -----
+function sdwt(x::AbstractMatrix{T},
+              wt::OrthoFilter,
+              L::Integer = maxtransformlevels(x)) where T<:Number
+    # Sanity check
+    @assert L ≤ maxtransformlevels(x) || 
+        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+    @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
+    # Setup
+    n, m = size(x)
+    xw = Array{T,3}(undef, (n,m,3*L+1))
+    # Compute transforms
+    sdwt!(xw, x, wt, L)
+    return xw
+end
 
+# ----- 1D SDWT without allocation -----
 @doc raw"""
     sdwt!(xw, x, wt[, L])
 
@@ -123,8 +140,36 @@ function sdwt!(xw::AbstractArray{T,2},
     end    
     return xw
 end
+# ----- 2D SDWT with no allocation -----
+function sdwt!(xw::AbstractArray{T,3},
+               x::AbstractMatrix{T},
+               wt::OrthoFilter,
+               L::Integer = maxtransformlevels(x)) where T<:Number
+    # Sanity check
+    @assert L ≤ maxtransformlevels(x) ||
+        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+    @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
+    @assert size(xw,3) == 3*L+1
 
-# Shift-based ISDWT
+    # Setup
+    n, m = size(x)
+    g, h = WT.makereverseqmfpair(wt, true)
+    xw[:,:,end] = x
+    temp = Array{T,3}(undef, (n,m,2))
+
+    # SDWT
+    for d in 0:(L-1)
+        @inbounds v = xw[:,:, 3*(L-d)+1]       # Parent node
+        @inbounds w₁ = @view xw[:,:, 3*(L-d)-2]          # Scaling + Scaling coefficients
+        @inbounds w₂ = @view xw[:,:, 3*(L-d)-1]          # Detail + Scaling coefficients
+        @inbounds w₃ = @view xw[:,:, 3*(L-d)]            # Scaling + Detail coefficients
+        @inbounds w₄ = @view xw[:,:, 3*(L-d)+1]          # Detail + Detail coefficients
+        @inbounds sdwt_step!(w₁, w₂, w₃, w₄, v, d, h, g, temp)
+    end    
+    return xw
+end
+
+# ----- 1D ISDWT (Shift based) with allocation -----
 """
     isdwt(xw, wt[, sm])
 
@@ -168,7 +213,16 @@ function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter, sm::Integer) where T<:Nu
     isdwt!(x, xw, wt, sm)
     return x
 end
-
+# ----- 2D ISDWT (Shift based) with allocation -----
+function isdwt(xw::AbstractArray{T,3}, wt::OrthoFilter, sm::Integer) where T<:Number
+    # Setup
+    n, m, _ = size(xw)
+    x = Matrix{T}(undef, (n,m))
+    # Transform
+    isdwt!(x, xw, wt, sm)
+    return x
+end
+# ----- 1D ISDWT (Average based) with allocation -----
 function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
     # Setup
     n = size(xw,1)
@@ -177,7 +231,17 @@ function isdwt(xw::AbstractArray{T,2}, wt::OrthoFilter) where T<:Number
     isdwt!(x, xw, wt)
     return x
 end
+# ----- 2D ISDWT (Average based) with allocation -----
+function isdwt(xw::AbstractArray{T,3}, wt::OrthoFilter) where T<:Number
+    # Setup
+    n, m, _ = size(xw)
+    x = Matrix{T}(undef, (n,m))
+    # Transform
+    isdwt!(x, xw, wt)
+    return x
+end
 
+# ----- 1D ISDWT (Shift based) without allocation -----
 """
     isdwt!(x, xw, wt[, sm])
 
@@ -241,8 +305,38 @@ function isdwt!(x::AbstractVector{T},
     end
     return x
 end
+# ----- 2D ISDWT (Shift based) without allocation -----
+function isdwt!(x::AbstractMatrix{T},
+                xw::AbstractArray{T,3},
+                wt::OrthoFilter,
+                sm::Integer) where T<:Number
+    # Sanity check
+    n, m, k = size(xw)
+    L = (k-1) ÷ 3
+    @assert 0 ≤ log2(sm) ≤ L
 
-# Average-based ISDWT
+    # Setup
+    g, h = WT.makereverseqmfpair(wt, true)
+    sd = Utils.main2depthshift(sm, L)
+    temp = Array{T,3}(undef, (n,m,2))
+    for i in eachindex(x)
+        @inbounds x[i] = xw[i]
+    end
+
+    # ISDWT
+    for d in reverse(0:(L-1))
+        sv = sd[d+1]
+        sw = sd[d+2]
+        w₁ = copy(x)
+        @inbounds w₂ = @view xw[:,:,3*(L-d)-1]
+        @inbounds w₃ = @view xw[:,:,3*(L-d)]
+        @inbounds w₄ = @view xw[:,:,3*(L-d)+1]
+        @inbounds isdwt_step!(x, w₁, w₂, w₃, w₄, d, sv, sw, h, g, temp)
+    end
+    return x
+end
+
+# ----- 1D ISDWT (Average based) without allocation -----
 function isdwt!(x::AbstractVector{T}, xw::AbstractArray{T,2}, wt::OrthoFilter) where 
                 T<:Number
     # Setup
@@ -258,6 +352,30 @@ function isdwt!(x::AbstractVector{T}, xw::AbstractArray{T,2}, wt::OrthoFilter) w
         w₁ = copy(x)
         @inbounds w₂ = @view xw[:,L-d+1]
         @inbounds isdwt_step!(x, w₁, w₂, d, h, g)
+    end
+    return x
+end
+# ----- 2D ISDWT (Average based) without allocation -----
+function isdwt!(x::AbstractMatrix{T}, xw::AbstractArray{T,3}, wt::OrthoFilter) where
+                T<:Number
+    # Sanity check
+    n, m, k = size(xw)
+    L = (k-1) ÷ 3
+
+    # Setup
+    g, h = WT.makereverseqmfpair(wt, true)
+    temp = Array{T,3}(undef, (n,m,2))
+    for i in eachindex(x)
+        @inbounds x[i] = xw[i]
+    end
+
+    # ISDWT
+    for d in reverse(0:(L-1))
+        w₁ = copy(x)
+        @inbounds w₂ = @view xw[:,:,3*(L-d)-1]
+        @inbounds w₃ = @view xw[:,:,3*(L-d)]
+        @inbounds w₄ = @view xw[:,:,3*(L-d)+1]
+        @inbounds isdwt_step!(x, w₁, w₂, w₃, w₄, d, h, g, temp)
     end
     return x
 end
@@ -621,9 +739,9 @@ function swpd!(xw::AbstractArray{T,2},
 
     # SWPD
     for i in 1:n₁
-        d = floor(Int, log2(i))
-        j₁ = left(i)
-        j₂ = right(i)
+        d = getdepth(i,:binary)
+        j₁ = getchildindex(i,:left)
+        j₂ = getchildindex(i,:right)
         @inbounds v = @view xw[:,i]
         @inbounds w₁ = @view xw[:,j₁]
         @inbounds w₂ = @view xw[:,j₂]
@@ -789,18 +907,18 @@ function iswpd!(x::AbstractVector{T},
     _, m = size(xw)
     g, h = WT.makereverseqmfpair(wt, true)
     tmp = copy(xw)                          # Temp. array to store intermediate outputs
-    L = floor(Int, log2(m))                 # Number of decompositions from xw
+    L = getdepth(m,:binary)                 # Number of decompositions from xw
     sd = Utils.main2depthshift(sm, L)       # Shifts at each depth
 
     # iSWPD
     for (i, haschild) in Iterators.reverse(enumerate(tree))
         # Current node has child => Compute one step of inverse transform
         if haschild
-            d = floor(Int, log2(i))                     # Parent depth
+            d = getdepth(i,:binary)                     # Parent depth
             sv = sd[d+1]                                # Parent shift
             sw = sd[d+2]                                # Child shift
-            j₁ = left(i)                                # Scaling child index
-            j₂ = right(i)                               # Detail child index
+            j₁ = getchildindex(i,:left)                 # Scaling child index
+            j₂ = getchildindex(i,:right)                # Detail child index
             @inbounds v = i==1 ? x : @view tmp[:,i]     # Parent node
             @inbounds w₁ = @view tmp[:,j₁]              # Scaling child node
             @inbounds w₂ = @view tmp[:,j₂]              # Detail child node
@@ -808,7 +926,7 @@ function iswpd!(x::AbstractVector{T},
             @inbounds isdwt_step!(v, w₁, w₂, d, sv, sw, h, g)
         end
     end
-    return tmp[:,1]
+    return x
 end
 
 # Average-based iSWPD by tree
@@ -827,9 +945,9 @@ function iswpd!(x::AbstractVector{T},
     for (i, haschild) in Iterators.reverse(enumerate(tree))
         # Current node has child => Compute one step of inverse transform
         if haschild
-            d = floor(Int, log2(i))                     # Parent depth
-            j₁ = left(i)                                # Scaling child index
-            j₂ = right(i)                               # Detail child index
+            d = getdepth(i,:binary)                     # Parent depth
+            j₁ = getchildindex(i,:left)                 # Scaling child index
+            j₂ = getchildindex(i,:right)                # Detail child index
             @inbounds v = i==1 ? x : @view tmp[:,i]     # Parent node
             @inbounds w₁ = @view tmp[:,j₁]              # Scaling child node
             @inbounds w₂ = @view tmp[:,j₂]              # Detail child node
@@ -837,7 +955,7 @@ function iswpd!(x::AbstractVector{T},
             @inbounds isdwt_step!(v, w₁, w₂, d, h, g)
         end
     end
-    return tmp[:,1]
+    return x
 end
 
 include("swt_one_level.jl")

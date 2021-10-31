@@ -331,8 +331,8 @@ function dwt_step!(w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
     # Sanity check
     @assert size(v) == size(temp)
     @assert size(w₁) == size(w₂) == size(w₃) == size(w₄)
-    # @assert size(w₁,1)*2 = size(v,1)
-    # @assert size(w₁,2)*2 == size(v,2)
+    @assert size(w₁,1)*2 == size(v,1)
+    @assert size(w₁,2)*2 == size(v,2)
 
     # Setup
     n,m = size(w₁)
@@ -341,22 +341,22 @@ function dwt_step!(w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
     if standard
         # Compute dwt for all columns
         for j in 1:(2*m)
-            temp₁ⱼ = @view temp[1:n,j]
-            temp₂ⱼ = @view temp[(n+1):end,j]
-            vⱼ = @view v[:,j]
-            dwt_step!(temp₁ⱼ, temp₂ⱼ, vⱼ, h, g)
+            @inbounds temp₁ⱼ = @view temp[1:n,j]
+            @inbounds temp₂ⱼ = @view temp[(n+1):end,j]
+            @inbounds vⱼ = @view v[:,j]
+            @inbounds dwt_step!(temp₁ⱼ, temp₂ⱼ, vⱼ, h, g)
         end
         # Compute dwt for all rows
         for i in 1:n
-            temp₁ᵢ = @view temp[i,:]
-            w₁ᵢ = @view w₁[i,:]
-            w₂ᵢ = @view w₂[i,:]
-            dwt_step!(w₁ᵢ, w₂ᵢ, temp₁ᵢ, h, g)
+            @inbounds temp₁ᵢ = @view temp[i,:]
+            @inbounds w₁ᵢ = @view w₁[i,:]
+            @inbounds w₂ᵢ = @view w₂[i,:]
+            @inbounds dwt_step!(w₁ᵢ, w₂ᵢ, temp₁ᵢ, h, g)
             
-            temp₂ᵢ = @view temp[n+i,:]
-            w₃ᵢ = @view w₃[i,:]
-            w₄ᵢ = @view w₄[i,:]
-            dwt_step!(w₃ᵢ, w₄ᵢ, temp₂ᵢ, h, g)
+            @inbounds temp₂ᵢ = @view temp[n+i,:]
+            @inbounds w₃ᵢ = @view w₃[i,:]
+            @inbounds w₄ᵢ = @view w₄[i,:]
+            @inbounds dwt_step!(w₃ᵢ, w₄ᵢ, temp₂ᵢ, h, g)
         end
     else
         error("Non-standard transform not implemented yet.")
@@ -422,8 +422,8 @@ function idwt_step!(v::AbstractArray{T,2},
     # Sanity check
     @assert size(v) == size(temp)
     @assert size(w₁) == size(w₂) == size(w₃) == size(w₄)
-    # @assert size(w₁,1)*2 = size(v,1)
-    # @assert size(w₁,2)*2 == size(v,2)
+    @assert size(w₁,1)*2 == size(v,1)
+    @assert size(w₁,2)*2 == size(v,2)
 
     # Setup
     n,m = size(w₁)

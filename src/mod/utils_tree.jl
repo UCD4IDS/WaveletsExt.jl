@@ -206,35 +206,41 @@ end
 
 # Get level of a particular index in a tree
 """
-    getquadtreelevel(idx)
+    getdepth(idx, tree_type)
 
-Get level of `idx` in the quadtree.
+Get depth of `idx` in a binary tree or quadtree.
 
 # Arguments
-- `idx::T where T<:Integer`: Index of a quadtree.
+- `idx::T where T<:Integer`: Index of a node.
+- `tree_type::Symbol`: Tree type. Supported types are `:binary` and `:quad` trees.
 
 # Returns
-`::T`: Level of `idx`.
+`::T`: Depth of node `idx`.
 
 # Examples
 ```@repl
 using WaveletsExt
 
-getquadtreelevel(1)     # 0
-getquadtreelevel(3)     # 1
+getdepth(1,:binary)     # 0
+getdepth(3,:binary)     # 1
+getdepth(8,:binary)     # 3
+
+getdepth(1,:quad)       # 0
+getdepth(3,:quad)       # 1
+getdepth(8,:quad)       # 2
 ```
 
 **See also:** [`makequadtree`](@ref)
 """
-function getquadtreelevel(idx::T) where T<:Integer
-    # TODO: Get a mathematical solution to this
+function getdepth(idx::T, tree_type::Symbol) where T<:Integer
     @assert idx > 0
-    # Root node => level 0
-    if idx == 1
-        return 0
-    # Node level is 1 level lower than parent node
+    @assert tree_type ∈ [:binary, :quad]
+
+    if tree_type == :binary
+        return floor(T, log2(idx))
+    elseif tree_type == :quad
+        return floor(T, log(4, 3*idx-2))
     else
-        parent_idx = floor(T, (idx+2)/4)
-        return 1 + getquadtreelevel(parent_idx)
+        throw(ArgumentError("Unsupported tree type $tree_type."))
     end
 end
