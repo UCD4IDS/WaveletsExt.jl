@@ -144,9 +144,10 @@ end
 
 # Build a quadtree
 """
-    makequadtree(x, L[, s])
+    maketree(x[, s])
+    maketree(n, m, L[, s])
 
-Build quadtree for 2D wavelet transform. Indexing of the quadtree are as follows:
+Build quadtree for 2D wavelet transform. Indexing of the tree are as follows:
 
 ```
 Level 0                 Level 1                 Level 2             ...
@@ -158,7 +159,9 @@ _________________       _________________       _________________
 ```
 
 # Arguments
-- `x::AbstractArray{T,2} where T<:Number`: Input array.
+- `x::AbstractMatrix{T} where T<:Number`: Input array.
+- `n::Integer`: Number of rows in `x`.
+- `m::Integer`: Number of columns in `x`.
 - `L::Integer`: Number of decomposition levels.
 - `s::Symbol`: (Default: `:full`) Type of quadtree. Available types are `:full` and `:dwt`.
 
@@ -167,41 +170,43 @@ _________________       _________________       _________________
 
 # Examples
 ```@repl
-using WaveletsExt
+using Wavelets, WaveletsExt
 
 x = randn(16,16)
-makequadtree(x, 3)
+maketree(x)
 ```
 """
-function makequadtree(x::AbstractArray{T,2}, L::Integer, s::Symbol = :full) where T<:Number
-    ns = maxtransformlevels(x)      # Max transform levels of x
+function Wavelets.Util.maketree(x::AbstractMatrix{T}, s::Symbol = :full) where T<:Number
+    return maketree(size(x,1), size(x,2), maxtransformlevels(x), s)
+end
+
+function Wavelets.Util.maketree(n::Integer, m::Integer, L::Integer, s::Symbol = :full)
+    L₀ = maxtransformlevels(min(n,m))
+    @assert 0 ≤ L ≤ L₀
     # TODO: Find a mathematical formula to define this rather than sum things up to speed up
     # TODO: process.
-    nq = sum(4 .^ (0:ns))           # Quadtree size
-    @assert 0 ≤ L ≤ ns
+    nq = sum(4 .^(0:(L₀-1)))
 
     # Construct quadtree
-    q = BitArray(undef, nq)
-    fill!(q, false)
+    tree = falses(nq)
 
-    # Fill in true values depending on input `s`
+    # Fill in true values depending on input s
     if s == :full
-        # TODO: Find a mathematical formula to define this
         rng = 4 .^ (0:(L-1)) |> sum |> x -> 1:x
         for i in rng
-            @inbounds q[i] = true
+            @inbounds tree[i] = true
         end
     elseif s == :dwt
-        q[1] = true     # Root node
+        tree[1] = true     # Root node
         for i in 0:(L-2)
             # TODO: Find a mathematical formula to define this
             idx = 4 .^ (0:i) |> sum |> x -> x+1     # Subsequent LL subspace nodes
-            @inbounds q[idx] = true
+            @inbounds tree[idx] = true
         end
     else
         throw(ArgumentError("Unknown symbol."))
     end
-    return q
+    return tree
 end
 
 # Get level of a particular index in a tree

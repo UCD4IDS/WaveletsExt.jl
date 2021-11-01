@@ -4,7 +4,6 @@ export
     getchildindex,
     getparentindex,
     getleaf,
-    makequadtree,
     getdepth,
     # Extraction
     getbasiscoef,

@@ -30,15 +30,19 @@ xw = sdwtall(x, wt)
 
 **See also:** [`sdwt`](@ref)
 """
-function sdwtall(x::AbstractArray{T,2},
+function sdwtall(x::AbstractArray{T},
                  wt::OrthoFilter,
-                 L::Integer = maxtransformlevels(x,1)) where T<:Number
+                 L::Integer = minimum(size(x)[1:end-1]) |> maxtransformlevels) where 
+                 T<:Number
+    @assert 2 ≤ ndims(x) ≤ 3
     # Allocate space for transforms
-    n,N = size(x)
-    xw = Array{T,3}(undef, (n,L+1,N))
+    sz = size(x)[1:(end-1)]
+    k = ndims(x)==2 ? L+1 : 3*L+1
+    N = size(x)[end]
+    xw = Array{T}(undef, (sz...,k,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_xw = ndims(xw)
+    dim_x = ndims(x)
     # Compute transforms
     @inbounds begin
         @views for (xwᵢ, xᵢ) in zip(eachslice(xw, dims=dim_xw), eachslice(x, dims=dim_x))
@@ -82,13 +86,15 @@ x̂ = isdwtall(xw)
 
 **See also:** [`isdwt`](@ref)
 """
-function isdwtall(xw::AbstractArray{T,3}, wt::OrthoFilter) where T<:Number
+function isdwtall(xw::AbstractArray{T}, wt::OrthoFilter) where T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_x = 2
-    dim_xw = 3
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
@@ -98,13 +104,15 @@ function isdwtall(xw::AbstractArray{T,3}, wt::OrthoFilter) where T<:Number
     return x
 end
 
-function isdwtall(xw::AbstractArray{T,3}, wt::OrthoFilter, sm::Integer) where T<:Number
+function isdwtall(xw::AbstractArray{T}, wt::OrthoFilter, sm::Integer) where T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_x = 2
-    dim_xw = 3
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
@@ -145,15 +153,19 @@ xw = swptall(x, wt)
 
 **See also:** [`swpt`](@ref)
 """
-function swptall(x::AbstractArray{T,2}, 
+function swptall(x::AbstractArray{T}, 
                  wt::OrthoFilter, 
-                 L::Integer = maxtransformlevels(x,1)) where T<:Number
+                 L::Integer = minimum(size(x)[1:end-1]) |> maxtransformlevels) where 
+                 T<:Number
+    @assert 2 ≤ ndims(x) ≤ 3
     # Allocate space for transforms
-    n,N = size(x)
-    xw = Array{T,3}(undef, (n,1<<L,N))
+    sz = size(x)[1:(end-1)]
+    k = ndims(x)==2 ? 1<<L : Int(4^L)
+    N = size(x)[end]
+    xw = Array{T}(undef, (sz...,k,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_xw = ndims(xw)
+    dim_x = ndims(x)
     # Compute transforms
     @inbounds begin
         @views for (xwᵢ, xᵢ) in zip(eachslice(xw, dims=dim_xw), eachslice(x, dims=dim_x))
@@ -197,13 +209,15 @@ x̂ = iswptall(xw)
 
 **See also:** [`iswpt`](@ref)
 """
-function iswptall(xw::AbstractArray{T,3}, wt::OrthoFilter) where T<:Number
+function iswptall(xw::AbstractArray{T}, wt::OrthoFilter) where T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
@@ -213,13 +227,15 @@ function iswptall(xw::AbstractArray{T,3}, wt::OrthoFilter) where T<:Number
     return x
 end
 
-function iswptall(xw::AbstractArray{T,3}, wt::OrthoFilter, sm::Integer) where T<:Number
+function iswptall(xw::AbstractArray{T}, wt::OrthoFilter, sm::Integer) where T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
@@ -260,15 +276,19 @@ xw = swpdall(x, wt)
 
 **See also:** [`swpd`](@ref)
 """
-function swpdall(x::AbstractArray{T,2},
+function swpdall(x::AbstractArray{T},
                   wt::OrthoFilter,
-                  L::Integer = maxtransformlevels(x,1)) where T<:Number
+                  L::Integer = minimum(size(x)[1:end-1]) |> maxtransformlevels) where 
+                  T<:Number
+    @assert 2 ≤ ndims(x) ≤ 3
     # Allocate space for transforms
-    n,N = size(x)
-    xw = Array{T,3}(undef, (n,1<<(L+1)-1,N))
+    sz = size(x)[1:(end-1)]
+    k = ndims(x)==2 ? 1<<(L+1)-1 : sum(4 .^(0:L))
+    N = size(x)[end]
+    xw = Array{T}(undef, (sz...,k,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_xw = ndims(xw)
+    dim_x = ndims(x)
     # Compute transforms
     @inbounds begin
         @views for (xwᵢ, xᵢ) in zip(eachslice(xw, dims=dim_xw), eachslice(x, dims=dim_x))
@@ -320,24 +340,27 @@ x̂ = iswpdall(xw, 5)
 
 **See also:** [`iswpd`](@ref)
 """
-function iswpdall(xw::AbstractArray{T,3},
+function iswpdall(xw::AbstractArray{T},
                    wt::OrthoFilter,
-                   L::Integer = maxtransformlevels(x,1)) where T<:Number
+                   L::Integer = minimum(size(xw)[1:end-2]) |> maxtransformlevels) where 
+                   T<:Number
     return iswpdall(xw, wt, maketree(size(xw,1), L))
 end
 
-function iswpdall(xw::AbstractArray{T,3}, wt::OrthoFilter, L::Integer, sm::Integer) where 
-                   T<:Number
+function iswpdall(xw::AbstractArray{T}, wt::OrthoFilter, L::Integer, sm::Integer) where 
+                  T<:Number
     return iswpdall(xw, wt, maketree(size(xw,1), L), sm)
 end
 
-function iswpdall(xw::AbstractArray{T,3}, wt::OrthoFilter, tree::BitVector) where T<:Number
+function iswpdall(xw::AbstractArray{T}, wt::OrthoFilter, tree::BitVector) where T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
@@ -347,16 +370,18 @@ function iswpdall(xw::AbstractArray{T,3}, wt::OrthoFilter, tree::BitVector) wher
     return x
 end
 
-function iswpdall(xw::AbstractArray{T,3}, 
+function iswpdall(xw::AbstractArray{T}, 
                   wt::OrthoFilter, 
                   tree::BitVector, 
                   sm::Integer) where T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
