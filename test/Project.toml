@@ -9,6 +9,6 @@ Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
 
 [compat]
 Distributions = "0.24, 0.25"
-ImageQualityIndexes = "0.2"
+ImageQualityIndexes = "0.2, 0.3"
 Plots = "1.12"
 Wavelets = "0.9"
