@@ -564,7 +564,7 @@ function discriminant_power(D::AbstractArray{T,2}, tree::BitVector,
 
     @assert length(tree) == size(D,1) - 1
 
-    power = bestbasiscoef(D, tree)
+    power = getbasiscoef(D, tree)
     order = sortperm(power, rev = true)
 
     return (power, order)
@@ -823,7 +823,7 @@ function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3},
 
     # select best tree and best set of expansion coefficients
     f.tree = bestbasis_treeselection(f.cost, f.n, :max)
-    Xc = bestbasiscoef(Xw, f.tree)
+    Xc = getbasiscoefall(Xw, f.tree)
 
     # obtain and order basis functions by power of discrimination
     (f.DP, f.order) = f.dp == BasisDiscriminantMeasure() ?
@@ -896,7 +896,7 @@ function fit_transform(f::LocalDiscriminantBasis, X::AbstractArray{S,2},
 
     # fit LDB and return best features
     fit!(f, Xw, y)
-    Xc = bestbasiscoef(Xw, f.tree)
+    Xc = getbasiscoefall(Xw, f.tree)
     return Xc[f.order[1:f.n_features],:]
 end
 

@@ -1,47 +1,23 @@
-# Left and right node index of a binary tree
 """
-    left(i)
-
-Given the node index `i`, returns the index of its left node.
-
-# Arguments
-- `i::Integer`: Index of the node of interest.
-
-# Returns
-`::Integer`: Index of left child.
-
-# Examples
-```@repl
-using Wavelets, WaveletsExt
-
-left(3)     # 6
-```
-
-**See also:** [`right`](@ref)
-"""
-left(i::Integer) = i<<1
 
 """
-    right(i)
+function Wavelets.Util.isvalidtree(x::AbstractMatrix, b::BitVector)
+    n, m = size(x)
+    nb = length(b)
+    gettreelength(n,m) == nb || return false    # Tree does not have correct expected length
 
-Given the node index `i`, returns the index of its right node.
-
-# Arguments
-- `i::Integer`: Index of the node of interest.
-
-# Returns
-`::Integer`: Index of right child.
-
-# Examples
-```@repl
-using Wavelets, WaveletsExt
-
-right(3)     # 7
-```
-
-**See also:** [`left`](@ref)
-"""
-right(i::Integer) = i<<1 + 1
+    L₀ = getdepth(nb, :quad)
+    ns = (1<<(2*L₀)-1)÷3                        # Index to iterate to
+    for i in 1:ns
+        @inbounds isnode = b[i]
+        @inbounds haschild = b[getchildindex(i,:topleft)] || b[getchildindex(i,:topright)] ||
+                             b[getchildindex(i,:bottomleft)] || b[getchildindex(i,:bottomright)]
+        if !isnode && haschild
+            return false
+        end
+    end
+    return true
+end
 
 """
     getchildindex(idx, child)
@@ -56,6 +32,18 @@ Get the child index of a parent index `idx`.
   
 # Returns
 - `::T`: Index of child node.
+
+# Examples
+```repl
+using WaveletsExt
+
+getchildindex(3,:left) == 6
+getchildindex(3,:right) == 7
+getchildindex(3,:topleft) == 22
+getchildindex(3,:topright) == 23
+getchildindex(3,:bottomleft) == 24
+getchildindex(3,:bottomright) == 25
+```
 """
 function getchildindex(idx::Integer, child::Symbol)
     @assert child ∈ [:left, :right, :topleft, :topright, :bottomleft, :bottomright]
@@ -103,7 +91,7 @@ end
 
 # Get leaf nodes in the form of a BitVector
 """
-    getleaf(tree)
+    getleaf(tree, tree_type)
 
 Returns the leaf nodes of a tree.
 
@@ -122,21 +110,38 @@ tree = maketree(4, 2, :dwt)     # [1,1,0]
 getleaf(tree)                   # [0,0,1,1,1,0,0]
 ```
 """
-function getleaf(tree::BitVector)
+function getleaf(tree::BitVector, tree_type::Symbol)
     # Setup and Sanity check
-    nₜ = length(tree)
-    n = nₜ + 1
-    @assert isdyadic(n)
+    @assert tree_type ∈ [:binary, :quad]
+    nₜ = length(tree)                                               # Tree length
+    L₀ = getdepth(nₜ, tree_type)                                    # Max depth in tree
+    Enₜ = tree_type == :binary ? 1<<(L₀+1)-1 : (1<<(2*L₀+2)-1)÷3    # Expected tree length
+    @assert Enₜ == nₜ
+    n = tree_type == :binary ? 1<<(L₀+1) : 1<<(2*L₀+2)              # Nodes in depth L₀+1
+    ns = 1<<(L₀+1)
+    x = tree_type == :binary ? trues(ns) : trues(ns,ns)             # Test signal
+    @assert isvalidtree(x, tree)                                    # Check tree validity
 
     result = falses(n+nₜ)
-    result[1] = true
+    @inbounds result[1] = true
     for i in eachindex(tree)
-        if tree[i] == 0
+        if !tree[i]             # i-th node does not exist
             continue
         else
+            # Current node is not leaf
             @inbounds result[i] = false
-            @inbounds result[getchildindex(i,:left)] = true
-            @inbounds result[getchildindex(i,:right)] = true
+            # Set children node as leaves
+            if tree_type == :binary
+                @inbounds result[getchildindex(i,:left)] = true
+                @inbounds result[getchildindex(i,:right)] = true
+            elseif tree_type == :quad
+                @inbounds result[getchildindex(i,:topleft)] = true
+                @inbounds result[getchildindex(i,:topright)] = true
+                @inbounds result[getchildindex(i,:bottomleft)] = true
+                @inbounds result[getchildindex(i,:bottomright)] = true
+            else
+                throw(ArgumentError("Invalid tree type $tree_type."))
+            end
         end
     end
     return result
@@ -181,11 +186,10 @@ function Wavelets.Util.maketree(x::AbstractMatrix{T}, s::Symbol = :full) where T
 end
 
 function Wavelets.Util.maketree(n::Integer, m::Integer, L::Integer, s::Symbol = :full)
+    @assert s ∈ [:full, :dwt]
     L₀ = maxtransformlevels(min(n,m))
     @assert 0 ≤ L ≤ L₀
-    # TODO: Find a mathematical formula to define this rather than sum things up to speed up
-    # TODO: process.
-    nq = sum(4 .^(0:(L₀-1)))
+    nq = gettreelength(n,m)
 
     # Construct quadtree
     tree = falses(nq)
@@ -199,8 +203,7 @@ function Wavelets.Util.maketree(n::Integer, m::Integer, L::Integer, s::Symbol = 
     elseif s == :dwt
         tree[1] = true     # Root node
         for i in 0:(L-2)
-            # TODO: Find a mathematical formula to define this
-            idx = 4 .^ (0:i) |> sum |> x -> x+1     # Subsequent LL subspace nodes
+            idx = (1<<(2*i+2)+2)÷3  # Subsequent LL subspace nodes (= 4^(0:i) |> sum |> x -> x+1)
             @inbounds tree[idx] = true
         end
     else
@@ -248,4 +251,34 @@ function getdepth(idx::T, tree_type::Symbol) where T<:Integer
     else
         throw(ArgumentError("Unsupported tree type $tree_type."))
     end
+end
+
+"""
+    gettreelength(n[, m])
+
+Compute the length of the binary/quad tree `BitVector`.
+
+# Arguments
+- `n::T where T<:Integer`: Array size at 1st dimension/Signal length for 1D-signals.
+- `m::T where T<:Integer`: Array size at 2nd dimension.
+
+# Returns
+- `::T`: Length of binary/quad tree.
+
+# Examples
+```repl
+using WaveletsExt
+
+Utils.gettreelength(8)          # 7
+Utils.gettreelength(8,8)        # 21
+```
+"""
+function gettreelength(n::T) where T<:Integer
+    L = maxtransformlevels(n)
+    return 1<<L-1
+end
+
+function gettreelength(n::T, m::T) where T<:Integer
+    L = maxtransformlevels(min(n,m))
+    return (1<<(2*L)-1)÷3
 end

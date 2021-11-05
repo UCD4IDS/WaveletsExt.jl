@@ -371,7 +371,7 @@ function iwpd!(x̂::AbstractArray{T,2},
                wt::OrthoFilter,
                L::Integer = maxtransformlevels(x̂);
                standard::Bool = true) where T<:Number
-    iwpd!(x̂, xw, wt, makequadtree(x̂, L, :full), standard=standard)
+    iwpd!(x̂, xw, wt, maketree(size(x̂)..., L, :full), standard=standard)
     return x̂
 end
 
@@ -485,13 +485,13 @@ wt = wavelet(WT.haar)
 xw = wpt(x, wt)
 ```
 
-**See also:** [`wpt!`](@ref), [`makequadtree`](@ref)
+**See also:** [`wpt!`](@ref), [`maketree`](@ref)
 """
 function Wavelets.Transforms.wpt(x::AbstractArray{T,2}, 
                                  wt::OrthoFilter, 
                                  L::Integer = maxtransformlevels(x);
                                  standard::Bool = true) where T<:Number
-    return wpt(x, wt, makequadtree(x, L, :full), standard=standard)
+    return wpt(x, wt, maketree(size(x)..., L, :full), standard=standard)
 end
 
 function Wavelets.Transforms.wpt(x::AbstractArray{T,2},
@@ -548,14 +548,14 @@ wt = wavelet(WT.haar)
 wpt!(xw, x, wt)
 ```
 
-**See also:** [`wpt`](@ref), [`makequadtree`](@ref)
+**See also:** [`wpt`](@ref), [`maketree`](@ref)
 """
 function Wavelets.Transforms.wpt!(y::AbstractArray{T,2},
                                   x::AbstractArray{T,2},
                                   wt::OrthoFilter,
                                   L::Integer = maxtransformlevels(x),
                                   standard::Bool = true) where T<:Number
-    return wpt!(y, x, wt, makequadtree(x, L, :full), standard=standard)
+    return wpt!(y, x, wt, maketree(size(x)..., L, :full), standard=standard)
 end
 
 function Wavelets.Transforms.wpt!(y::AbstractArray{T,2},
@@ -659,13 +659,13 @@ xw = wpt(x, wt)
 y = iwpt(xw, wt)
 ```
 
-**See also:** [`iwpt!`](@ref), [`wpt!`](@ref), [`makequadtree`](@ref)
+**See also:** [`iwpt!`](@ref), [`wpt!`](@ref), [`maketree`](@ref)
 """
 function Wavelets.Transforms.iwpt(xw::AbstractArray{T,2},
                                   wt::OrthoFilter,
                                   L::Integer = maxtransformlevels(xw);
                                   standard::Bool = true) where T<:Number
-    return iwpt(xw, wt, makequadtree(xw, L, :full), standard=standard)
+    return iwpt(xw, wt, maketree(size(xw)..., L, :full), standard=standard)
 end
 
 function Wavelets.Transforms.iwpt(xw::AbstractArray{T,2},
@@ -728,14 +728,14 @@ y = similar(x)
 iwpt!(y, xw, wt)
 ```
 
-**See also:** [`iwpt`](@ref), [`wpt!`](@ref) [`makequadtree`](@ref)
+**See also:** [`iwpt`](@ref), [`wpt!`](@ref) [`maketree`](@ref)
 """
 function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},
                                    xw::AbstractArray{T,2},
                                    wt::OrthoFilter,
                                    L::Integer = maxtransformlevels(xw);
                                    standard::Bool = true) where T<:Number
-    return iwpt!(x̂, xw, wt, makequadtree(xw, L, :full), standard=standard)
+    return iwpt!(x̂, xw, wt, maketree(size(xw)..., L, :full), standard=standard)
 end
 
 function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},

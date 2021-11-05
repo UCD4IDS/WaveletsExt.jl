@@ -1092,7 +1092,7 @@ function iswpd!(x::AbstractMatrix{T},
                 sm::Integer) where T<:Number
     # Sanity check
     @assert size(x) == size(xw)[1:(end-1)]
-    # TODO: isvalidtree for quadtree
+    @assert isvalidtree(x, tree)
 
     # Setup
     n, m, k = size(xw)
@@ -1160,7 +1160,7 @@ function iswpd!(x::AbstractMatrix{T},
                 tree::BitVector) where T<:Number
     # Sanity check
     @assert size(x) == size(xw)[1:(end-1)]
-    # TODO: isvalidtree for quadtree
+    @assert isvalidtree(x, tree)
 
     # Setup
     n, m, k = size(xw)

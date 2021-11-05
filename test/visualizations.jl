@@ -1,5 +1,5 @@
 tree = BitVector([1,1,1])
-@test WaveletsExt.Visualizations.treenodes_matrix(tree) == BitArray([1 1; 1 1])
+@test Visualizations.treenodes_matrix(tree) == BitArray([1 1; 1 1])
 # plot_tfbdry() test
 @test typeof(plot_tfbdry(tree)) == Plots.Plot{Plots.GRBackend}
 @test_nowarn plot_tfbdry(tree, start=1)

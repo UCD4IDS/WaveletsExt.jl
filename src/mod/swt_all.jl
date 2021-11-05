@@ -344,12 +344,12 @@ function iswpdall(xw::AbstractArray{T},
                    wt::OrthoFilter,
                    L::Integer = minimum(size(xw)[1:end-2]) |> maxtransformlevels) where 
                    T<:Number
-    return iswpdall(xw, wt, maketree(size(xw,1), L))
+    return iswpdall(xw, wt, maketree(size(xw)[1:(end-2)]..., L))
 end
 
 function iswpdall(xw::AbstractArray{T}, wt::OrthoFilter, L::Integer, sm::Integer) where 
                   T<:Number
-    return iswpdall(xw, wt, maketree(size(xw,1), L), sm)
+    return iswpdall(xw, wt, maketree(size(xw)[1:(end-2)]..., L), sm)
 end
 
 function iswpdall(xw::AbstractArray{T}, wt::OrthoFilter, tree::BitVector) where T<:Number

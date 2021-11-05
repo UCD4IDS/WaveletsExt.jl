@@ -22,9 +22,7 @@ export
     BB,
     SIBB,
     # best basis tree
-    bestbasis_tree,
-    # best basis expansion coefficients
-    bestbasiscoef
+    bestbasis_tree
 
 using 
     Wavelets, 
@@ -403,7 +401,7 @@ function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer,
     if type == :min
         @inbounds begin
             for i in reverse(1:(1<<L-1))
-                childcost = costs[left(i)] + costs[right(i)]
+                childcost = costs[getchildindex(i,:left)] + costs[getchildindex(i,:right)]
                 if childcost < costs[i]     # child cost < parent cost
                     costs[i] = childcost
                 else
@@ -414,7 +412,7 @@ function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer,
     elseif type == :max
         @inbounds begin
             for i in reverse(1:(1<<L-1))
-                childcost = costs[left(i)] + costs[right(i)]
+                childcost = costs[getchildindex(i,:left)] + costs[getchildindex(i,:right)]
                 if childcost > costs[i]     # child cost < parent cost
                     costs[i] = childcost
                 else
@@ -437,7 +435,7 @@ function bestbasis_treeselection(costs::AbstractVector{Tc},
     bc = deepcopy(costs)
     nn = length(tree)
     for i in reverse(eachindex(bt))
-        if left(i) > nn                        # current node is at bottom level
+        if getchildindex(i,:left) > nn                        # current node is at bottom level
             continue
         end
         level = floor(Int, log2(i))
@@ -445,30 +443,32 @@ function bestbasis_treeselection(costs::AbstractVector{Tc},
             if !bt[i][j]                # node of current shift does not exist
                 continue
             end
-            @assert bt[left(i)][j] == bt[right(i)][j] == 
-                bt[left(i)][j+1<<level] == 
-                bt[right(i)][j+1<<level] == true || continue
+            @assert bt[getchildindex(i,:left)][j] == 
+                    bt[getchildindex(i,:right)][j] == 
+                    bt[getchildindex(i,:left)][j+1<<level] == 
+                    bt[getchildindex(i,:right)][j+1<<level] == true || continue
             # child cost of current shift of current node
-            cc = bc[left(i)][j] + bc[right(i)][j]      
+            cc = bc[getchildindex(i,:left)][j] + bc[getchildindex(i,:right)][j]      
             # child cost of circshift of current node               
-            scc = bc[left(i)][j+1<<level] + bc[right(i)][j+1<<level]  
+            scc = bc[getchildindex(i,:left)][j+1<<level] + 
+                  bc[getchildindex(i,:right)][j+1<<level]  
             mincost = min(cc, scc, bc[i][j])
             # mincost=parent, delete subtrees of both cc & scc                    
             if mincost == bc[i][j]          
-                delete_subtree!(bt, left(i), j)
-                delete_subtree!(bt, right(i), j)
-                delete_subtree!(bt, left(i), j+1<<level)
-                delete_subtree!(bt, right(i), j+1<<level)
+                delete_subtree!(bt, getchildindex(i,:left), j)
+                delete_subtree!(bt, getchildindex(i,:right), j)
+                delete_subtree!(bt, getchildindex(i,:left), j+1<<level)
+                delete_subtree!(bt, getchildindex(i,:right), j+1<<level)
             # mincost=cc, delete subtrees of scc
             elseif mincost == cc                                             
                 bc[i][j] = mincost
-                delete_subtree!(bt, left(i), j+1<<level)
-                delete_subtree!(bt, right(i), j+1<<level)
+                delete_subtree!(bt, getchildindex(i,:left), j+1<<level)
+                delete_subtree!(bt, getchildindex(i,:right), j+1<<level)
             # mincost=scc, delete subtrees of cc
             else                                                                    
                 bc[i][j] = mincost
-                delete_subtree!(bt, left(i), j)
-                delete_subtree!(bt, right(i), j)
+                delete_subtree!(bt, getchildindex(i,:left), j)
+                delete_subtree!(bt, getchildindex(i,:right), j)
             end
         end
     end
@@ -481,12 +481,12 @@ end
 function delete_subtree!(bt::BitVector, i::Integer)
     @assert 1 <= i <= length(bt)
     bt[i] = false
-    if (left(i)) < length(bt)
-        if bt[left(i)]
-            delete_subtree!(bt, left(i))
+    if (getchildindex(i,:left)) < length(bt)
+        if bt[getchildindex(i,:left)]
+            delete_subtree!(bt, getchildindex(i,:left))
         end
-        if bt[right(i)]
-            delete_subtree!(bt, right(i))
+        if bt[getchildindex(i,:right)]
+            delete_subtree!(bt, getchildindex(i,:right))
         end
     end
     return nothing
@@ -496,18 +496,18 @@ function delete_subtree!(bt::AbstractVector{BitVector}, i::Integer, j::Integer)
     @assert 1 <= i <= length(bt)
     level = floor(Int, log2(i))
     bt[i][j] = false
-    if (left(i)) < length(bt)          # current node can contain subtrees
-        if bt[left(i)][j]              # left child of current shift
-            delete_subtree!(bt, left(i), j)
+    if (getchildindex(i,:left)) < length(bt)          # current node can contain subtrees
+        if bt[getchildindex(i,:left)][j]              # left child of current shift
+            delete_subtree!(bt, getchildindex(i,:left), j)
         end
-        if bt[right(i)][j]            # right child of current shift
-            delete_subtree!(bt, right(i), j)
+        if bt[getchildindex(i,:right)][j]            # right child of current shift
+            delete_subtree!(bt, getchildindex(i,:right), j)
         end
-        if bt[left(i)][j+1<<level]     # left child of added shift
-            delete_subtree!(bt, left(i), j+1<<level)
+        if bt[getchildindex(i,:left)][j+1<<level]     # left child of added shift
+            delete_subtree!(bt, getchildindex(i,:left), j+1<<level)
         end
-        if bt[right(i)][j+1<<level]   # right child of added shift
-            delete_subtree!(bt, right(i), j+1<<level)
+        if bt[getchildindex(i,:right)][j+1<<level]   # right child of added shift
+            delete_subtree!(bt, getchildindex(i,:right), j+1<<level)
         end
     end
     return nothing
@@ -586,64 +586,6 @@ end
 function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3}; 
         method::BestBasisType=JBB()) where T<:AbstractFloat
     return bestbasistree(X, method)
-end
-
-
-## BEST BASIS EXPANSION COEFFICIENTS
-# TODO: change to basiscoef (any basis tree should work, not just best basis)
-# TODO: Should this work for only 1 signal, or multiple signal? 
-# TODO: Should the case of multiple signal have a different function name from 1 signal?
-"""
-    bestbasiscoef(X, tree)
-
-Returns the expansion coefficients based on the given tree(s) and wavelet packet
-decomposition (WPD) expansion coefficients. If the WPD expansion coefficients 
-were not provided, the expansion coefficients can be obtained by providing the
-signals and wavelet.
-
-**See also:** [`bestbasistree`](@ref), [`bestbasis_treeselection`](@ref)
-"""
-function bestbasiscoef(X::AbstractArray{T, 2}, tree::BitVector) where 
-        T<:AbstractFloat
-
-    @assert size(X,1) == length(tree) + 1
-    
-    (n,L) = size(X)
-    return reshape(bestbasiscoef(reshape(X, (n,L,1)), tree), :)
-end
-
-function bestbasiscoef(X::AbstractArray{T,3}, tree::BitVector) where 
-        T<:AbstractFloat
-
-    @assert size(X,1) == length(tree) + 1
-    
-    n = size(X, 1)
-    leaf = getleaf(tree)
-    y = X[:,1,:]
-    for (i, val) in enumerate(leaf)
-        if val
-            # if node is selected, use coefficients of the children of the node
-            lvl = floor(Integer, log2(i))   # counting of lvl starts from 0
-            node = i - 2^lvl                # counting of node starts from 0
-            n₀ = nodelength(n, lvl)
-            rng = (node * n₀ + 1):((node + 1) * n₀)
-            @inbounds y[rng,:] = X[rng, lvl+1, :]
-        end
-    end
-    return y
-end
-
-function bestbasiscoef(X::AbstractArray{T,3}, tree::BitArray{2}) where 
-        T<:AbstractFloat
-    @assert size(X,3) == size(tree,2)
-    @assert size(X,1) == size(tree,1) + 1
-    
-    (n,_,N) = size(X)
-    y = Array{T,2}(undef, (n,N))
-    for i in axes(X,3)
-        @inbounds y[:,i] = bestbasiscoef(X[:,:,i], tree[:,i])
-    end
-    return y
 end
 
 end # end of module

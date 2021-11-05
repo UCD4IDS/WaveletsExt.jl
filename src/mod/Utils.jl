@@ -5,6 +5,7 @@ export
     getparentindex,
     getleaf,
     getdepth,
+    gettreelength,
     # Extraction
     getbasiscoef,
     getbasiscoefall,
@@ -100,9 +101,11 @@ xw = getbasiscoef(Xw, tree)
 function getbasiscoef(Xw::AbstractArray{T,2}, 
                       tree::BitVector) where T<:Number
     # Setup and Sanity Check
-    n, _ = size(Xw)
+    n, k = size(Xw)
     nₜ = length(tree)
-    leaf = getleaf(tree)
+    leaf = getleaf(tree, :binary)
+    @assert k-1 ≤ maxtransformlevels(n)
+    @assert isvalidtree(Xw[:,1], tree)
     @assert n == nₜ+1
     @assert nₜ+n == length(leaf)
     xw = Array{T,1}(undef, n)
@@ -110,7 +113,8 @@ function getbasiscoef(Xw::AbstractArray{T,2},
     # Extract basis coefficients
     for (i, isleaf) in enumerate(leaf)
         if isleaf
-            d = floor(Int, log2(i))         # Depth of node (0 for root node)
+            d = getdepth(i,:binary)         # Depth of node (0 for root node)
+            d < k || throw(ArgumentError("Not enough decomposition levels in Xw."))
             nn = i-1<<d                     # Node number (0 for leftmost node)
             n₀ = nodelength(n, d)           # Length of node
             rng = (nn*n₀+1):((nn+1)*n₀)
@@ -154,9 +158,11 @@ getbasiscoefall(Xw, tree)
 """
 function getbasiscoefall(Xw::AbstractArray{T,3}, tree::BitVector) where T<:Number
     # Setup and Sanity Check
-    n, _, m = size(Xw)
+    n, k, m = size(Xw)
     nₜ = length(tree)
-    leaf = getleaf(tree)
+    leaf = getleaf(tree, :binary)
+    @assert k-1 ≤ maxtransformlevels(n)
+    @assert isvalidtree(Xw[:,1,1], tree)
     @assert n == nₜ+1
     @assert nₜ+n == length(leaf)
     xw = Array{T,2}(undef, (n,m))
@@ -164,7 +170,8 @@ function getbasiscoefall(Xw::AbstractArray{T,3}, tree::BitVector) where T<:Numbe
     # Extract basis coefficients
     for (i, isleaf) in enumerate(leaf)
         if isleaf
-            d = floor(Int, log2(i))         # Depth of node (0 for root node)
+            d = getdepth(i,:binary)         # Depth of node (0 for root node)
+            d < k || throw(ArgumentError("Not enough decomposition levels in Xw."))
             nn = i-1<<d                     # Node number (0 for leftmost node)
             n₀ = nodelength(n, d)           # Length of node
             rng = (nn*n₀+1):((nn+1)*n₀)
@@ -176,18 +183,19 @@ end
 
 function getbasiscoefall(Xw::AbstractArray{T,3}, tree::BitArray{2}) where T<:Number
     # Setup and Sanity Check
-    n, _, m = size(Xw)
+    n, k, m = size(Xw)
     nₜ, mₜ = size(tree)
+    @assert k-1 ≤ maxtransformlevels(n)
+    @assert all( mapslices(treeᵢ -> isvalidtree(Xw[:,1,1],treeᵢ), tree, dims=1) )
     @assert m == mₜ
     @assert n == nₜ+1
     xw = Array{T,2}(undef, (n,m))
 
     # Extract basis coefficients
-    for i in eachcol(tree)
-        xwᵢ = @view xw[:,i]
+    for i in 1:mₜ
         Xwᵢ = @view Xw[:,:,i]
         treeᵢ = tree[:,i]
-        @inbounds xwᵢ = getbasiscoef(Xwᵢ, treeᵢ)
+        @inbounds xw[:,i] = getbasiscoef(Xwᵢ, treeᵢ)
     end
     return xw
 end
@@ -264,6 +272,7 @@ Utils.main2depthshift(5, 5)       # [0, 1, 1, 5, 5, 5]
 ```
 """
 function main2depthshift(sm::Integer, L::Integer)
+    @assert sm < 1<<L
     sb = Array{Bool,1}(undef, L)
     digits!(sb, sm, base=2)         # Compute if a shift is necessary at each depth
     d = collect(0:(L-1))            # Collect all depths
@@ -317,6 +326,8 @@ function coarsestscalingrange(x::AbstractArray{T},
 end
 
 function coarsestscalingrange(n::Integer, tree::BitVector, redundant::Bool=false)
+    L = getdepth(length(tree),:binary)
+    @assert L+1 == maxtransformlevels(n)
     if !redundant          # regular wt
         i = 1
         j = 0
@@ -380,11 +391,13 @@ function finestdetailrange(x::AbstractArray{T}, tree::BitVector,
 end
 
 function finestdetailrange(n::Integer, tree::BitVector, redundant::Bool=false)
+    L = getdepth(length(tree),:binary)
+    @assert L+1 == maxtransformlevels(n)
     if !redundant      # regular wt
         i = 1
         j = 0
         while i≤length(tree) && tree[i]
-            i = right(i)
+            i = getchildindex(i,:right)
             j += 1
         end
         n₀ = nodelength(n, j)
@@ -392,7 +405,7 @@ function finestdetailrange(n::Integer, tree::BitVector, redundant::Bool=false)
     else               # redundant wt
         i = 1
         while i≤length(tree) && tree[i]
-            i = right(i)
+            i = getchildindex(i,:right)
         end
         rng = (1:n, i)
     end
@@ -426,10 +439,11 @@ getrowrange(8,3)            # 1:4
 
 **See also:** [`makequadtree`](@ref), [`getcolrange`](@ref)
 """
-function getrowrange(n::Integer, idx::T) where T<:Integer
-    # TODO: Get a mathematical solution to this, if possible
+function getrowrange(n::T, idx::T) where T<:Integer
     # Sanity check
-    @assert idx > 0
+    L₀ = maxtransformlevels(n)
+    k = (1<<(2*L₀+2)-1)÷3       # (= sum(4^(0:L₀)))
+    @assert 0 < idx ≤ k
 
     # Root node => range is of entire array
     if idx == 1
@@ -478,9 +492,10 @@ getcolrange(8,3)            # 5:8
 **See also:** [`makequadtree`](@ref), [`getrowrange`](@ref)
 """
 function getcolrange(n::Integer, idx::T) where T<:Integer
-    # TODO: Get a mathematical solution to this, if possible
     # Sanity check
-    @assert idx > 0
+    L₀ = maxtransformlevels(n)
+    k = (1<<(2*L₀+2)-1)÷3       # (= sum(4^(0:L₀)))
+    @assert 0 < idx ≤ k
 
     # Root node => range is of entire array
     if idx == 1

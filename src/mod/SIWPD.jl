@@ -69,8 +69,8 @@ function decompose!(y::AbstractArray{Ty,2}, wt::OrthoFilter,
 
     cnodelen = nodelen ÷ 2
     cstart = shift*cnodelen + 1
-    lchild = @view y[:, left(node)]
-    rchild = @view y[:, right(node)]
+    lchild = @view y[:, getchildindex(node,:left)]
+    rchild = @view y[:, getchildindex(node,:right)]
 
     # non-shifted subtree
     Wavelets.Transforms.filtdown!(      # scaling coefficients
@@ -81,10 +81,10 @@ function decompose!(y::AbstractArray{Ty,2}, wt::OrthoFilter,
     )   
     if zeroshiftdecomposition   # pursue the same thing with d-1 if shift > 0
         decompose!(                     # decompose left child
-            y, wt, h, g, si, left(node), cnodelen, level+1, d-1, shift
+            y, wt, h, g, si, getchildindex(node,:left), cnodelen, level+1, d-1, shift
         )   
         decompose!(                     # decompose right child
-            y, wt, h, g, si, right(node), cnodelen, level+1, d-1, shift
+            y, wt, h, g, si, getchildindex(node,:right), cnodelen, level+1, d-1, shift
         )   
     end
 
@@ -99,10 +99,10 @@ function decompose!(y::AbstractArray{Ty,2}, wt::OrthoFilter,
     )
     # pursue the same thing with d-1
     decompose!(                         # decompose shifted left child
-        y, wt, h, g, si, left(node), cnodelen, level+1, d-1, shift+1<<level
+        y, wt, h, g, si, getchildindex(node,:left), cnodelen, level+1, d-1, shift+1<<level
     )       
     decompose!(                         # decomposed shifted right child
-        y, wt, h, g, si, right(node), cnodelen, level+1, d-1, shift+1<<level
+        y, wt, h, g, si, getchildindex(node,:right), cnodelen, level+1, d-1, shift+1<<level
     )     
 
     return nothing

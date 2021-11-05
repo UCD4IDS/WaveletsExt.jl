@@ -152,7 +152,7 @@ function surethreshold(coef::AbstractArray{T},
     elseif redundant && isa(tree, Nothing)     # sdwt, acdwt, swpt, or acwpt
         y = reshape(coef, :)
     else                                       # swpd or acwpd
-        leaves = getleaf(tree)
+        leaves = getleaf(tree,:binary)
         y = reshape(coef[:, leaves], :)
     end
     a = sort(abs.(y)).^2
@@ -295,7 +295,7 @@ function relerrorthreshold(coef::AbstractArray{T},
     elseif redundant && isa(tree, Nothing)     # sdwt
         c = reshape(coef, :)
     else                                       # swpd
-        leaves = getleaf(tree)
+        leaves = getleaf(tree,:binary)
         c = reshape(coef[:, leaves], :)
     end
     # the magnitudes of the coefficients
@@ -547,12 +547,12 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         σ = isa(estnoise, Function) ? estnoise(x, true, tree) : estnoise
         # thresholding
         if smooth == :regular
-            leaves = findall(getleaf(tree))
+            leaves = findall(getleaf(tree,:binary))
             x̃ = copy(x)
             @inbounds x̃[:, leaves] = threshold!(x[:,leaves], dnt.th, σ*dnt.t)             
         else    # :undersmooth
             x̃ = copy(x)
-            leaves = findall(getleaf(tree))
+            leaves = findall(getleaf(tree,:binary))
             _, coarsestnode = coarsestscalingrange(x, tree, true)
             rng = setdiff(leaves, coarsestnode)
             @inbounds x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    
@@ -580,12 +580,12 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         σ = isa(estnoise, Function) ? estnoise(x, true, tree) : estnoise
         # thresholding
         if smooth == :regular
-            leaves = findall(getleaf(tree))
+            leaves = findall(getleaf(tree,:binary))
             x̃ = copy(x)
             @inbounds x̃[:, leaves] = threshold!(x[:,leaves], dnt.th, σ*dnt.t)             
         else    # :undersmooth
             x̃ = copy(x)
-            leaves = findall(getleaf(tree))
+            leaves = findall(getleaf(tree,:binary))
             _, coarsestnode = coarsestscalingrange(x, tree, true)
             rng = setdiff(leaves, coarsestnode)
             @inbounds x̃[:,rng] = threshold!(x[:,rng], dnt.th, σ*dnt.t)                    

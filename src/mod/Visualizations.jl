@@ -112,7 +112,7 @@ function plot_tfbdry(tree::BitVector,
                      bg_col::Symbol = :black)
 
     @assert 0 <= start <= 1
-    leaf = getleaf(tree)
+    leaf = getleaf(tree,:binary)
 
     ncol = 1 << depth
     nrow = depth+1

@@ -599,8 +599,8 @@ function acwpd!(xw::AbstractArray{T,2},
     # ACWPD
     for i in 1:n₁
         d = floor(Int, log2(i))
-        j₁ = left(i)
-        j₂ = right(i)
+        j₁ = getchildindex(i,:left)
+        j₂ = getchildindex(i,:right)
         @inbounds v = @view xw[:,i]
         @inbounds w₁ = @view xw[:,j₁]
         @inbounds w₂ = @view xw[:,j₂]
@@ -763,8 +763,8 @@ function iacwpd!(x::AbstractVector{T}, xw::AbstractArray{T,2}, tree::BitVector) 
         # Current node has child => Compute one step of inverse transform
         if haschild
             d = floor(Int, log2(i))                 # Parent depth
-            j₁ = left(i)                            # Scaling child index
-            j₂ = right(i)                           # Detail child index
+            j₁ = getchildindex(i,:left)             # Scaling child index
+            j₂ = getchildindex(i,:right)            # Detail child index
             @inbounds v = i==1 ? x : @view tmp[:,i] # Parent node
             @inbounds w₁ = @view tmp[:,j₁]          # Scaling child node
             @inbounds w₂ = @view tmp[:,j₂]          # Detail child node

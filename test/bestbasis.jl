@@ -30,16 +30,6 @@ bt0 = map(node -> sum(node), bestbasistree(xw0, 4, SIBB()))
 bt4 = map(node -> sum(node), bestbasistree(xw4, 4, SIBB()))
 @test bt0 == bt4
 
-# get coefficients
-tr = maketree(x)
-xw = wpd(x, wt)
-@test bestbasiscoef(xw, tr) == wpt(x, wt)
-x = randn(16,5)
-xw = cat([wpd(x[:,i], wt) for i in axes(x,2)]..., dims=3)
-@test bestbasiscoef(xw, tr) == hcat([wpt(x[:,i], wt) for i in axes(x,2)]...)
-tr = BitArray(ones(15,5))
-@test bestbasiscoef(xw, tr) == hcat([wpt(x[:,i], wt) for i in axes(x,2)]...)
-
 # misc
 @test_throws ArgumentError bestbasis_treeselection(randn(15), 8, :fail)
 @test_throws AssertionError bestbasis_treeselection(randn(7), 3, :fail) # true n=4
