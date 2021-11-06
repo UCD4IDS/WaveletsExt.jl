@@ -222,7 +222,11 @@ end
     @test sdwtall(xₙ, wt) == yₙ
     @test sdwtall(wₙ, wt) == zₙ
     @test isdwtall(yₙ, wt) ≈ xₙ
+    @test isdwtall(yₙ, wt,2) ≈ xₙ
     @test isdwtall(zₙ, wt) ≈ wₙ
+    @test isdwtall(zₙ, wt,2) ≈ wₙ
+    @test_throws AssertionError isdwtall(yₙ, wt,12)
+    @test_throws AssertionError isdwtall(zₙ, wt,12)
 
     # swpt
     y = swpt(x, wt); z = swpt(w,wt)
@@ -230,7 +234,11 @@ end
     @test swptall(xₙ, wt) == yₙ
     @test swptall(wₙ, wt) == zₙ
     @test iswptall(yₙ, wt) ≈ xₙ
+    @test iswptall(yₙ, wt, 2) ≈ xₙ
     @test iswptall(zₙ, wt) ≈ wₙ
+    @test iswptall(zₙ, wt, 2) ≈ wₙ
+    @test_throws AssertionError iswptall(yₙ, wt, 12)
+    @test_throws AssertionError iswptall(zₙ, wt, 12)
 
     # swpd
     y = swpd(x, wt); z = swpd(w,wt)

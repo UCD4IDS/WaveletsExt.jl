@@ -256,7 +256,8 @@ function isdwt_step!(v::AbstractVector{T},
                      g::Array{S,1};
                      add2out::Bool = false) where {T<:Number, S<:Number}
     # Sanity check
-    @assert 0 ≤ sv ≤ sw < 1<<(d+1)
+    @assert 0 ≤ sv < 1<<d
+    @assert sv ≤ sw < 1<<(d+1)
 
     # Setup
     n = length(v)               # Signal length
