@@ -256,7 +256,7 @@ function isdwt_step!(v::AbstractVector{T},
                      g::Array{S,1};
                      add2out::Bool = false) where {T<:Number, S<:Number}
     # Sanity check
-    @assert sw ≥ sv
+    @assert 0 ≤ sv ≤ sw < 1<<(d+1)
 
     # Setup
     n = length(v)               # Signal length
@@ -345,7 +345,7 @@ function isdwt_step(w₁::AbstractMatrix{T}, w₂::AbstractMatrix{T},
                     h::Array{S,1}, g::Array{S,1}) where {T<:Number, S<:Number}
     n, m = size(w₁)
     v = Matrix{T}(undef, (n,m))
-    temp = Array{T,2}(undef, (n,m))
+    temp = Array{T,3}(undef, (n,m,2))
     isdwt_step!(v, w₁, w₂, w₃, w₄, d, h, g, temp)
     return v
 end

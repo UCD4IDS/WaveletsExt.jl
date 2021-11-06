@@ -1,5 +1,5 @@
 @testset "DWT" begin
-    # Single steps
+    # Single steps (1D)
     x = [2,3,-4,5.0]
     wt = wavelet(WT.db4)
     g, h = WT.makereverseqmfpair(wt, true)
@@ -7,8 +7,24 @@
     w₁ = round.(w₁, digits=3); w₂ = round.(w₂, digits=3)
     @test [w₁;w₂] == [-0.524, 4.767, 1.803, 5.268]
     @test round.(DWT.idwt_step(w₁, w₂, h, g), digits=3) == x
+    w₁, w₂ = DWT.dwt_step!(zeros(2), zeros(2), x,h,g)
+    w₁ = round.(w₁, digits=3); w₂ = round.(w₂, digits=3)
+    @test [w₁;w₂] == [-0.524, 4.767, 1.803, 5.268]
+    @test round.(DWT.idwt_step!(zeros(4), w₁, w₂, h, g), digits=3) == x
     
-    wt = wavelet(WT.db4)
+    # Single steps (2D)
+    x = [2 3;-4 5.0]
+    w₁, w₂, w₃, w₄ = DWT.dwt_step(x, h, g)
+    @test round.([w₁ w₂;w₃ w₄], digits=3) == [3 5;-2 4]
+    @test round.(DWT.idwt_step(w₁, w₂, w₃, w₄, h, g), digits=3) == x
+    w₁, w₂, w₃, w₄ = DWT.dwt_step!(zeros(1,1),zeros(1,1),zeros(1,1),zeros(1,1), x, h, g, zeros(2,2))
+    @test round.([w₁ w₂;w₃ w₄], digits=3) == [3 5;-2 4]
+    @test round.(DWT.idwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, h, g, zeros(2,2)), digits=3) == x
+    @test_throws ErrorException DWT.dwt_step(x, h, g, standard=false)
+    @test_throws ErrorException DWT.idwt_step(w₁, w₂, w₃, w₄, h, g, standard=false)
+    @test_throws ErrorException DWT.dwt_step!(zeros(1,1),zeros(1,1),zeros(1,1),zeros(1,1), x, h, g, zeros(2,2), standard=false)
+    @test_throws ErrorException DWT.idwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, h, g, zeros(2,2), standard=false)
+
     # 1D transforms
     x = randn(8)
     y1 = wpt(x, wt, 1)
@@ -46,6 +62,33 @@ end
     w₁ = round.(w₁,digits=3); w₂ = round.(w₂,digits=3)
     @test [w₁ w₂] == [3.854 -6.181;-0.524 1.803;0.389 -0.89;4.767 5.268]
     @test round.(SWT.isdwt_step(w₁, w₂, 0, h, g), digits=3) == x
+    @test round.(SWT.isdwt_step(w₁, w₂, 0, 0, 0, h, g), digits=3) == x
+    @test round.(SWT.isdwt_step(w₁, w₂, 0, 0, 1, h, g), digits=3) == x
+    @test_throws AssertionError SWT.isdwt_step(w₁, w₂, 0, -1, 0, h, g)
+    @test_throws AssertionError SWT.isdwt_step(w₁, w₂, 0, 1, 0, h, g)
+    @test_throws AssertionError SWT.isdwt_step(w₁, w₂, 0, 0, 2, h, g)
+
+    # Single steps (2D)
+    x = [2 3;-4 5.0]
+    w₁, w₂, w₃, w₄ = SWT.sdwt_step(x, 0, h, g)
+    @test round.(w₁, digits=3) == [3 3;3 3]
+    @test round.(w₂, digits=3) == [-5 5;-5 5]
+    @test round.(w₃, digits=3) == [2 2;-2 -2]
+    @test round.(w₄, digits=3) == [4 -4;-4 4]
+    @test round.(SWT.isdwt_step(w₁, w₂, w₃, w₄, 0, h, g), digits=3) == x
+    @test round.(SWT.isdwt_step(w₁, w₂, w₃, w₄, 0, 0, 0, h, g), digits=3) == x
+    @test round.(SWT.isdwt_step(w₁, w₂, w₃, w₄, 0, 0, 1, h, g), digits=3) == x
+    w₁, w₂, w₃, w₄ = SWT.sdwt_step!(zeros(2,2),zeros(2,2),zeros(2,2),zeros(2,2), x, 0, h, g, zeros(2,2,2))
+    @test round.(w₁, digits=3) == [3 3;3 3]
+    @test round.(w₂, digits=3) == [-5 5;-5 5]
+    @test round.(w₃, digits=3) == [2 2;-2 -2]
+    @test round.(w₄, digits=3) == [4 -4;-4 4]
+    @test round.(SWT.isdwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, 0, h, g, zeros(2,2,2)), digits=3) == x
+    @test round.(SWT.isdwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, 0, 0, 0, h, g, zeros(2,2,2)), digits=3) == x
+    @test round.(SWT.isdwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, 0, 0, 1, h, g, zeros(2,2,2)), digits=3) == x
+    @test_throws AssertionError SWT.isdwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, 0, 0, 2, h, g, zeros(2,2,2))
+    @test_throws AssertionError SWT.isdwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, 0, -1, 1, h, g, zeros(2,2,2))
+    @test_throws AssertionError SWT.isdwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, 0, 1, 0, h, g, zeros(2,2,2))
 
     # 1D transforms
     x = randn(8)
