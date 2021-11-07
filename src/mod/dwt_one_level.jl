@@ -259,7 +259,7 @@ g, h = WT.makereverseqmfpair(wt, true)
 DWT.dwt_step(v, h, g)
 ```
 
-**See also:** [`dwt_step`](@ref), [`dwt_step!](@ref), [`idwt_step`](@ref)
+**See also:** [`dwt_step`](@ref), [`dwt_step!`](@ref), [`idwt_step`](@ref)
 """
 function dwt_step(v::AbstractArray{T,2}, h::Array{S,1}, g::Array{S,1}; 
                   standard::Bool = true) where {T<:Number, S<:Number}

@@ -238,7 +238,7 @@ getdepth(3,:quad)       # 1
 getdepth(8,:quad)       # 2
 ```
 
-**See also:** [`makequadtree`](@ref)
+**See also:** [`Wavelets.Util.maketree`](@ref)
 """
 function getdepth(idx::T, tree_type::Symbol) where T<:Integer
     @assert idx > 0

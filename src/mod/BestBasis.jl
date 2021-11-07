@@ -531,7 +531,7 @@ bestbasistree(X, JBB())
 bestbasistree(X, SIBB())
 ```
 
-**See also:** [`bestbasiscoef`](@ref)
+**See also:** [`getbasiscoef`](@ref), [`getbasiscoefall`](@ref)
 """
 function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                
         method::LSDB) where T<:AbstractFloat

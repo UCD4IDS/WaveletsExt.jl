@@ -30,7 +30,7 @@ wt = wavelet(WT.db4)
 # best basis tree
 xw = wpd(x, wt)
 bt = bestbasistree(xw, BB())
-y = bestbasiscoef(xw, bt)
+y = getbasiscoef(xw, bt)
 
 # denoise
 x̂ = denoise(y, :wpt, wt, tree=bt)
@@ -56,11 +56,11 @@ X = duplicatesignals(x, 6, 2, true, 0.8)
 wt = wavelet(WT.db4)
 
 # decomposition
-coef = cat([wpd(X[:,i], wt) for i in axes(X,2)]..., dims=3)
+coef = wpdall(X, wt)
 
 # best basis tree
 bt = bestbasistree(coef, JBB())
-Y = bestbasiscoef(coef, bt)
+Y = getbasiscoefall(coef, bt)
 
 # denoise
 X̂ = denoiseall(Y, :wpt, wt, tree=bt)

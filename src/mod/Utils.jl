@@ -433,11 +433,11 @@ Get the row range from a matrix with `n` rows that corresponds to `idx` from a q
 using WaveletsExt
 
 x = randn(8,8)
-tree = makequadtree(x, 3, :full)
+tree = maketree(x, 3, :full)
 getrowrange(8,3)            # 1:4
 ```
 
-**See also:** [`makequadtree`](@ref), [`getcolrange`](@ref)
+**See also:** [`Wavelets.Util.maketree`](@ref), [`getcolrange`](@ref)
 """
 function getrowrange(n::T, idx::T) where T<:Integer
     # Sanity check
@@ -485,11 +485,11 @@ quadtree.
 using WaveletsExt
 
 x = randn(8,8)
-tree = makequadtree(x, 3, :full)
+tree = maketree(x, 3, :full)
 getcolrange(8,3)            # 5:8
 ```
 
-**See also:** [`makequadtree`](@ref), [`getrowrange`](@ref)
+**See also:** [`Wavelets.Util.maketree`](@ref), [`getrowrange`](@ref)
 """
 function getcolrange(n::Integer, idx::T) where T<:Integer
     # Sanity check
