@@ -146,6 +146,15 @@ end
 end
 
 @testset "ACWT" begin
+    # Single step
+    x = [2,3,-4,5.0]
+    wt = wavelet(WT.db4)
+    g, h = ACWT.make_acreverseqmfpair(wt)
+    w₁, w₂ = ACWT.acdwt_step(x, 0, h, g)
+    w₁ = round.(w₁,digits=3); w₂ = round.(w₂,digits=3)
+    @test [w₁ w₂] == [4.243 -1.414;1.414 2.828;0 -5.657;2.828 4.243]
+    @test round.(ACWT.iacdwt_step(w₁, w₂), digits=3) == x
+
     # acwt (1D)
     x = randn(8)
     wt = wavelet(WT.db4)
@@ -160,6 +169,8 @@ end
     @test iacwpd(acwpd(x, wt), wt, 2) ≈ x
     @test iacwpd(acwpd(x, wt), tree) ≈ x
     @test iacwpd(acwpd(x, wt), wt, tree) ≈ x
+    @test iacwpd!(zeros(8), acwpd(x, wt), wt, tree) ≈ x
+    @test_throws AssertionError iacwpd!(zeros(4), acwpd(x, wt), wt, tree)
 
     # acwt (2D)
     x₂ = randn(8,8)
@@ -215,6 +226,7 @@ end
     yₙ = cat(y,y,y, dims=3)
     @test acwpdall(xₙ, wt, 3) ≈ yₙ
     @test iacwpdall(yₙ, wt, 3) ≈ xₙ
+    @test iacwpdall(yₙ, wt, maketree(8,3,:full)) ≈ xₙ
 
     # sdwt
     y = sdwt(x, wt); z = sdwt(w,wt)

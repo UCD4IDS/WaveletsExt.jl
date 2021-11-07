@@ -398,7 +398,7 @@ function iwpd!(x̂::AbstractArray{T,2},
     # Sanity check
     @assert size(x̂,1) == size(xw,1)
     @assert size(x̂,2) == size(xw,2)
-    # TODO: @assert isvalidquadtree
+    @assert isvalidtree(x̂, tree)
 
     # Setup
     m, n, _ = size(xw)
@@ -407,7 +407,6 @@ function iwpd!(x̂::AbstractArray{T,2},
     temp = Array{T,2}(undef, (m,n))
 
     # Inverse transform
-    # TODO: Change to extract basis coefficients and send to iwpt!
     for i in reverse(eachindex(tree))
         # Reconstruct node i if it has children
         if tree[i]
@@ -442,7 +441,6 @@ function iwpd!(x̂::AbstractArray{T,2},
 end
 
 # ========== Wavelet Packet Transform ==========
-# TODO: Add `isvalidquadtree` function in Utils
 # 2D Wavelet Packet Transform without allocated output array
 """
     wpt(x, wt[, L; standard])
@@ -564,8 +562,7 @@ function Wavelets.Transforms.wpt!(y::AbstractArray{T,2},
                                   tree::BitVector;
                                   standard::Bool = true) where T<:Number
     # Sanity check
-    # TODO: define isvalidquadtree
-    # @assert isvalidquadtree(x, tree)
+    @assert isvalidtree(x, tree)
     @assert size(y) == size(x)
 
     # ----- Allocation and setup to match Wavelets.jl's function requirements -----
@@ -744,8 +741,7 @@ function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},
                                    tree::BitVector;
                                    standard::Bool = true) where T<:Number
     # Sanity check
-    # TODO: define isvalidquadtree
-    # @assert isvalidquadtree(xw, tree)
+    @assert isvalidtree(xw, tree)
     @assert size(x̂) == size(xw)
 
     # ----- Setup -----

@@ -35,13 +35,13 @@ using ..Utils
 Computes the stationary discrete wavelet transform (SDWT) for `L` levels.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
-    \in \mathbb{N}``.
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Original signal,
+    preferably of size 2ᴷ where ``K \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`::Matrix{T}`: Output from SDWT on `x`.
+`::Matrix{T}` or `::Array{T,3}`: Output from SDWT on `x`.
 
 # Examples
 ```julia
@@ -81,15 +81,15 @@ end
 Same as `sdwt` but without array allocation.
 
 # Arguments
-- `xw::AbstractArray{T,2}`: An allocated array of dimension `(n,L+1)` to write the outputs
-  of `x` onto.
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+- `xw::AbstractArray{T,2}` or `xw::AbstractArray{T,3} where T<:Number`: An allocated array
+  of dimension `(n,L+1)` to write the outputs of `x` onto.
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
   \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`xw::Array{T,2}`: Output from SDWT on `x`.
+`xw::Array{T,2}` or `xw::Array{T,3}`: Output from SDWT on `x`.
 
 # Examples
 ```julia
@@ -164,14 +164,15 @@ end
 Computes the inverse stationary discrete wavelet transform (iSDWT) on `xw`.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: SDWT-transformed array.
+- `xw::AbstractArray{T,2}` or `xw::AbstractArray{T,3} where T<:Number`: SDWT-transformed
+  array.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.
 
 # Returns
-`::Vector{T}`: Inverse transformed signal.
+`::Vector{T}` or `::Matrix{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -222,15 +223,17 @@ end
 Same as `isdwt` but with no array allocation.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Allocation for reconstructed signal.
-- `xw::AbstractArray{T,2} where T<:Number`: SDWT-transformed array.
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Allocation for
+  reconstructed signal.
+- `xw::AbstractArray{T,2}` or `xw::AbstractArray{T,3} where T<:Number`: SDWT-transformed
+  array.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.
 
 # Returns
-`x::Vector{T}`: Inverse transformed signal.
+`x::Vector{T}` or `x::Matrix{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -362,13 +365,13 @@ end
 Computes `L` levels of stationary wavelet packet transform (SWPT) on `x`.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
   \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`::Matrix{T}`: Output from SWPT on `x`.
+`::Matrix{T}` or `::Array{T,3}`: Output from SWPT on `x`.
 
 # Examples
 ```julia
@@ -409,14 +412,14 @@ end
 Same as `swpt` but without array allocation.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: Allocation for transformed signal.
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+- `xw::AbstractArray{T,2}` or `xw::AbstractArray{T,3} where T<:Number`: Allocation for transformed signal.
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
   \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`xw::Matrix{T}`: Output from SWPT on `x`.
+`xw::Matrix{T}` or `xw::Array{T,3}`: Output from SWPT on `x`.
 
 # Examples
 ```julia
@@ -516,14 +519,14 @@ end
 Computes the inverse stationary wavelet packet transform (iSWPT) on `xw`.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: SWPT-transformed array.
+- `xw::AbstractArray{T,2}` or `xw::AbstractArray{T,3} where T<:Number`: SWPT-transformed array.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.
 
 # Returns
-`::Vector{T}`: Inverse transformed signal.
+`::Vector{T}` or `::Matrix{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -574,15 +577,17 @@ end
 Same as `iswpt` but with no array allocation.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Allocation for inverse transform.
-- `xw::AbstractArray{T,2} where T<:Number`: SWPT-transformed array.
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Allocation for inverse
+  transform.
+- `xw::AbstractArray{T,2}` or `xw::AbstractArray{T,3} where T<:Number`: SWPT-transformed
+  array.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.
 
 # Returns
-`x::Vector{T}`: Inverse transformed signal.
+`x::Vector{T}` or `x::Matrix{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -760,13 +765,13 @@ end
 Computes `L` levels of stationary wavelet packet decomposition (SWPD) on `x`.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
-  \in \mathbb{N}``.
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Original signal,
+  preferably of size 2ᴷ where ``K \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`::Matrix{T}`: Output from SWPD on `x`.
+`::Matrix{T}` or `::Array{T,3}`: Output from SWPD on `x`.
 
 # Examples
 ```julia
@@ -807,14 +812,15 @@ end
 Same as `swpd` but without array allocation.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: Allocation for transformed signal.
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
-  \in \mathbb{N}``.
+- `xw::AbstractArray{T,2}` or `xw::AbstractArray{T,3} where T<:Number`: Allocation for
+  transformed signal.
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Original signal,
+  preferably of size 2ᴷ where ``K \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`xw::Matrix{T}`: Output from SWPD on `x`.
+`xw::Matrix{T}` or `xw::Array{T,3}`: Output from SWPD on `x`.
 
 # Examples
 ```julia
@@ -903,24 +909,25 @@ end
 
 Computes the inverse stationary wavelet packet transform (iSWPT) on `xw`.
 
-!!! note
-    This function might not be very useful if one is looking to reconstruct a raw decomposed
-    signal. The purpose of this function would be better utilized in applications such as
-    denoising, where a signal is decomposed (`swpd`) and thresholded
+!!! note 
+    This function might not be very useful if one is looking to reconstruct a raw
+    decomposed signal. The purpose of this function would be better utilized in applications
+    such as denoising, where a signal is decomposed (`swpd`) and thresholded
     (`denoise`/`denoiseall`) before being reconstructed.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: TIDWT-transformed array.
+- `xw::AbstractArray{T,2}` or `x::AbstractArray{T,3} where T<:Number`: SWPD-transformed
+  array.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
-- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition used
-  for reconstruction.
-- `tree::BitVector`: Binary tree for inverse transform to be computed accordingly. 
+- `L::Integer`: (Default: `maxtransformlevels(x)` or `minimum(size(xw)[1:end-1]) |>
+  maxtransformlevels`) Number of levels of decomposition used for reconstruction.
+- `tree::BitVector`: Binary/Quad tree for inverse transform to be computed accordingly. 
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.
 
 # Returns
-`::Vector{T}`: Inverse transformed signal.
+`::Vector{T}` or `::Matrix{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -940,7 +947,7 @@ x̂ = iswpd(xw, wt, maxtransformlevels(xw,1), 5)
 x̃ = iswpd(xw, wt)
 ```
 
-**See also:** [`isdwt_step`](@ref), [`iswpt`](@ref), [`swpd`](@ref)
+**See also:** [`isdwt_step`](@ref), [`iswpt`](@ref), [`swpd`](@ref), [`iswpd!`](@ref)
 """
 function iswpd(xw::AbstractArray{T}, wt::OrthoFilter, L::Integer, sm::Integer) where 
                T<:Number
@@ -989,18 +996,20 @@ end
 Same as `iswpd` but with no array allocation.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Allocated array for output.
-- `xw::AbstractArray{T,2} where T<:Number`: SWPD-transformed array.
+- `x::AbstractVector{T}` or `x::AbstractMatrix{T} where T<:Number`: Allocated array for
+  output.
+- `xw::AbstractArray{T,2}` or `xw::AbstractArray{T,3} where T<:Number`: SWPD-transformed
+  array.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
-- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition used
-  for reconstruction.
-- `tree::BitVector`: Binary tree for inverse transform to be computed accordingly. 
+- `L::Integer`: (Default: `maxtransformlevels(x)` or `minimum(size(xw)[1:end-1]) |>
+  maxtransformlevels`) Number of levels of decomposition used for reconstruction.
+- `tree::BitVector`: Binary/Quad tree for inverse transform to be computed accordingly. 
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.
 
 # Returns
-`x::Vector{T}`: Inverse transformed signal.
+`x::Vector{T}` or `x::Matrix{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
