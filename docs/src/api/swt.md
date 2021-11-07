@@ -5,8 +5,6 @@ Modules = [SWT]
 ```
 
 ## Public API
-!!! note
-    All SWT functions currently only support 1D-signals. Transforms on multiple 2D-signals are not yet supported.
 ### Transforms on 1 Signal
 ```@docs
 SWT.sdwt
