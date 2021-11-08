@@ -57,7 +57,7 @@ savefig(p, "transforms.png")
 !["Wiggle" plots displaying the value of coefficients in each level of the autocorrelation and stationary wavelet transform for a unit impulse signal. \label{fig:transforms}](transforms.png)
 
 ## Best Basis Algorithms
-`WaveletsExt.jl` can select a single best basis for set of signals through the Joint Best Basis (JBB) [@Wickerhauser:1996] or Least Statistically Dependent Basis (LSDB) [@Saito:2001] algorithms. The resulting best basis tree can be visualized using `plot_tfbdry`.
+`WaveletsExt.jl` can select a best basis for a multiple signal input (i.e., and array of signals) through the Joint Best Basis (JBB) [@Wickerhauser:1996] or Least Statistically Dependent Basis (LSDB) [@Saito:2001] algorithms. The resulting best basis tree can be visualized using `plot_tfbdry`.
 
 ```julia
 using Plots, Wavelets, WaveletsExt
@@ -83,15 +83,15 @@ p2 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |>
 p = plot(p1, p2, layout=(1,2), size=(600,300))
 savefig(p, "bestbasis.png")
 ```
-![The best basis trees of 100 noisy HeaviSine (A sinusoid + two Heaviside step functions) [@Donoho:1995a; @Donoho1995b] signals selected by the JBB and LSDB algorithms. \label{fig:bestbasis}](bestbasis.png)
+![The best basis trees of 100 noisy HeaviSine (A sinusoid + two Heaviside step functions) [@Donoho:1995a; @Donoho:1995b] signals selected by the JBB and LSDB algorithms. Each row corresponds to a decomposition level (level 0 = original signal) and each cell represents a subband. Colored cells indicate the subbands selected by the best basis algorithm.  \label{fig:bestbasis}](bestbasis.png)
 
 ## Denoising Algorithms
-`WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single input signal whereas the latter denoises multiple signal input simultaneously. For more examples of denoising algorithms in `WaveletsExt.jl`, refer to [@Liew:2021].
+`WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single input signal whereas the latter denoises a multiple signal input. For more examples of denoising algorithms in `WaveletsExt.jl`, refer to [@Liew:2021].
 
 ```julia
 using Plots, Wavelets, WaveletsExt
 
-# Generate 6 circularly shifted heavysine signals
+# Generate 6 circularly shifted HeaviSine signals
 x₀ = generatesignals(:heavysine, 8) |> 
      x -> duplicatesignals(x, 6, 2, false)
 # Generate 6 noisy versions of the original signals
