@@ -137,7 +137,7 @@ end
     @test length(generatesignals(:blocks, 5)) == 32
     @test length(generatesignals(:bumps, 5)) == 32
     @test length(generatesignals(:doppler, 5)) == 32
-    @test length(generatesignals(:heavysine, 5)) == 32
+    @test length(generatesignals(:heavisine, 5)) == 32
     @test length(generatesignals(:quadchirp, 5)) == 32
     @test length(generatesignals(:mishmash, 5)) == 32
     @test_throws ArgumentError generatesignals(:fail, 5)

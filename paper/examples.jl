@@ -32,8 +32,8 @@ savefig(p, "transforms.png")
 #    Basis (LSDB). One may then use the `plot_tfbdry` function implemented in WaveletsExt.jl
 #    to analyze the best basis subspace.
 
-# Generate 100 noisy heavysine signals of length 2⁸
-x = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 100, 2, true, 0.5)
+# Generate 100 noisy heavisine signals of length 2⁸
+x = generatesignals(:heavisine, 8) |> x -> duplicatesignals(x, 100, 2, true, 0.5)
 # Wavelet packet decomposition of all signals
 xw = wpdall(x, wt, 6)
 
@@ -55,10 +55,10 @@ savefig(p, "paper/bestbasis.png")
 #    There are two functions available: `denoise` and `denoiseall`. The former denoises one
 #    signal whereas the latter denoises multiple signals at once.
 
-# Generate 6 circularly shifted original heavysine signals
-x₀ = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 6, 2, false)
+# Generate 6 circularly shifted original heavisine signals
+x₀ = generatesignals(:heavisine, 8) |> x -> duplicatesignals(x, 6, 2, false)
 # Generate 6 noisy versions of the original signals
-x = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 6, 2, true, 0.8)
+x = generatesignals(:heavisine, 8) |> x -> duplicatesignals(x, 6, 2, true, 0.8)
 
 # Decompose each noisy signal
 xw = wpdall(x, wt)
