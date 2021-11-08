@@ -1,5 +1,14 @@
 """
+    isvalidtree(x, b)
 
+Check if `tree` is a valid tree for the signal `x`.
+
+# Arguments
+- `x::AbstractVector` or `x::AbstractMatrix`: Signal (1D or 2D).
+- `b::BitVector`: Tree to represent `x`.
+
+# Returns
+- `::Bool`: Whether tree is valid.
 """
 function Wavelets.Util.isvalidtree(x::AbstractMatrix, b::BitVector)
     n, m = size(x)
