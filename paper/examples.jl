@@ -39,12 +39,12 @@ xw = wpdall(x, wt, 6)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
-p1 = plot_tfbdry(tree, 7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p1 = plot_tfbdry(tree, 6, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="JBB")
 
 # ----- Least Statistically Dependent Basis (LSDB)
 tree = bestbasistree(xw, LSDB())
-p2 = plot_tfbdry(tree, 7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p2 = plot_tfbdry(tree, 6, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="LSDB")
 
 # Combine and save plot
@@ -66,19 +66,23 @@ xw = wpdall(x, wt)
 # Get best basis tree from the decomposition of signals
 bt = bestbasistree(xw, JBB())
 # Get best basis coefficients based on best basis tree
-y = bestbasiscoef(xw, bt)
+y = getbasiscoefall(xw, bt)
 
 # Denoise all signals based on computed best basis tree
 x̂ = denoiseall(y, :wpt, wt, tree=bt)
 
 # Plot results
+xs = repeat([0,256],6) |> x -> reshape(x, (2,6))
+ys = repeat(1:6, inner=2) |> x -> reshape(x, (2,6))
 p1 = plot(title="Noisy Signals")
 wiggle!(x₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
 wiggle!(x, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
+plot!(p1, xs, ys, lc=:black)
 
 p2 = plot(title="Denoised Signals")
 wiggle!(x₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
 wiggle!(x̂, sc=0.7, EdgeColor=:blue, FaceColor=:white, ZDir=:reverse)
+plot!(p1, xs, ys, lc=:black)
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
