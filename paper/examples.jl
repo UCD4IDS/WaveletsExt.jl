@@ -82,7 +82,7 @@ plot!(p1, xs, ys, lc=:black)
 p2 = plot(title="Denoised Signals")
 wiggle!(x₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
 wiggle!(x̂, sc=0.7, EdgeColor=:blue, FaceColor=:white, ZDir=:reverse)
-plot!(p1, xs, ys, lc=:black)
+plot!(p2, xs, ys, lc=:black)
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
@@ -118,7 +118,7 @@ ldb = LocalDiscriminantBasis(wt=wt,
 X̂ = fit_transform(ldb, X, y)
 
 # Plot the best basis for feature extraction
-p2 = plot_tfbdry(ldb.tree, 7, nd_col=:green, ln_col=:black, bg_col=:white)
+p2 = plot_tfbdry(ldb.tree, 6, nd_col=:green, ln_col=:black, bg_col=:white)
 plot!(p2, title="Basis Selection using LDB")
 
 p = plot(p1, p2, size=(600,300))
