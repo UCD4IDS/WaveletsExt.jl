@@ -33,7 +33,7 @@ One of the most distinguishing features of `WaveletsExt.jl` is the presence of a
 
 # Examples
 ## 1. Redundant Wavelet Transforms
-`WaveletsExt.jl` implements several redundant wavelet transforms including Stationary Wavelet Transform (SWT) [@Nason:1995] and Autocorrelation Wavelet Transform (a special case of SWT) [@Saito:1993]. These transformations can be performed using the `acwt` and `sdwt` functions. Users can also visualize the resulting decomposition with the `wiggle` function.
+`WaveletsExt.jl` implements several redundant wavelet transforms including Stationary Wavelet Transform (SWT) [@Nason:1995] and Autocorrelation Wavelet Transform [@Saito:1993]. These transformations can be performed using the `acdwt` and `sdwt` functions, and the resulting decomposition can be visualized with the `wiggle` function.
 
 ```julia
 using Plots, Wavelets, WaveletsExt
@@ -57,7 +57,7 @@ savefig(p, "transforms.png")
 !["Wiggle" plots displaying the value of coefficients in each level of the autocorrelation and stationary wavelet transform for a unit impulse signal. \label{fig:transforms}](transforms.png)
 
 ## Best Basis Algorithms
-`WaveletsExt.jl` can select a single best basis for set of signals through the Joint Best Basis (JBB) [@Wickerhauser:1996] or Least Statistically Dependent Basis (LSDB) [@Saito:2001] algorithms. The resulting best basis tree can be visualized using `plot_tfbdry`.
+`WaveletsExt.jl` can select a best basis for a multiple signal input (i.e., an array of signals) through the Joint Best Basis (JBB) [@Wickerhauser:1996] or Least Statistically Dependent Basis (LSDB) [@Saito:2001] algorithms. The resulting best basis tree can be visualized using `plot_tfbdry`.
 
 ```julia
 using Plots, Wavelets, WaveletsExt
@@ -83,19 +83,20 @@ p2 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |>
 p = plot(p1, p2, layout=(1,2), size=(600,300))
 savefig(p, "bestbasis.png")
 ```
-![The best basis trees of 100 noisy HeaviSine (A sinusoid + two Heaviside step functions) [@Donoho:1995a; @Donoho1995b] signals selected by the JBB and LSDB algorithms. \label{fig:bestbasis}](bestbasis.png)
+![The best basis trees of 100 HeaviSine signals (A sinusoid + two Heaviside step functions) [@Donoho:1995a; @Donoho:1995b] selected by the JBB and LSDB algorithms. Each row represents a decomposition level, where level 0 is the original input signal, and each cell represents a frequency subband (low to high frequency from left to right). The colored cells indicate those subbands selected by the JBB (left) and the LSDB (right) algorithms.  \label{fig:bestbasis}](bestbasis.png)
 
 ## Denoising Algorithms
-`WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single signal whereas the latter denoises a set of signals simultaneously. For more examples of denoising algorithms in `WaveletsExt.jl`, refer to [@Liew:2021].
+`WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single signal input whereas the latter denoises multiple signal input. For more examples of denoising algorithms in `WaveletsExt.jl`, refer to [@Liew:2021].
 
 ```julia
 using Plots, Wavelets, WaveletsExt
 
-# Generate 6 circularly shifted heavysine signals
-x₀ = generatesignals(:heavysine, 8) |> 
+# Generate 6 circularly shifted HeaviSine signals
+x₀ = generatesignals(:heavisine, 8) |> 
      x -> duplicatesignals(x, 6, 2, false)
+     
 # Generate 6 noisy versions of the original signals
-x = generatesignals(:heavysine, 8) |> 
+x = generatesignals(:heavisine, 8) |> 
     x -> duplicatesignals(x, 6, 2, true, 0.8)
 
 # Decompose each noisy signal
@@ -103,6 +104,7 @@ xw = wpdall(x, wt)
 
 # Get best basis tree from the decomposition of signals
 bt = bestbasistree(xw, JBB())
+
 # Get best basis coefficients based on best basis tree
 y = bestbasiscoef(xw, bt)
 
@@ -122,7 +124,7 @@ wiggle!(x̂, sc=0.7, FaceColor=:white, ZDir=:reverse)
 p = plot(p1, p2, layout=(1,2), size=(600,300))
 savefig(p, "denoising.png")
 ```
-![Left: HeaviSine signals with Gaussian noise. Right: Simultaneously denoised signals.  \label{fig:denoising}](denoising.png)
+![Left: HeaviSine signals with Gaussian noise. Black lines represent the original (non-noisy) signal. Right: Simultaneously denoised signals using the JBB algorithm with a universal thresholding constant determined by the VisuShrink method [@Donoho:1994]. \label{fig:denoising}](denoising.png)
 
 ## Feature Extraction
 Users can extract distinguishing features of signals localized in time and frequency using the Local Discriminant Basis (LDB) algorithm. Further details can be found in the original papers by Saito and his collaborators [@Saito:1995; @Saito:2002] as well as the interactive tutorial [@Dan:2021].
@@ -167,11 +169,7 @@ savefig(p, "ldb.png")
 ![Left: Examples of Cylinder, Bell, and Funnel signals. Right: The best basis tree selected by the LDB algorithm for discriminating the three classes of signals. \label{fig:denoising}](ldb.png)
 
 # Reproducible Research
-`WaveletsExt.jl` was partially inspired by the WaveLab library in MATLAB, which was developed to enable reproducible wavelet research [@Donoho:1995b]. In this spirit, we wrote a series of tutorials, examples, and experiments using `Pluto.jl`, a platform with which Julia users can create and share reactive documents [@Fonsp:2021]. By downloading and running these so-called Pluto notebooks, researchers and students alike can reproduce the results of our research and interactively adjust parameters to see the changes in experiment outcome.
-
-- Denoising Experiments using Wavelet Transforms, Autocorrelation Wavelet Transforms, Stationary Wavelet Transforms [@Liew:2021]
-
-- Feature Extraction using Local Discriminant Bases for Signal Classification [@Dan:2021]
+`WaveletsExt.jl` was partially inspired by the WaveLab library in MATLAB, which was developed to enable reproducible wavelet research [@Donoho:1995b]. In this spirit, we wrote a series of tutorials, examples, and experiments using `Pluto.jl` [@Liew:2021; @Dan:2021], a platform with which Julia users can create and share reactive documents [@Fonsp:2021]. By downloading and running these so-called Pluto notebooks, researchers and students alike can reproduce the results of our research and interactively adjust parameters to see the changes in experiment outcomes.
 
 # Acknowledgements
 This project was partially supported by the following grants from the US National Science Foundation: DMS-1148643; DMS-1418779; DMS-1912747; and CCF-1934568.
