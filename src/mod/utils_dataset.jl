@@ -83,7 +83,7 @@ below are based on D. Donoho and I. Johnstone in "Adapting to Unknown Smoothness
 Shrinkage" Preprint Stanford, January 93, p 27-28.  
 - `:blocks`
 - `:bumps`
-- `:heavysine`
+- `:heavisine`
 - `:doppler`
 - `:quadchirp`
 - `:mishmash`
@@ -127,7 +127,7 @@ function generatesignals(fn::Symbol, L::Integer = 7)
         for j in eachindex(h)
             x += (h[j] ./ (1 .+ ((tt .- t[j]) / w[j]).^4))
         end
-    elseif fn == :heavysine
+    elseif fn == :heavisine
         x = collect(range(0, 1, length=n))
         x = 4*sin.(4*pi*x) - sign.(x .- 0.3) - sign.(0.72 .- x)
     elseif fn == :doppler

@@ -67,7 +67,7 @@ x = generatesignals(:heavysine, 8) |>
     x -> duplicatesignals(x, 100, 2, true, 0.5)
 
 # Wavelet packet decomposition of all signals
-xw = wpdall(x, wt)
+xw = wpdall(x, wt, 6)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
@@ -147,7 +147,7 @@ p1 = plot(cylinder, bell, funnel, layout=(3,1))
 wt = wavelet(WT.coif4)
 ldb = LocalDiscriminantBasis(
   wt=wt,
-  max_dec_level=7,
+  max_dec_level=6,
   dm=SymmetricRelativeEntropy(),
   en=TimeFrequency(),
   dp=BasisDiscriminantMeasure(),

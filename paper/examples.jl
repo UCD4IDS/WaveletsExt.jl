@@ -32,19 +32,19 @@ savefig(p, "transforms.png")
 #    Basis (LSDB). One may then use the `plot_tfbdry` function implemented in WaveletsExt.jl
 #    to analyze the best basis subspace.
 
-# Generate 100 noisy heavysine signals of length 2⁸
-x = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 100, 2, true, 0.5)
+# Generate 100 noisy heavisine signals of length 2⁸
+x = generatesignals(:heavisine, 8) |> x -> duplicatesignals(x, 100, 2, true, 0.5)
 # Wavelet packet decomposition of all signals
 xw = wpdall(x, wt, 6)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
-p1 = plot_tfbdry(tree, 7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p1 = plot_tfbdry(tree, 6, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="JBB")
 
 # ----- Least Statistically Dependent Basis (LSDB)
 tree = bestbasistree(xw, LSDB())
-p2 = plot_tfbdry(tree, 7, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p2 = plot_tfbdry(tree, 6, nd_col=:green, ln_col=:black, bg_col=:white) |> 
      p -> plot!(p, title="LSDB")
 
 # Combine and save plot
@@ -55,10 +55,10 @@ savefig(p, "paper/bestbasis.png")
 #    There are two functions available: `denoise` and `denoiseall`. The former denoises one
 #    signal whereas the latter denoises multiple signals at once.
 
-# Generate 6 circularly shifted original heavysine signals
-x₀ = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 6, 2, false)
+# Generate 6 circularly shifted original heavisine signals
+x₀ = generatesignals(:heavisine, 8) |> x -> duplicatesignals(x, 6, 2, false)
 # Generate 6 noisy versions of the original signals
-x = generatesignals(:heavysine, 8) |> x -> duplicatesignals(x, 6, 2, true, 0.8)
+x = generatesignals(:heavisine, 8) |> x -> duplicatesignals(x, 6, 2, true, 0.8)
 
 # Decompose each noisy signal
 xw = wpdall(x, wt)
@@ -66,19 +66,23 @@ xw = wpdall(x, wt)
 # Get best basis tree from the decomposition of signals
 bt = bestbasistree(xw, JBB())
 # Get best basis coefficients based on best basis tree
-y = bestbasiscoef(xw, bt)
+y = getbasiscoefall(xw, bt)
 
 # Denoise all signals based on computed best basis tree
 x̂ = denoiseall(y, :wpt, wt, tree=bt)
 
 # Plot results
+xs = repeat([0,256],6) |> x -> reshape(x, (2,6))
+ys = repeat(1:6, inner=2) |> x -> reshape(x, (2,6))
 p1 = plot(title="Noisy Signals")
 wiggle!(x₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
 wiggle!(x, sc=0.7, EdgeColor=:red, FaceColor=:white, ZDir=:reverse)
+plot!(p1, xs, ys, lc=:black)
 
 p2 = plot(title="Denoised Signals")
 wiggle!(x₀, sc=0.7, FaceColor=:white, ZDir=:reverse)
 wiggle!(x̂, sc=0.7, EdgeColor=:blue, FaceColor=:white, ZDir=:reverse)
+plot!(p2, xs, ys, lc=:black)
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
@@ -114,7 +118,7 @@ ldb = LocalDiscriminantBasis(wt=wt,
 X̂ = fit_transform(ldb, X, y)
 
 # Plot the best basis for feature extraction
-p2 = plot_tfbdry(ldb.tree, 7, nd_col=:green, ln_col=:black, bg_col=:white)
+p2 = plot_tfbdry(ldb.tree, 6, nd_col=:green, ln_col=:black, bg_col=:white)
 plot!(p2, title="Basis Selection using LDB")
 
 p = plot(p1, p2, size=(600,300))
