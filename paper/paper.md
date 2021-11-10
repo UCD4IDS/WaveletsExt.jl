@@ -57,7 +57,7 @@ savefig(p, "transforms.png")
 !["Wiggle" plots displaying the value of coefficients in each level of the autocorrelation and stationary wavelet transform for a unit impulse signal. \label{fig:transforms}](transforms.png)
 
 ## Best Basis Algorithms
-`WaveletsExt.jl` can select a best basis for a multiple signal input (i.e., and array of signals) through the Joint Best Basis (JBB) [@Wickerhauser:1996] or Least Statistically Dependent Basis (LSDB) [@Saito:2001] algorithms. The resulting best basis tree can be visualized using `plot_tfbdry`.
+`WaveletsExt.jl` can select a best basis for a multiple signal input (i.e., an array of signals) through the Joint Best Basis (JBB) [@Wickerhauser:1996] or Least Statistically Dependent Basis (LSDB) [@Saito:2001] algorithms. The resulting best basis tree can be visualized using `plot_tfbdry`.
 
 ```julia
 using Plots, Wavelets, WaveletsExt
@@ -83,19 +83,19 @@ p2 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |>
 p = plot(p1, p2, layout=(1,2), size=(600,300))
 savefig(p, "bestbasis.png")
 ```
-![The best basis trees of 100 noisy HeaviSine (A sinusoid + two Heaviside step functions) [@Donoho:1995a; @Donoho:1995b] signals selected by the JBB and LSDB algorithms. Each row corresponds to a decomposition level (level 0 = original signal) and each cell represents a subband. Colored cells indicate the subbands selected by the best basis algorithm.  \label{fig:bestbasis}](bestbasis.png)
+![The best basis trees of 100 HeaviSine signals (A sinusoid + two Heaviside step functions) [@Donoho:1995a; @Donoho:1995b] with Gaussian noise selected by the JBB and LSDB algorithms. Each row corresponds to a decomposition level, where level 0 is the original input signal, and each cell represents a frequency subband (low to high frequency from left to right). The green colored cells indicate those subbands selected by the JBB (left plot) and the LSDB (right plot) algorithms.  \label{fig:bestbasis}](bestbasis.png)
 
 ## Denoising Algorithms
-`WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single input signal whereas the latter denoises a multiple signal input. For more examples of denoising algorithms in `WaveletsExt.jl`, refer to [@Liew:2021].
+`WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single signal input whereas the latter denoises multiple signal input. For more examples of denoising algorithms in `WaveletsExt.jl`, refer to [@Liew:2021].
 
 ```julia
 using Plots, Wavelets, WaveletsExt
 
 # Generate 6 circularly shifted HeaviSine signals
-x₀ = generatesignals(:heavysine, 8) |> 
+x₀ = generatesignals(:heavisine, 8) |> 
      x -> duplicatesignals(x, 6, 2, false)
 # Generate 6 noisy versions of the original signals
-x = generatesignals(:heavysine, 8) |> 
+x = generatesignals(:heavisine, 8) |> 
     x -> duplicatesignals(x, 6, 2, true, 0.8)
 
 # Decompose each noisy signal
@@ -122,7 +122,7 @@ wiggle!(x̂, sc=0.7, FaceColor=:white, ZDir=:reverse)
 p = plot(p1, p2, layout=(1,2), size=(600,300))
 savefig(p, "denoising.png")
 ```
-![Left: HeaviSine signals with Gaussian noise. Right: Simultaneously denoised signals.  \label{fig:denoising}](denoising.png)
+![Left: HeaviSine signals with Gaussian noise. Black lines represent the original (non-noisy) signal. Right: Simultaneously denoised signals via the JBB algorithm with threshold determined using the VisuShrink method [@Donoho:1994]. \label{fig:denoising}](denoising.png)
 
 ## Feature Extraction
 Users can extract distinguishing features of signals localized in time and frequency using the Local Discriminant Basis (LDB) algorithm. Further details can be found in the original papers by Saito and his collaborators [@Saito:1995; @Saito:2002] as well as the interactive tutorial [@Dan:2021].
