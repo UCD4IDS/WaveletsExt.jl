@@ -10,11 +10,8 @@ export
     DifferentialEntropyCost,
     ShannonEntropyCost,
     LogEnergyEntropyCost,
-    coefcost,
     # tree cost
     tree_costs,
-    # best tree selection
-    bestbasis_treeselection,
     # best basis types
     BestBasisType,
     LSDB,
@@ -22,7 +19,7 @@ export
     BB,
     SIBB,
     # best basis tree
-    bestbasis_tree
+    bestbasistreeall
 
 using 
     Wavelets, 
@@ -36,396 +33,99 @@ using
     ..DWT,
     ..SIWPD
 
+include("bestbasis_costs.jl")
+include("bestbasis_tree.jl")
 
-## COST COMPUTATION
+## ----- BEST TREE SELECTION -----
+# Tree selection for 1D signals
 """
-Cost function abstract type.
+    bestbasis_treeselection(costs, n[, type])
+    bestbasis_treeselection(costs, n, m[, type])
 
-**See also:** [`LSDBCost`](@ref), [`JBBCost`](@ref), [`BBCost`](@ref)
-"""
-abstract type CostFunction end
+Computes the best basis tree based on the given cost vector.
 
-"""
-    LSDBCost <: CostFunction
+# Arguments
+- `costs::AbstractVector{T}`: Vector containing costs for each node.
+- `n::Integer`: Length of signals (for 1D cases) or vertical length of signals (for 2D
+  cases).
+- `m::Integer`: Horizontal length of signals (for 2D cases).
+- `type::Symbol`: (Default: `:min`) Criterion used to select the best tree. Supported types
+  are `:min` and `:max`. Eg. Setting `type = :min` results in a basis tree with the lowest
+  cost to be selected.
 
-Cost function abstract type specifically for LSDB.
-
-**See also:** [`CostFunction`](@ref), [`JBBCost`](@ref), [`BBCost`](@ref)
-"""
-abstract type LSDBCost <: CostFunction end
-
-"""
-    JBBCost <: CostFunction
-    
-Cost function abstract type specifically for JBB.
-
-**See also:** [`CostFunction`](@ref), [`LSDBCost`](@ref), [`BBCost`](@ref)
-"""
-abstract type JBBCost <: CostFunction end
-
-"""
-    BBCost <: CostFunction
-    
-Cost function abstract type specifically for BB.
-
-**See also:** [`CostFunction`](@ref), [`LSDBCost`](@ref), [`JBBCost`](@ref)
-"""
-abstract type BBCost <: CostFunction end
-
-@doc raw"""
-    LoglpCost <: JBBCost
-    
-``\log \ell^p`` information cost used for JBB. Typically, we set `p=2` as in 
-Wickerhauser's original algorithm.
-
-**See also:** [`CostFunction`](@ref), [`JBBCost`](@ref), [`NormCost`](@ref)
-"""
-@with_kw struct LoglpCost <: JBBCost 
-    p::Number = 2
-end
-
-@doc raw"""
-    NormCost <: JBBCost
-    
-``p``-norm information cost used for JBB.
-
-**See also:** [`CostFunction`](@ref), [`JBBCost`](@ref), [`LoglpCost`](@ref)
-"""
-@with_kw struct NormCost <: JBBCost 
-    p::Number = 1
-end
-
-"""
-    DifferentialEntropyCost <: LSDBCost
-
-Differential entropy cost used for LSDB.
-
-**See also:** [`CostFunction`](@ref), [`LSDBCost`](@ref)
-"""
-struct DifferentialEntropyCost <: LSDBCost end
-
-"""
-    ShannonEntropyCost <: LSDBCost
-
-Shannon entropy cost used for BB.
-
-**See also:** [`CostFunction`](@ref), [`BBCost`](@ref), 
-    [`LogEnergyEntropyCost`](@ref)
-"""
-struct ShannonEntropyCost <: BBCost end
-
-"""
-    LogEnergyEntropyCost <: LSDBCost
-
-Log energy entropy cost used for BB.
-
-**See also:** [`CostFunction`](@ref), [`BBCost`](@ref), 
-    [`ShannonEntropyCost`](@ref)
-"""
-struct LogEnergyEntropyCost <: BBCost end
-
-# cost functions for individual best basis algorithm
-function coefcost(x::T, et::ShannonEntropyCost, nrm::T) where T<:AbstractFloat
-    s = (x/nrm)^2
-    if s == 0.0
-        return -zero(T)
-    else
-        return -s*log(s)
-    end
-end
-
-function coefcost(x::T, et::LogEnergyEntropyCost, nrm::T) where T<:AbstractFloat
-    s = (x/nrm)^2
-    if s == 0.0
-        return -zero(T)
-    else
-        return -log(s)
-    end
-end
-
-function coefcost(x::AbstractArray{T}, et::BBCost, nrm::T=norm(x)) where 
-        T<:AbstractFloat
-
-    @assert nrm >= 0
-    sum = zero(T)
-    nrm == sum && return sum
-    for i in eachindex(x)
-        @inbounds sum += coefcost(x[i], et, nrm)
-    end
-    return sum
-end
-
-# cost functions for joint best basis (JBB)
-function coefcost(x::AbstractArray{T}, et::LoglpCost) where T<:Number
-    xᵖ = abs.(x) .^ et.p
-    return sum(log.(xᵖ))
-end
-
-function coefcost(x::AbstractArray{T}, et::NormCost) where T<:Number
-    return norm(x, et.p)
-end
-
-# cost functions for least statistically dependent basis (LSDB)
-function coefcost(x::AbstractVector{T}, et::DifferentialEntropyCost) where 
-        T<:AbstractFloat
-
-    N = length(x)                           # length of vector x
-    M = 50                                  # arbitrary large number M
-
-    nbins = ceil(Int64, (30 * N)^(1/5))     # number of bins per histogram
-    mbins = ceil(Int64, M/nbins)            # number of histograms calculated
-
-    σ = std(x)                              # standard deviation of x
-    # setup range for ASH
-    s = 0.5                     
-    δ = (maximum(x) - minimum(x) + σ)/((nbins+1)*mbins-1)       
-    rng = (minimum(x) - s*σ):δ:(maximum(x) + s*σ)     
-    # compute ASH          
-    epdf = ash(x, rng=rng, m=mbins, kernel=Kernels.triangular)
-    ent = 0
-    for k in 1:N
-        ent -= (1/N) * log(AverageShiftedHistograms.pdf(epdf, x[k]))
-    end
-    return ent
-end
-
-function coefcost(x::AbstractArray{T,2}, et::DifferentialEntropyCost) where 
-        T<:Number
-
-    cost = 0
-    for i in axes(x,1)
-        @inbounds cost += coefcost(x[i,:], DifferentialEntropyCost())
-    end
-    return cost
-end
-
-
-## BEST BASIS TYPES
-"""
-Abstract type for best basis. Current available types are:
-- [`LSDB`](@ref)
-- [`JBB`](@ref)
-- [`BB`](@ref)
-- [`SIBB`](@ref)
-"""
-abstract type BestBasisType end
-
-"""
-    LSDB([; cost=DifferentialEntropyCost(), redundant=false])
-
-Least Statistically Dependent Basis (LSDB). Set `redundant=true` when running
-LSDB with redundant wavelet transforms such as SWT or ACWT.
-
-**See also:** [`BestBasisType`](@ref), [`JBB`](@ref), [`BB`](@ref), 
-    [`SIBB`](@ref)
-"""
-@with_kw struct LSDB <: BestBasisType
-    cost::LSDBCost = DifferentialEntropyCost()
-    redundant::Bool = false
-end
-
-"""
-    JBB([; cost=LoglpCost(2), redundant=false])
-
-Joint Best Basis (JBB). Set `redundant=true` when running JBB with redundant 
-wavelet transforms such as SWT or ACWT.
-
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`BB`](@ref), 
-    [`SIBB`](@ref)
-"""
-@with_kw struct JBB <: BestBasisType    # Joint Best Basis
-    cost::JBBCost = LoglpCost(2)
-    redundant::Bool = false
-end
-
-"""
-    BB([; cost=LoglpCost(2), redundant=false])
-
-Best Basis (BB). Set `redundant=true` when running BB with redundant wavelet 
-transforms such as SWT or ACWT.
-
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), 
-    [`SIBB`](@ref)
-"""
-@with_kw struct BB <: BestBasisType     # Individual Best Basis
-    cost::BBCost = ShannonEntropyCost()
-    redundant::Bool = false
-end
-
-"""
-    SIBB([; cost=ShannonEntropyCost()])
-
-Shift Invariant Best Basis (SIBB).
-
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), 
-    [`BB`](@ref)
-"""
-@with_kw struct SIBB <: BestBasisType   # Shift invariant best basis
-    cost::BBCost = ShannonEntropyCost()
-end                     
-
-
-## TREE COST
-"""
-    tree_costs(X, method)
-
-Returns the cost of each node in a binary tree in order to find the best basis.
-
-**See also:** [`bestbasistree`](@ref), [`bestbasis_treeselection`](@ref)
-"""
-function tree_costs(X::AbstractArray{T,3}, method::LSDB) where T<:AbstractFloat
-    L = size(X, 2)
-    n = size(X, 1)
-
-    if method.redundant
-        costs = Vector{T}(undef, L)
-        for i in eachindex(costs)
-            j = floor(Integer, log2(i))
-            costs[i] = coefcost(X[:,i,:], method.cost) / (1<<j)
-        end
-    else
-        costs = Vector{T}(undef, 2^L - 1)
-        i = 1
-        for lvl in 0:(L-1)
-            n₀ = nodelength(n, lvl)
-            for node in 0:(2^lvl-1)
-                rng = (node * n₀ + 1):((node + 1) * n₀)
-                costs[i] = coefcost(X[rng, lvl+1, :], method.cost)
-                i += 1
-            end
-        end
-    end
-    return costs
-end
-
-function tree_costs(X::AbstractArray{T,3}, method::JBB) where T<:AbstractFloat
-    # For each level, compute mean, sum of squares, and variance
-    (n, L, N) = size(X)                     # L = levels if wpd, nodes if swpd
-    EX = sum(X, dims = 3) ./ N              # calculate E(X)
-    EX² = sum(X .^ 2, dims = 3) ./ N        # calculate E(X²)
-    VarX = EX² - (EX) .^ 2                  # calculate Var(X)
-    VarX = reshape(VarX, (n, L))        
-    σ = VarX .^ 0.5                         # calculate σ = √Var(X)
-    @assert all(σ .>= 0)
-
-    if method.redundant
-        costs = Vector{T}(undef, L)
-        for i in eachindex(costs)
-            j = floor(Integer, log2(i))
-            costs[i] = coefcost(σ[:, i], method.cost) / (1<<j)
-        end
-    else
-        costs = Vector{T}(undef, 2^L - 1)
-        i = 1   # iterates over the nodes for the costs variable
-        for lvl in 0:(L-1)
-            n₀ = nodelength(n, lvl)
-            for node in 0:(2^lvl-1)
-                rng = (node * n₀ + 1):((node + 1) * n₀)
-                coef = σ[rng, lvl+1]
-                costs[i] = coefcost(coef, method.cost)
-                i += 1
-            end
-        end
-    end
-    return costs
-end
-
-function tree_costs(X::AbstractArray{T,2}, method::BB) where T<:AbstractFloat
-    nrm = norm(X[:,1])
-    L = size(X, 2)                      # count of levels if wpd, nodes if swpd
-    n = size(X,1)
-
-    if method.redundant                # swpd
-        costs = Vector{T}(undef, L)
-        for i in eachindex(costs)
-            j = floor(Integer, log2(i))
-            costs[i] = coefcost(X[:, i], method.cost, nrm) / (1<<j)
-        end
-    else
-        costs = Vector{T}(undef, 2^L - 1)
-        i = 1
-        for lvl in 0:(L-1)
-            n₀ = nodelength(n, lvl)
-            for node in 0:(2^lvl-1)
-                rng = (node * n₀ + 1):((node + 1) * n₀)
-                costs[i] = coefcost(X[rng, lvl+1, :], method.cost, nrm)
-                i += 1
-            end
-        end
-    end
-    return costs
-end
-
-function tree_costs(y::AbstractArray{T,2}, tree::AbstractVector{BitVector}, 
-        method::SIBB) where T<:Number
-
-    nn = length(tree)                           
-    ns = size(y,1)                              
-    @assert size(y,2) == nn                     
-    tree_costs = Vector{Vector{Union{T,Nothing}}}(undef, nn)
-    nrm = norm(y[:,1])                          
-
-    for i in eachindex(tree)
-        level = floor(Int, log2(i))
-        len = nodelength(ns, level)
-        # number of nodes corresponding to Ω(i,j)
-        costs = Vector{Union{AbstractFloat,Nothing}}(nothing, length(tree[i]))
-        for j in eachindex(tree[i])
-            if tree[i][j]
-                shift = j-1                     # current shift
-                nstart = shift*len + 1
-                nend = (shift+1) * len
-                costs[j] = coefcost(y[nstart:nend,i], method.cost, nrm)
-            end
-        end
-        tree_costs[i] = costs
-    end
-    return tree_costs
-end
-
-
-## BEST TREE SELECTION
-"""
-    bestbasis_treeselection(costs, n[, type=:min])
-
-Computes the best tree based on the given cost vector.
+# Returns
+- `::BitVector`: Best basis tree selected based on cost.
 
 **See also:** [`bestbasistree`](@ref), [`tree_costs`](@ref)
 """
-function bestbasis_treeselection(costs::AbstractVector{T}, n::Integer,
-        type::Symbol=:min) where T<:AbstractFloat
-
-    @assert length(costs) <= 2*n - 1
-    L = floor(Int, log2(length(costs)))
-    bt = maketree(n, L, :full)
-    if type == :min
-        @inbounds begin
-            for i in reverse(1:(1<<L-1))
-                childcost = costs[getchildindex(i,:left)] + costs[getchildindex(i,:right)]
-                if childcost < costs[i]     # child cost < parent cost
-                    costs[i] = childcost
-                else
-                    delete_subtree!(bt, i)
-                end
+function bestbasis_treeselection(costs::AbstractVector{T}, 
+                                 n::Integer, 
+                                 type::Symbol = :min) where T<:AbstractFloat
+    k = length(costs)
+    @assert k ≤ gettreelength(2*n)
+    @assert type ∈ [:min, :max] || throw(ArgumentError("Unsupported type $type."))
+    L = getdepth(k,:binary)
+    tree = maketree(n, L, :full)
+    for i in reverse(eachindex(tree))
+        if tree[i]                  # Check costs if node i exists
+            # Get parent and children costs
+            @inbounds pc = costs[i]
+            @inbounds cc = costs[getchildindex(i,:left)] + costs[getchildindex(i,:right)]
+            if type == :min && cc < pc          # Child cost < parent cost
+                @inbounds costs[i] = cc
+            elseif type == :max && cc > pc      # Child cost > parent cost
+                @inbounds costs[i] = cc
+            else
+                delete_subtree!(tree, i, :binary)
             end
         end
-    elseif type == :max
-        @inbounds begin
-            for i in reverse(1:(1<<L-1))
-                childcost = costs[getchildindex(i,:left)] + costs[getchildindex(i,:right)]
-                if childcost > costs[i]     # child cost < parent cost
-                    costs[i] = childcost
-                else
-                    delete_subtree!(bt, i)
-                end
-            end
-        end
-    else
-        throw(ArgumentError("Accepted types are :min and :max only"))
     end
-    return bt
+    @assert isvalidtree(zeros(n), tree)
+    return tree
+end
+# Tree selection for 2D signals
+function bestbasis_treeselection(costs::AbstractVector{T},
+                                 n::Integer, m::Integer,
+                                 type::Symbol = :min) where T<:AbstractFloat
+    k = length(costs)
+    @assert k ≤ gettreelength(2*n,2*m)
+    @assert type ∈ [:min, :max] || throw(ArgumentError("Unsupported type $type."))
+    L = getdepth(k,:quad)
+    tree = maketree(n, m, L, :full)
+    for i in reverse(eachindex(tree))
+        if tree[i]
+            # Get parent and children costs
+            @inbounds pc = costs[i]
+            @inbounds cc = costs[getchildindex(i,:topleft)] + costs[getchildindex(i,:topright)] +
+                        costs[getchildindex(i,:bottomleft)] + costs[getchildindex(i,:bottomright)]
+            if type == :min && cc < pc
+                @inbounds costs[i] = cc
+            elseif type == :max && cc > pc
+                @inbounds costs[i] = cc
+            else
+                delete_subtree!(tree, i, :quad)
+            end
+        end
+    end
+    @assert isvalidtree(zeros(n,m), tree)
+    return tree
 end
 
+# SIWPD tree selection
+"""
+    bestbasis_treeselection(costs, tree)
+
+Best basis tree selection on SIWPD.
+
+# Arguments
+- `costs::AbstractVector{Tc} where Tc<:AbstractVector{<:Union{Number, Nothing}}`: Cost of
+  each node.
+- `tree::AbstractVector{Tt} where Tt<:BitVector`: SIWPD tree.
+
+!!! warning
+    Current implementation works but is unstable, ie. we are still working on better
+    syntax/more optimized computations/better data structure.
+"""
 function bestbasis_treeselection(costs::AbstractVector{Tc}, 
         tree::AbstractVector{Tt}) where 
         {Tc<:AbstractVector{<:Union{Number,Nothing}}, Tt<:BitVector}
@@ -477,19 +177,34 @@ function bestbasis_treeselection(costs::AbstractVector{Tc},
     return bt
 end
 
-# deletes subtree due to inferior cost
-function delete_subtree!(bt::BitVector, i::Integer)
-    @assert 1 <= i <= length(bt)
+# Deletes subtree due to inferior cost
+"""
+    delete_subtree!(bt, i, tree_type)
+
+Deletes a subtree of the entire tree due to children's inferior costs.
+
+# Arguments
+- `bt::BitVector`: Tree.
+- `i::Integer`: Root of the subtree to be deleted.
+- `tree_type::Symbol`: Type of tree (`:binary` or `:quad`).
+
+# Returns
+`bt::BitVector`: Tree with deleted subtree.
+
+**See also:** [`bestbasistree`](@ref), [`bestbasis_treeselection`](@ref)
+"""
+function delete_subtree!(bt::BitVector, i::Integer, tree_type::Symbol)
+    @assert 1 ≤ i ≤ length(bt)
+    @assert tree_type ∈ [:binary, :quad]
+    children = tree_type == :binary ? [:left, :right] : [:topleft, :topright, :bottomleft, :bottomright]
     bt[i] = false
-    if (getchildindex(i,:left)) < length(bt)
-        if bt[getchildindex(i,:left)]
-            delete_subtree!(bt, getchildindex(i,:left))
-        end
-        if bt[getchildindex(i,:right)]
-            delete_subtree!(bt, getchildindex(i,:right))
+    for c in children
+        # Delete child subtree if exist
+        if (getchildindex(i,c) ≤ length(bt)) && bt[getchildindex(i,c)]
+            delete_subtree!(bt, getchildindex(i,c), tree_type)
         end
     end
-    return nothing
+    return bt
 end
 
 function delete_subtree!(bt::AbstractVector{BitVector}, i::Integer, j::Integer)
@@ -515,65 +230,98 @@ end
 
 
 ## BEST BASIS TREES
+# Best basis tree for LSDB
 """
     bestbasistree(X[, method])
 
-Extension to the best basis tree function from Wavelets.jl. Given a set of 
-decomposed signals, returns different types of best basis trees based on the 
-methods specified. Available methods are the joint best basis ([`JBB`](@ref)), 
-least statistically dependent basis ([`LSDB`](@ref)), individual regular 
-best basis ([`BB`](@ref)), and shift-invariant best basis ([`SIBB`](@ref)).
+Extension to the best basis tree function from Wavelets.jl. Given a set of decomposed
+signals, returns different types of best basis trees based on the methods specified.
+Available methods are the joint best basis ([`JBB`](@ref)), least statistically dependent
+basis ([`LSDB`](@ref)), individual regular best basis ([`BB`](@ref)), and shift-invariant
+best basis ([`SIBB`](@ref)).
+
+# Arguments
+- `X::AbstractArray{T} where T<:AbstractFloat`: A set of decomposed signals, of sizes
+  `(n,L,k)` for 1D signals or `(n,m,L,k)` for 2D signals, where:
+    - `n`: Length of signal (1D) or vertical length of signal (2D).
+    - `m`: Horizontal length of signal (2D).
+    - `L`: Number of decomposition levels plus 1 (for standard wavelet decomposition) or
+      number of nodes in the tree (for redundant transforms such as ACWT and SWT).
+    - `k`: Number of signals.
+- `method::BestBasisType`: Type of best basis, ie. `BB()`, `JBB()` or `LSDB()`.
+
+!!! tip
+    For standard best basis (`BB()`), this current function can only process one signal at a
+    time, ie. the input `X` should have dimensions `(n,L)` or `(n,m,L)`. To process multiple
+    signals using one function, see [`bestbasistreeall`](@ref).
+
+# Returns
+- `::BitVector`: Best basis tree.
 
 # Examples
 ```julia
-bestbasistree(X, JBB())
+using Wavelets, WaveletsExt
 
-bestbasistree(X, SIBB())
+X = generatesignals(:heavisine, 6) |> x -> duplicatesignals(x, 5, 2, true)
+wt = wavelet(WT.db4)
+Xw = wpdall(X, wt)
+
+bestbasistree(Xw, JBB())
+bestbasistree(Xw, LSDB())
 ```
 
-**See also:** [`getbasiscoef`](@ref), [`getbasiscoefall`](@ref)
+**See also:** [`getbasiscoef`](@ref), [`getbasiscoefall`](@ref), [`tree_costs`](@ref),
+[`delete_subtree!`](@ref)
 """
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                
-        method::LSDB) where T<:AbstractFloat
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T}, method::LSDB) where 
+                                          T<:AbstractFloat
+    @assert 3 ≤ ndims(X) ≤ 4                # Compatible for 1D and 2D decomposed signals
+    sz = size(X)[1:end-2]                   # Signal size
+    costs = tree_costs(X, method)
+    tree = bestbasis_treeselection(costs, sz...)
+    return tree
+end
+# Best basis tree for JBB
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T}, method::JBB) where 
+                                          T<:AbstractFloat
+    @assert 3 ≤ ndims(X) ≤ 4                # Compatible for 1D and 2D decomposed signals
+    sz = size(X)[1:end-2]                   # Signal size
+    costs = tree_costs(X, method)
+    tree = bestbasis_treeselection(costs, sz...)
+    return tree
+end
+# Standard best basis tree
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T}, method::BB) where 
+    T<:AbstractFloat
+    @assert 2 ≤ ndims(X) ≤ 3                # Compatible for 1D and 2D decomposed signal
+    sz = size(X)[1:end-1]                   # Signal size
+    costs = tree_costs(X, method)
+    tree = bestbasis_treeselection(costs, sz...)
+    return tree
+end
+# SIWPD Best basis tree
+# TODO: find a way to compute bestbasis_tree without input d
+"""
+    bestbasistree(y, d, method)
+
+Computes the best basis tree for the shift invariant wavelet packet decomposition (SIWPD).
+
+# Arguments
+- `y::AbstractArray{T,2} where T<:Number`: A SIWPD decomposed signal.
+- `d::Integer`: The number of depth computed for the decomposition.
+- `method::SIBB`: The `SIBB()` method.
+
+# Returns
+- `Vector{BitVector}`: SIWPD best basis tree.
+
+!!! warning
+    Current implementation works but is unstable, ie. we are still working on better
+    syntax/more optimized computations/better data structure.
+"""
+function Wavelets.Threshold.bestbasistree(y::AbstractArray{T,2}, 
+                                          d::Integer, 
+                                          method::SIBB) where T<:Number                                           
     
-    costs = tree_costs(X, method)
-    besttree = bestbasis_treeselection(costs, size(X,1))
-    return besttree
-end
-
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3}, 
-        method::JBB) where T<:AbstractFloat
-
-    costs = tree_costs(X, method)
-    besttree = bestbasis_treeselection(costs, size(X,1))
-    return besttree
-end
-
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3},                
-        method::BB) where T<:AbstractFloat
-    
-    n = size(X,1)
-    besttree = falses(n-1, size(X,3))
-    @inbounds begin
-        for i in axes(besttree,2)
-            costs = tree_costs(X[:,:,i], method)
-            besttree[:,i] = bestbasis_treeselection(costs, n)
-        end
-    end
-    return besttree
-end
-
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,2}, 
-        method::BB) where T<:AbstractFloat
-
-    costs = tree_costs(X, method)
-    besttree = bestbasis_treeselection(costs, size(X,1))
-    return besttree
-end
-
-function Wavelets.Threshold.bestbasistree(y::AbstractArray{T,2}, d::Integer, 
-        method::SIBB) where T<:Number                                           # TODO: find a way to compute bestbasis_tree without input d
-        
     nn = size(y,2) 
     L = maxtransformlevels((nn+1)÷2)
     ns = size(y,1)
@@ -582,10 +330,56 @@ function Wavelets.Threshold.bestbasistree(y::AbstractArray{T,2}, d::Integer,
     besttree = bestbasis_treeselection(costs, tree)
     return besttree
 end
-
-function Wavelets.Threshold.bestbasistree(X::AbstractArray{T,3}; 
-        method::BestBasisType=JBB()) where T<:AbstractFloat
+# Default best basis tree search
+function Wavelets.Threshold.bestbasistree(X::AbstractArray{T}, 
+                                          method::BestBasisType = JBB()) where 
+                                          T<:AbstractFloat
     return bestbasistree(X, method)
+end
+
+"""
+    bestbasistreeall(X, method)
+
+Compute the standard best basis tree of a set of signals.
+
+# Arguments
+- `X::AbstractArray{T} where T<:AbstractFloat`: A set of decomposed signals, of sizes
+  `(n,L,k)` for 1D signals or `(n,m,L,k)` for 2D signals, where:
+    - `n`: Length of signal (1D) or vertical length of signal (2D).
+    - `m`: Horizontal length of signal (2D).
+    - `L`: Number of decomposition levels plus 1 (for standard wavelet decomposition) or
+        number of nodes in the tree (for redundant transforms such as ACWT and SWT).
+    - `k`: Number of signals.
+- `method::BB`: Standard best basis method, eg. `BB()`.
+
+# Returns
+- `::BitMatrix`: `(nₜ,k)` matrix where each column corresponds to a tree.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+X = generatesignals(:heavisine, 6) |> x -> duplicatesignals(x, 5, 2, true)
+wt = wavelet(WT.db4)
+
+Xw = wpdall(X, wt)
+bestbasistreeall(Xw, BB())
+
+Xw = swpdall(X, wt)
+bestbasistree(Xw, BB(redundant=true))
+```
+
+**See also:** [`bestbasistree`](@ref)
+"""
+function bestbasistreeall(X::AbstractArray{T}, method::BB) where T<:AbstractFloat
+    @assert 3 ≤ ndims(X) ≤ 4                # Compatible for 1D and 2D decomposed signals
+    sz = size(X)[1:end-2]                   # Signal size
+    k = size(X)[end]                        # Number of signals
+    trees = falses(gettreelength(sz...), k) # Allocate trees
+    @views for (i, Xᵢ) in enumerate(eachslice(X, dims=ndims(X)))
+        @inbounds trees[:,i] = bestbasistree(Xᵢ, method)
+    end
+    return trees
 end
 
 end # end of module

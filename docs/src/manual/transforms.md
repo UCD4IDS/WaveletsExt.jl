@@ -46,7 +46,7 @@ as follows:
 using Wavelets, WaveletsExt
 
 # Define function and wavelet
-x = generatesignals(:heavysine, 8)
+x = generatesignals(:heavisine, 8)
 wt = wavelet(WT.db4)
 
 # ----- Discrete Wavelet Transform (DWT) -----

@@ -29,6 +29,9 @@ Extension). It contains additional functionalities that complement Wavelets.jl, 
 ## Authors
 This package is written and maintained by Zeng Fung Liew and Shozen Dan under the supervision of Professor Naoki Saito at the University of California, Davis.
 
+## What's New (v0.1.11)
+- **All types of 2D wavelet transforms up and running.** Discrete wavelet transforms, wavelet packet transforms, and wavelet packet decompositions for standard, autocorrelation, and stationary transforms working well with improved speeds and memory allocations.
+
 ## What's New (v0.1.10)
 - **Direct support for wavelet transform of multiple signals.** Since the current package deals
   a lot with multiple signals (eg. Joint Best Basis (JBB), group signal denoising, Local

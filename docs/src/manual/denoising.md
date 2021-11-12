@@ -23,7 +23,7 @@ For more detailed information, visit the [denoising API](@ref denoising_api) pag
 using Wavelets, WaveletsExt, Random, Plots
 
 # define function and wavelet
-x₀ = generatesignals(:heavysine, 8)
+x₀ = generatesignals(:heavisine, 8)
 x = x₀ + 0.8*randn(256)
 wt = wavelet(WT.db4)
 
@@ -50,7 +50,7 @@ For more detailed information, visit the [denoising API](@ref denoising_api) pag
 using Wavelets, WaveletsExt, Random, Plots
 
 # define function and wavelet
-x = generatesignals(:heavysine, 8)
+x = generatesignals(:heavisine, 8)
 X₀ = duplicatesignals(x, 6, 2, false)
 X = duplicatesignals(x, 6, 2, true, 0.8)
 wt = wavelet(WT.db4)

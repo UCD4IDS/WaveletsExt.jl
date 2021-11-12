@@ -224,7 +224,7 @@ end
 
 # ----- 1 step of dwt for 2D signals -----
 """
-    dwt_step(v, h, g[; standard])
+    dwt_step(v, h, g)
 
 Compute 1 step of 2D discrete wavelet transform (DWT).
 
@@ -232,9 +232,6 @@ Compute 1 step of 2D discrete wavelet transform (DWT).
 - `v::AbstractArray{T,2} where T<:Number`: Array of coefficients of size ``(n,m)``.
 - `h::Array{S,1} where S<:Number`: High pass filter.
 - `g::Array{S,1} where S<:Number`: Low pass filter.
-
-# Keyword Arguments
-- `standard::Bool`: (Default: `true`) Whether to perform the standard wavelet transform.
 
 # Returns
 - `w₁::Array{T,2}`: Top left output. Result of low pass filter on columns + low pass filter
@@ -261,8 +258,8 @@ DWT.dwt_step(v, h, g)
 
 **See also:** [`dwt_step`](@ref), [`dwt_step!`](@ref), [`idwt_step`](@ref)
 """
-function dwt_step(v::AbstractArray{T,2}, h::Array{S,1}, g::Array{S,1}; 
-                  standard::Bool = true) where {T<:Number, S<:Number}
+function dwt_step(v::AbstractArray{T,2}, h::Array{S,1}, g::Array{S,1}) where 
+                 {T<:Number, S<:Number}
     n,m = size(v)
     n₁ = n÷2
     m₁ = m÷2
@@ -271,12 +268,12 @@ function dwt_step(v::AbstractArray{T,2}, h::Array{S,1}, g::Array{S,1};
     w₃ = Array{T,2}(undef, (n₁,m₁))
     w₄ = Array{T,2}(undef, (n₁,m₁))
     temp = Array{T,2}(undef, (n,m))
-    dwt_step!(w₁, w₂, w₃, w₄, v, h, g, temp, standard=standard)
+    dwt_step!(w₁, w₂, w₃, w₄, v, h, g, temp)
     return w₁, w₂, w₃, w₄
 end
 
 """
-    dwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp[; standard])
+    dwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp)
 
 Same as 2D version of `dwt_step` but without array allocation.
 
@@ -290,9 +287,6 @@ Same as 2D version of `dwt_step` but without array allocation.
 - `g::Array{S,1} where S<:Number`: Low pass filter.
 - `temp::AbstractArray{T,2} where T<:Number`: Array allocation for intermediate
   computations.
-
-# Keyword Arguments
-- `standard::Bool`: (Default: `true`) Whether to perform the standard wavelet transform.
 
 # Returns
 - `w₁::Array{T,2}`: Top left output. Result of low pass filter on columns + low pass filter
@@ -326,8 +320,7 @@ function dwt_step!(w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
                    w₃::AbstractArray{T,2}, w₄::AbstractArray{T,2},
                    v::AbstractArray{T,2},
                    h::Array{S,1}, g::Array{S,1},
-                   temp::AbstractArray{T,2};
-                   standard::Bool = true) where {T<:Number, S<:Number}
+                   temp::AbstractArray{T,2}) where {T<:Number, S<:Number}
     # Sanity check
     @assert size(v) == size(temp)
     @assert size(w₁) == size(w₂) == size(w₃) == size(w₄)
@@ -337,35 +330,31 @@ function dwt_step!(w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
     # Setup
     n,m = size(w₁)
 
-    # Transform
-    if standard
-        # Compute dwt for all columns
-        for j in 1:(2*m)
-            @inbounds temp₁ⱼ = @view temp[1:n,j]
-            @inbounds temp₂ⱼ = @view temp[(n+1):end,j]
-            @inbounds vⱼ = @view v[:,j]
-            @inbounds dwt_step!(temp₁ⱼ, temp₂ⱼ, vⱼ, h, g)
-        end
-        # Compute dwt for all rows
-        for i in 1:n
-            @inbounds temp₁ᵢ = @view temp[i,:]
-            @inbounds w₁ᵢ = @view w₁[i,:]
-            @inbounds w₂ᵢ = @view w₂[i,:]
-            @inbounds dwt_step!(w₁ᵢ, w₂ᵢ, temp₁ᵢ, h, g)
-            
-            @inbounds temp₂ᵢ = @view temp[n+i,:]
-            @inbounds w₃ᵢ = @view w₃[i,:]
-            @inbounds w₄ᵢ = @view w₄[i,:]
-            @inbounds dwt_step!(w₃ᵢ, w₄ᵢ, temp₂ᵢ, h, g)
-        end
-    else
-        error("Non-standard transform not implemented yet.")
+    # --- Transform ---
+    # Compute dwt for all columns
+    for j in 1:(2*m)
+        @inbounds temp₁ⱼ = @view temp[1:n,j]
+        @inbounds temp₂ⱼ = @view temp[(n+1):end,j]
+        @inbounds vⱼ = @view v[:,j]
+        @inbounds dwt_step!(temp₁ⱼ, temp₂ⱼ, vⱼ, h, g)
+    end
+    # Compute dwt for all rows
+    for i in 1:n
+        @inbounds temp₁ᵢ = @view temp[i,:]
+        @inbounds w₁ᵢ = @view w₁[i,:]
+        @inbounds w₂ᵢ = @view w₂[i,:]
+        @inbounds dwt_step!(w₁ᵢ, w₂ᵢ, temp₁ᵢ, h, g)
+        
+        @inbounds temp₂ᵢ = @view temp[n+i,:]
+        @inbounds w₃ᵢ = @view w₃[i,:]
+        @inbounds w₄ᵢ = @view w₄[i,:]
+        @inbounds dwt_step!(w₃ᵢ, w₄ᵢ, temp₂ᵢ, h, g)
     end
     return w₁, w₂, w₃, w₄
 end
 
 """
-    idwt_step(w₁, w₂, w₃, w₄, h, g; standard)
+    idwt_step(w₁, w₂, w₃, w₄, h, g)
 
 Computes one step of inverse discrete wavelet transform on 2D-signals.
 
@@ -382,17 +371,16 @@ Computes one step of inverse discrete wavelet transform on 2D-signals.
 """
 function idwt_step(w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
                    w₃::AbstractArray{T,2}, w₄::AbstractArray{T,2},
-                   h::Array{S,1}, g::Array{S,1};
-                   standard::Bool = true) where {T<:Number, S<:Number}
+                   h::Array{S,1}, g::Array{S,1}) where {T<:Number, S<:Number}
     n,m = size(w₁)
     v = Array{T,2}(undef, (2*n,2*m))
     temp = Array{T,2}(undef, (2*n,2*m))
-    idwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp, standard=standard)
+    idwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp)
     return v
 end
 
 """
-    idwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp[; standard])
+    idwt_step!(v, w₁, w₂, w₃, w₄, h, g, temp)
 
 Same as 2D version of `idwt_step` but without array allocation.
 
@@ -407,9 +395,6 @@ Same as 2D version of `idwt_step` but without array allocation.
 - `temp::AbstractArray{T,2} where T<:Number`: Array allocation for intermediate
   computations.
 
-# Keyword Arguments
-- `standard::Bool`: (Default: `true`) Whether to perform the standard wavelet transform.
-
 # Returns
 - `v::Array{T,2}`: Reconstructed coefficients.
 """
@@ -417,8 +402,7 @@ function idwt_step!(v::AbstractArray{T,2},
                     w₁::AbstractArray{T,2}, w₂::AbstractArray{T,2},
                     w₃::AbstractArray{T,2}, w₄::AbstractArray{T,2},
                     h::Array{S,1}, g::Array{S,1},
-                    temp::AbstractArray{T,2};
-                    standard::Bool = true) where {T<:Number, S<:Number}
+                    temp::AbstractArray{T,2}) where {T<:Number, S<:Number}
     # Sanity check
     @assert size(v) == size(temp)
     @assert size(w₁) == size(w₂) == size(w₃) == size(w₄)
@@ -428,29 +412,25 @@ function idwt_step!(v::AbstractArray{T,2},
     # Setup
     n,m = size(w₁)
 
-    # Inverse transform
-    if standard
-        # Compute idwt for all rows
-        for i in 1:n
-            @inbounds temp₁ᵢ = @view temp[i,:]
-            @inbounds w₁ᵢ = @view w₁[i,:]
-            @inbounds w₂ᵢ = @view w₂[i,:]
-            @inbounds idwt_step!(temp₁ᵢ, w₁ᵢ, w₂ᵢ, h, g)
+    # --- Inverse transform ---
+    # Compute idwt for all rows
+    for i in 1:n
+        @inbounds temp₁ᵢ = @view temp[i,:]
+        @inbounds w₁ᵢ = @view w₁[i,:]
+        @inbounds w₂ᵢ = @view w₂[i,:]
+        @inbounds idwt_step!(temp₁ᵢ, w₁ᵢ, w₂ᵢ, h, g)
 
-            @inbounds temp₂ᵢ = @view temp[n+i,:]
-            @inbounds w₃ᵢ = @view w₃[i,:]
-            @inbounds w₄ᵢ = @view w₄[i,:]
-            @inbounds idwt_step!(temp₂ᵢ, w₃ᵢ, w₄ᵢ, h, g)
-        end
-        # Compute idwt for all columns
-        for j in 1:(2*m)
-            @inbounds vⱼ = @view v[:,j]
-            @inbounds temp₁ⱼ = @view temp[1:n,j]
-            @inbounds temp₂ⱼ = @view temp[(n+1):end,j]
-            @inbounds idwt_step!(vⱼ, temp₁ⱼ, temp₂ⱼ, h, g)
-        end
-    else
-        error("Non-standard transform not implemented yet.")
+        @inbounds temp₂ᵢ = @view temp[n+i,:]
+        @inbounds w₃ᵢ = @view w₃[i,:]
+        @inbounds w₄ᵢ = @view w₄[i,:]
+        @inbounds idwt_step!(temp₂ᵢ, w₃ᵢ, w₄ᵢ, h, g)
+    end
+    # Compute idwt for all columns
+    for j in 1:(2*m)
+        @inbounds vⱼ = @view v[:,j]
+        @inbounds temp₁ⱼ = @view temp[1:n,j]
+        @inbounds temp₂ⱼ = @view temp[(n+1):end,j]
+        @inbounds idwt_step!(vⱼ, temp₁ⱼ, temp₂ⱼ, h, g)
     end
     return v
 end

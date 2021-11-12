@@ -43,8 +43,8 @@ the following approach.
 ```@example wt
 using Wavelets, WaveletsExt, Plots
 
-# Generate 4 Heavy Sine signals
-x = generatesignals(:heavysine, 7)
+# Generate 4 HeaviSine signals
+x = generatesignals(:heavisine, 7)
 X = duplicatesignals(x, 4, 2, true, 0.5)
 
 # Construct wavelet
@@ -54,7 +54,7 @@ wt = wavelet(WT.haar)
 xw = wpdall(X, wt)
 
 # Best basis trees, each column corresponds to 1 tree
-trees = bestbasistree(xw, BB()); 
+trees = bestbasistreeall(xw, BB()); 
 nothing # hide
 ```
 One can then view the selected nodes from the best basis trees using the [`plot_tfbdry`](@ref WaveletsExt.Visualizations.plot_tfbdry) function as shown below.

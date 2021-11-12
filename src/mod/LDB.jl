@@ -822,7 +822,7 @@ function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S,3},
     end
 
     # select best tree and best set of expansion coefficients
-    f.tree = bestbasis_treeselection(f.cost, f.n, :max)
+    f.tree = BestBasis.bestbasis_treeselection(f.cost, f.n, :max)
     Xc = getbasiscoefall(Xw, f.tree)
 
     # obtain and order basis functions by power of discrimination

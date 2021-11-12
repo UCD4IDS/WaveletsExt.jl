@@ -20,10 +20,6 @@
     w₁, w₂, w₃, w₄ = DWT.dwt_step!(zeros(1,1),zeros(1,1),zeros(1,1),zeros(1,1), x, h, g, zeros(2,2))
     @test round.([w₁ w₂;w₃ w₄], digits=3) == [3 5;-2 4]
     @test round.(DWT.idwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, h, g, zeros(2,2)), digits=3) == x
-    @test_throws ErrorException DWT.dwt_step(x, h, g, standard=false)
-    @test_throws ErrorException DWT.idwt_step(w₁, w₂, w₃, w₄, h, g, standard=false)
-    @test_throws ErrorException DWT.dwt_step!(zeros(1,1),zeros(1,1),zeros(1,1),zeros(1,1), x, h, g, zeros(2,2), standard=false)
-    @test_throws ErrorException DWT.idwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, h, g, zeros(2,2), standard=false)
 
     # 1D transforms
     x = randn(8)
