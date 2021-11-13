@@ -119,6 +119,61 @@ end
     @test iswpd(swpd(x, wt), wt, 2, sm) ≈ x
 end
 
+@testset "ACWT" begin
+    # Single step
+    x = [2,3,-4,5.0]
+    wt = wavelet(WT.db4)
+    g, h = ACWT.make_acreverseqmfpair(wt)
+    w₁, w₂ = ACWT.acdwt_step(x, 0, h, g)
+    w₁ = round.(w₁,digits=3); w₂ = round.(w₂,digits=3)
+    @test [w₁ w₂] == [4.243 -1.414;1.414 2.828;0 -5.657;2.828 4.243]
+    @test round.(ACWT.iacdwt_step(w₁, w₂), digits=3) == x
+    
+    # Single steps (2D)
+    x = [2 3;-4 5.0]
+    w₁, w₂, w₃, w₄ = ACWT.acdwt_step(x, 0, h, g)
+    @test round.(w₁, digits=3) == [3 3;3 3]
+    @test round.(w₂, digits=3) == [-5 5;-5 5]
+    @test round.(w₃, digits=3) == [2 2;-2 -2]
+    @test round.(w₄, digits=3) == [4 -4;-4 4]
+    @test round.(ACWT.iacdwt_step(w₁, w₂, w₃, w₄), digits=3) == x
+    w₁, w₂, w₃, w₄ = ACWT.acdwt_step!(zeros(2,2),zeros(2,2),zeros(2,2),zeros(2,2), x, 0, h, g, zeros(2,2,2))
+    @test round.(w₁, digits=3) == [3 3;3 3]
+    @test round.(w₂, digits=3) == [-5 5;-5 5]
+    @test round.(w₃, digits=3) == [2 2;-2 -2]
+    @test round.(w₄, digits=3) == [4 -4;-4 4]
+    @test round.(ACWT.iacdwt_step!(zeros(2,2), w₁, w₂, w₃, w₄, zeros(2,2,2)), digits=3) == x
+
+    # acwt (1D)
+    x = randn(8)
+    wt = wavelet(WT.db4)
+    tree = maketree(x, :dwt)
+    @test iacdwt(acdwt(x, wt)) ≈ x
+    @test iacdwt(acdwt(x, wt, 2), wt) ≈ x
+    @test acwpt(x, wt) == acwpd(x, wt)[:,8:15]
+    @test acwpt(x, wt, 2) == acwpd(x, wt)[:,4:7]
+    @test iacwpt(acwpt(x, wt)) ≈ x
+    @test iacwpd(acwpd(x, wt)) ≈ x
+    @test iacwpd(acwpd(x, wt), 2) ≈ x
+    @test iacwpd(acwpd(x, wt), wt, 2) ≈ x
+    @test iacwpd(acwpd(x, wt), tree) ≈ x
+    @test iacwpd(acwpd(x, wt), wt, tree) ≈ x
+    @test iacwpd!(zeros(8), acwpd(x, wt), wt, tree) ≈ x
+    @test_throws AssertionError iacwpd!(zeros(4), acwpd(x, wt), wt, tree)
+    
+    # acwt (2D)
+    x = randn(8,8)
+    tree = maketree(x, :dwt)
+    @test iacdwt(acdwt(x, wt, 3), wt) ≈ x
+    @test iacdwt(acdwt(x, wt, 3)) ≈ x
+    @test acwpt(x, wt) == acwpd(x, wt)[:,:,22:85]
+    @test acwpt(x, wt, 3) == acwpd(x, wt)[:,:,22:85]
+    @test iacwpt(acwpt(x, wt), wt) ≈ x
+    @test iacwpd(acwpd(x, wt)) ≈ x
+    @test iacwpd(acwpd(x, wt), wt, tree) ≈ x
+    @test iacwpd(acwpd(x, wt), tree) ≈ x
+end
+
 @testset "SIWPD" begin
     # siwpd 
     x = randn(4)
@@ -139,39 +194,6 @@ end
         repeat([BitVector([1,0,1,0])],4)...
     ]
     @test makesiwpdtree(4, 2, 1) == tree
-end
-
-@testset "ACWT" begin
-    # Single step
-    x = [2,3,-4,5.0]
-    wt = wavelet(WT.db4)
-    g, h = ACWT.make_acreverseqmfpair(wt)
-    w₁, w₂ = ACWT.acdwt_step(x, 0, h, g)
-    w₁ = round.(w₁,digits=3); w₂ = round.(w₂,digits=3)
-    @test [w₁ w₂] == [4.243 -1.414;1.414 2.828;0 -5.657;2.828 4.243]
-    @test round.(ACWT.iacdwt_step(w₁, w₂), digits=3) == x
-
-    # acwt (1D)
-    x = randn(8)
-    wt = wavelet(WT.db4)
-    tree = maketree(x, :dwt)
-    @test iacdwt(acdwt(x, wt)) ≈ x
-    @test iacdwt(acdwt(x, wt, 2), wt) ≈ x
-    @test acwpt(x, wt) == acwpd(x, wt)[:,8:15]
-    @test acwpt(x, wt, 2) == acwpd(x, wt)[:,4:7]
-    @test iacwpt(acwpt(x, wt)) ≈ x
-    @test iacwpd(acwpd(x, wt)) ≈ x
-    @test iacwpd(acwpd(x, wt), 2) ≈ x
-    @test iacwpd(acwpd(x, wt), wt, 2) ≈ x
-    @test iacwpd(acwpd(x, wt), tree) ≈ x
-    @test iacwpd(acwpd(x, wt), wt, tree) ≈ x
-    @test iacwpd!(zeros(8), acwpd(x, wt), wt, tree) ≈ x
-    @test_throws AssertionError iacwpd!(zeros(4), acwpd(x, wt), wt, tree)
-
-    # acwt (2D)
-    x₂ = randn(8,8)
-    y₂ = acdwt(x₂, wavelet(WT.haar))
-    @test iacdwt(y₂) ≈ x₂
 end
 
 @testset "Transform All" begin
@@ -206,23 +228,34 @@ end
     @test iwpdall(zₙ, wt, 3) ≈ wₙ
 
     # acdwt
-    y = acdwt(x, wt)
-    yₙ = cat(y,y,y, dims=3)
+    y = acdwt(x, wt); z = acdwt(w,wt)
+    yₙ = cat(y,y,y, dims=3); zₙ = cat(z,z,z,dims=4)
     @test acdwtall(xₙ, wt) == yₙ
+    @test acdwtall(wₙ, wt) == zₙ
     @test iacdwtall(yₙ, wt) ≈ xₙ
+    @test iacdwtall(zₙ, wt) ≈ wₙ
 
     # acwpt
-    y = acwpt(x, wt)
-    yₙ = cat(y,y,y, dims=3)
+    y = acwpt(x, wt); z = acwpt(w,wt)
+    yₙ = cat(y,y,y, dims=3); zₙ = cat(z,z,z,dims=4)
     @test acwptall(xₙ, wt) == yₙ
+    @test acwptall(wₙ, wt) == zₙ
     @test iacwptall(yₙ, wt) ≈ xₙ
+    @test iacwptall(zₙ, wt) ≈ wₙ
 
     # acwpd
-    y = acwpd(x, wt)
-    yₙ = cat(y,y,y, dims=3)
+    y = acwpd(x, wt); z = acwpd(w, wt)
+    yₙ = cat(y,y,y, dims=3); zₙ = cat(z,z,z,dims=4)
     @test acwpdall(xₙ, wt, 3) ≈ yₙ
+    @test acwpdall(wₙ, wt, 3) ≈ zₙ
     @test iacwpdall(yₙ, wt, 3) ≈ xₙ
+    @test iacwpdall(yₙ, 3) ≈ xₙ
+    @test iacwpdall(zₙ, wt, 3) ≈ wₙ
+    @test iacwpdall(zₙ, 3) ≈ wₙ
     @test iacwpdall(yₙ, wt, maketree(8,3,:full)) ≈ xₙ
+    @test iacwpdall(yₙ, maketree(8,3,:full)) ≈ xₙ
+    @test iacwpdall(zₙ, wt, maketree(8,8,3,:full)) ≈ wₙ
+    @test iacwpdall(zₙ, maketree(8,8,3,:full)) ≈ wₙ
 
     # sdwt
     y = sdwt(x, wt); z = sdwt(w,wt)

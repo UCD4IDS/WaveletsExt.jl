@@ -7,8 +7,8 @@ Returns the relative norm of base p between original signal x₀ and noisy signa
 x.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Signal with noise.
-- `x₀::AbstractVector{T} where T<:Number`: Reference signal.
+- `x::AbstractArray{T} where T<:Number`: Signal with noise.
+- `x₀::AbstractArray{T} where T<:Number`: Reference signal.
 - `p::Real`: (Default: 2) ``p``-norm to be computed.
 
 # Returns
@@ -26,8 +26,8 @@ relativenorm(x, y)
 
 **See also:** [`psnr`](@ref), [`snr`](@ref), [`ssim`](@ref)
 """
-function relativenorm(x::AbstractVector{T}, 
-                      x₀::AbstractVector{T}, 
+function relativenorm(x::AbstractArray{T}, 
+                      x₀::AbstractArray{T}, 
                       p::Real = 2) where T<:Number
     @assert length(x) == length(x₀)             # ensure same lengths
     return norm(x-x₀,p)/norm(x₀,p)

@@ -310,8 +310,8 @@ signal.
 # Arguments
 - `xw::AbstractArray{T,3} where T<:Number`: SWPT-transformed signal.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
-- `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
-  transforms.
+- `L::Integer`: (Default: `minimum(size(xw)[1:end-2]) |> maxtransformlevels`) Number of
+  levels of wavelet transforms.
 - `tree::BitVector`: Binary tree for inverse transform to be computed accordingly.
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize

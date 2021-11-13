@@ -9,8 +9,8 @@ Computes the autocorrelation discrete wavelet transform (ACDWT) on each slice of
 - `x::AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
   signal.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
-- `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
-  transforms.
+- `L::Integer`: (Default: `minimum(size(xw)[1:end-1]) |> maxtransformlevels`) Number of
+  levels of wavelet transforms.
 
 # Returns
 - `::Array{T,3}`: Slices of transformed signals.
@@ -30,15 +30,19 @@ xw = acdwtall(x, wt)
 
 **See also:** [`acdwt`](@ref)
 """
-function acdwtall(x::AbstractArray{T,2},
+function acdwtall(x::AbstractArray{T},
                   wt::OrthoFilter,
-                  L::Integer = maxtransformlevels(x,1)) where T<:Number
+                  L::Integer = minimum(size(x)[1:end-1]) |> maxtransformlevels) where 
+                  T<:Number
+    @assert 2 ≤ ndims(x) ≤ 3
     # Allocate space for transforms
-    n,N = size(x)
-    xw = Array{T,3}(undef, (n,L+1,N))
+    sz = size(x)[1:(end-1)]
+    k = ndims(x)==2 ? L+1 : 3*L+1
+    N = size(x)[end]
+    xw = Array{T}(undef, (sz...,k,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_xw = ndims(xw)
+    dim_x = ndims(x)
     # Compute transforms
     @inbounds begin
         @views for (xwᵢ, xᵢ) in zip(eachslice(xw, dims=dim_xw), eachslice(x, dims=dim_x))
@@ -79,14 +83,16 @@ x̂ = iacdwtall(xw)
 
 **See also:** [`iacdwt`](@ref)
 """
-function iacdwtall(xw::AbstractArray{T,3}, wt::Union{OrthoFilter,Nothing} = nothing) where 
+function iacdwtall(xw::AbstractArray{T}, wt::Union{OrthoFilter,Nothing} = nothing) where 
                    T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_x = 2
-    dim_xw = 3
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
@@ -106,8 +112,8 @@ Computes the autocorrelation wavelet packet transform (ACWPT) on each slice of s
 - `x""AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
   signal.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
-- `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
-  transforms.
+- `L::Integer`: (Default: `minimum(size(xw)[1:end-1]) |> maxtransformlevels`) Number of
+  levels of wavelet transforms.
 
 # Returns
 - `::Array{T,3}`: Slices of transformed signals.
@@ -127,15 +133,19 @@ xw = acwptall(x, wt)
 
 **See also:** [`acwpt`](@ref)
 """
-function acwptall(x::AbstractArray{T,2}, 
+function acwptall(x::AbstractArray{T}, 
                   wt::OrthoFilter, 
-                  L::Integer = maxtransformlevels(x,1)) where T<:Number
+                  L::Integer = minimum(size(x)[1:end-1]) |> maxtransformlevels) where 
+                  T<:Number
+    @assert 2 ≤ ndims(x) ≤ 3
     # Allocate space for transforms
-    n,N = size(x)
-    xw = Array{T,3}(undef, (n,1<<L,N))
+    sz = size(x)[1:(end-1)]
+    k = ndims(x)==2 ? 1<<L : Int(4^L)
+    N = size(x)[end]
+    xw = Array{T}(undef, (sz...,k,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_xw = ndims(xw)
+    dim_x = ndims(x)
     # Compute transforms
     @inbounds begin
         @views for (xwᵢ, xᵢ) in zip(eachslice(xw, dims=dim_xw), eachslice(x, dims=dim_x))
@@ -176,14 +186,16 @@ x̂ = iacwptall(xw)
 
 **See also:** [`iacwpt`](@ref)
 """
-function iacwptall(xw::AbstractArray{T,3}, wt::Union{OrthoFilter,Nothing} = nothing) where 
+function iacwptall(xw::AbstractArray{T}, wt::Union{OrthoFilter,Nothing} = nothing) where 
                    T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
@@ -203,8 +215,8 @@ Computes the autocorrelation wavelet packet decomposition (ACWPD) on each slice 
 - `x""AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
   signal.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
-- `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
-  transforms.
+- `L::Integer`: (Default: `minimum(size(xw)[1:end-1]) |> maxtransformlevels`) Number of
+  levels of wavelet transforms.
 
 # Returns
 - `::Array{T,3}`: Slices of transformed signals.
@@ -224,15 +236,19 @@ xw = acwpdall(x, wt)
 
 **See also:** [`acwpd`](@ref)
 """
-function acwpdall(x::AbstractArray{T,2},
+function acwpdall(x::AbstractArray{T},
                   wt::OrthoFilter,
-                  L::Integer = maxtransformlevels(x,1)) where T<:Number
+                  L::Integer = minimum(size(x)[1:end-1]) |> maxtransformlevels) where 
+                  T<:Number
+    @assert 2 ≤ ndims(x) ≤ 3
     # Allocate space for transforms
-    n,N = size(x)
-    xw = Array{T,3}(undef, (n,1<<(L+1)-1,N))
+    sz = size(x)[1:(end-1)]
+    k = ndims(x)==2 ? 1<<(L+1)-1 : sum(4 .^(0:L))
+    N = size(x)[end]
+    xw = Array{T}(undef, (sz...,k,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_xw = ndims(xw)
+    dim_x = ndims(x)
     # Compute transforms
     @inbounds begin
         @views for (xwᵢ, xᵢ) in zip(eachslice(xw, dims=dim_xw), eachslice(x, dims=dim_x))
@@ -254,8 +270,8 @@ signal.
 # Arguments
 - `xw::AbstractArray{T,3} where T<:Number`: ACWPT-transformed signal.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
-- `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
-  transforms.
+- `L::Integer`: (Default: `minimum(size(xw)[1:end-2]) |> maxtransformlevels`) Number of
+  levels of wavelet transforms.
 - `tree::BitVector`: Binary tree for inverse transform to be computed accordingly.
 
 # Returns
@@ -281,33 +297,36 @@ x̂ = iacwpdall(xw, 5)
 
 **See also:** [`iacwpd`](@ref)
 """
-function iacwpdall(xw::AbstractArray{T,3},
+function iacwpdall(xw::AbstractArray{T},
                    wt::Union{OrthoFilter,Nothing} = nothing,
-                   L::Integer = maxtransformlevels(x,1)) where T<:Number
+                   L::Integer = minimum(size(xw)[1:end-2]) |> maxtransformlevels) where 
+                   T<:Number
     return iacwpdall(xw, L)
 end
 
-function iacwpdall(xw::AbstractArray{T,3}, L::Integer) where T<:Number
-    return iacwpdall(xw, maketree(size(xw,1), L, :full))
+function iacwpdall(xw::AbstractArray{T}, L::Integer) where T<:Number
+    return iacwpdall(xw, maketree(size(xw)[1:(end-2)]..., L))
 end
 
-function iacwpdall(xw::AbstractArray{T,3},
+function iacwpdall(xw::AbstractArray{T},
                    wt::Union{OrthoFilter, Nothing},
                    tree::BitVector) where T<:Number
     return iacwpdall(xw, tree)
 end
 
-function iacwpdall(xw::AbstractArray{T,3}, tree::BitVector) where T<:Number
+function iacwpdall(xw::AbstractArray{T}, tree::BitVector) where T<:Number
+    @assert 3 ≤ ndims(xw) ≤ 4
     # Allocate space for transforms
-    n,_,N = size(xw)
-    x = Array{T,2}(undef, (n,N))
+    sz = size(xw)[1:(end-2)]
+    N = size(xw)[end]
+    x = Array{T}(undef, (sz...,N))
     # Dimension to slice
-    dim_xw = 3
-    dim_x = 2
+    dim_x = ndims(x)
+    dim_xw = ndims(xw)
     # Compute transforms
     @inbounds begin
         @views for (xᵢ, xwᵢ) in zip(eachslice(x, dims=dim_x), eachslice(xw, dims=dim_xw))
-            iacwpd!(xᵢ, xwᵢ)
+            iacwpd!(xᵢ, xwᵢ, tree)
         end
     end
     return x

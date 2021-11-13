@@ -135,7 +135,7 @@ function sdwt!(xw::AbstractArray{T,3},
                L::Integer = maxtransformlevels(x)) where T<:Number
     # Sanity check
     @assert L ≤ maxtransformlevels(x) ||
-        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+        throw(ArgumentError("Too many transform levels"))
     @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
     @assert size(xw,3) == 3*L+1
 
@@ -398,7 +398,7 @@ function swpt(x::AbstractArray{T},
     # Setup
     sz = size(x)
     N = ndims(x)+1
-    k = N==2 ? 1<<L : 4^L
+    k = N==2 ? 1<<L : 1<<(2*L)
     xw = Array{T,N}(undef, (sz..., k))
     # Transform
     swpt!(xw, x, wt, L)
