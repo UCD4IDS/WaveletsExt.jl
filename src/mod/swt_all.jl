@@ -6,14 +6,14 @@
 Computes the stationary discrete wavelet transform (SDWT) on each slice of signal.
 
 # Arguments
-- `x::AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
-  signal.
+- `x::AbstractArray{T} where T<:Number`: Input `N-1`-D signals, where each signal is sliced
+  at dimension `N`.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
   transforms.
 
 # Returns
-- `::Array{T,3}`: Slices of transformed signals.
+- `::Array{T}`: Slices of transformed signals.
 
 # Examples
 ```julia
@@ -59,14 +59,14 @@ end
 Computes the inverse stationary discrete wavelet transform (ISDWT) on each slice of signal.
 
 # Arguments
-- `xw::AbstractArray{T,3} where T<:Number`: SDWT-transformed signal.
+- `xw::AbstractArray{T} where T<:Number`: SDWT-transformed signal.
 - `wt::OrthoFilter`: (Default: `nothing`) Orthogonal wavelet filter.
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.
 
 # Returns
-- `::Array{T,2}`: Slices of reconstructed signals.
+- `::Array{T}`: Slices of reconstructed signals.
 
 # Examples
 ```julia
@@ -129,14 +129,14 @@ end
 Computes the stationary wavelet packet transform (SWPT) on each slice of signal.
 
 # Arguments
-- `x::AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
-  signal.
+- `x::AbstractArray{T} where T<:Number`: Input `N-1`-D signals, where each signal is sliced
+  at dimension `N`.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
   transforms.
 
 # Returns
-- `::Array{T,3}`: Slices of transformed signals.
+- `::Array{T}`: Slices of transformed signals.
 
 # Examples
 ```julia
@@ -182,14 +182,14 @@ end
 Computes the inverse stationary wavelet packet transform (ISWPT) on each slice of signal.
 
 # Arguments
-- `xw::AbstractArray{T,3} where T<:Number`: SWPT-transformed signal.
+- `xw::AbstractArray{T} where T<:Number`: SWPT-transformed signal.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 - `sm::Integer`: If `sm` is included as an argument, the `sm`-shifted inverse transform will
   be computed. This results in significantly faster computation, but fails to fully utilize
   the strength of redundant wavelet transforms.
 
 # Returns
-- `::Array{T,2}`: Slices of reconstructed signals.
+- `::Array{T}`: Slices of reconstructed signals.
 
 # Examples
 ```julia
@@ -252,14 +252,14 @@ end
 Computes the stationary wavelet packet decomposition (SWPD) on each slice of signal.
 
 # Arguments
-- `x""AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
-  signal.
+- `x::AbstractArray{T} where T<:Number`: Input `N-1`-D signals, where each signal is sliced
+  at dimension `N`.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `Wavelets.maxtransformlevels(xᵢ)`) Number of levels of wavelet
   transforms.
 
 # Returns
-- `::Array{T,3}`: Slices of transformed signals.
+- `::Array{T}`: Slices of transformed signals.
 
 # Examples
 ```julia
@@ -308,7 +308,7 @@ Computes the inverse autocorrelation wavelet packet decomposition (ISWPD) on eac
 signal.
 
 # Arguments
-- `xw::AbstractArray{T,3} where T<:Number`: SWPT-transformed signal.
+- `xw::AbstractArray{T} where T<:Number`: SWPD-transformed signal.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 - `L::Integer`: (Default: `minimum(size(xw)[1:end-2]) |> maxtransformlevels`) Number of
   levels of wavelet transforms.
@@ -318,7 +318,7 @@ signal.
   the strength of redundant wavelet transforms.
 
 # Returns
-- `::Array{T,2}`: Slices of reconstructed signals.
+- `::Array{T}`: Slices of reconstructed signals.
 
 # Examples
 ```julia

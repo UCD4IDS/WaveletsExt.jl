@@ -8,14 +8,22 @@ Performs one level of the autocorrelation discrete wavelet transform (acdwt) on 
 is the raw signal). The vectors `h` and `g` are the detail and scaling filters.
 
 # Arguments
-- `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
+- `v::AbstractArray{T} where T<:Number`: Array of coefficients from a node at level `d`.
 - `d::Integer`: Depth level of `v`.
 - `h::Vector{S} where S<:Number`: High pass filter.
 - `g::Vector{S} where S<:Number`: Low pass filter.
 
 # Returns
-- `w₁::Vector{T}`: Output from the low pass filter.
-- `w₂::Vector{T}`: Output from the high pass filter.
+- `w₁::AbstractVector{T} where T<:Number` or `w₁::AbstractMatrix{T} where T<:Number`: Vector
+  allocation for output from low pass filter (1D case); or matrix allocation for output from
+  low + low pass filter (2D case).
+- `w₂::AbstractVector{T} where T<:Number` or `w₂::AbstractMatrix{T} where T<:Number`: Vector
+  allocation for output from high pass filter (1D case); or matrix allocation for output
+  from low + high pass filter (2D case).
+- `w₃::AbstractVector{T} where T<:Number` or `w₃::AbstractMatrix{T} where T<:Number`: Matrix
+  allocation for output from high + low pass filter (2D case).
+- `w₄::AbstractVector{T} where T<:Number` or `w₄::AbstractMatrix{T} where T<:Number`: Matrix
+  allocation for output from high + high pass filter (2D case).
 
 # Examples
 ```julia
@@ -48,18 +56,30 @@ end
 Same with `acdwt_step` but without array allocation.
 
 # Arguments
-- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
-  filter.
-- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
-  filter.
-- `v::AbstractVector{T} where T<:Number`: Vector of coefficients from a node at level `d`.
+- `w₁::AbstractVector{T} where T<:Number` or `w₁::AbstractMatrix{T} where T<:Number`: Vector
+  allocation for output from low pass filter (1D case); or matrix allocation for output from
+  low + low pass filter (2D case).
+- `w₂::AbstractVector{T} where T<:Number` or `w₂::AbstractMatrix{T} where T<:Number`: Vector
+  allocation for output from high pass filter (1D case); or matrix allocation for output
+  from low + high pass filter (2D case).
+- `w₃::AbstractVector{T} where T<:Number` or `w₃::AbstractMatrix{T} where T<:Number`: Matrix
+  allocation for output from high + low pass filter (2D case).
+- `w₄::AbstractVector{T} where T<:Number` or `w₄::AbstractMatrix{T} where T<:Number`: Matrix
+  allocation for output from high + high pass filter (2D case).
+- `v::AbstractArray{T} where T<:Number`: Array of coefficients from a node at level `d`.
 - `d::Integer`: Depth level of `v`.
 - `h::Vector{S} where S<:Number`: High pass filter.
 - `g::Vector{S} where S<:Number`: Low pass filter.
 
 # Returns
-- `w₁::Vector{T}`: Output from the low pass filter.
-- `w₂::Vector{T}`: Output from the high pass filter.
+- `w₁::AbstractVector{T} where T<:Number` or `w₁::AbstractMatrix{T} where T<:Number`: Output
+  from low pass filter (1D case); or output from low + low pass filter (2D case).
+- `w₂::AbstractVector{T} where T<:Number` or `w₂::AbstractMatrix{T} where T<:Number`: Output
+  from high pass filter (1D case); or output from low + high pass filter (2D case).
+- `w₃::AbstractVector{T} where T<:Number` or `w₃::AbstractMatrix{T} where T<:Number`: Output
+  from high + low pass filter (2D case).
+- `w₄::AbstractVector{T} where T<:Number` or `w₄::AbstractMatrix{T} where T<:Number`: Output
+  from high + high pass filter (2D case).
 
 # Examples
 ```julia
@@ -109,19 +129,26 @@ end
 
 """
     iacdwt_step(w₁, w₂)
+    iacdwt_step(w₁, w₂, w₃, w₄)
 
 Perform one level of the inverse autocorrelation discrete wavelet transform (IACDWT) on the
 vectors `w₁` and `w₂`, which are the `j+1`-th level scaling coefficients (Note that the 0th
 level scaling coefficients is the raw signal).
 
 # Arguments
-- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
-  filter.
-- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
-  filter.
+- `w₁::AbstractVector{T} where T<:Number` or `w₁::AbstractMatrix{T} where T<:Number`:
+  Coefficients of left child node (1D case); or coefficients from top left child node (2D
+  case).
+- `w₂::AbstractVector{T} where T<:Number` or `w₂::AbstractMatrix{T} where T<:Number`:
+  Coefficients of right child node (1D case); or coefficients from top right child node (2D
+  case).
+- `w₃::AbstractVector{T} where T<:Number` or `w₃::AbstractMatrix{T} where T<:Number`:
+  Coefficients from bottom left child node (2D case).
+- `w₄::AbstractVector{T} where T<:Number` or `w₄::AbstractMatrix{T} where T<:Number`:
+  Coefficients from bottom right child node (2D case).
 
 # Returns
-- `v::Vector{T}`: Reconstructed coefficients.
+- `v::Array{T}`: Reconstructed coefficients.
 
 # Examples
 ```julia
@@ -153,14 +180,20 @@ end
 Same as `iacdwt_step` but without array allocation.
 
 # Arguments
-- `v::AbstractVector{T} where T<:Number`: Vector allocation for reconstructed coefficients.
-- `w₁::AbstractVector{T} where T<:Number`: Vector allocation for output from low pass
-  filter.
-- `w₂::AbstractVector{T} where T<:Number`: Vector allocation for output from high pass
-  filter.
+- `v::AbstractArray{T} where T<:Number`: Array allocation for reconstructed coefficients.
+- `w₁::AbstractVector{T} where T<:Number` or `w₁::AbstractMatrix{T} where T<:Number`:
+  Coefficients of left child node (1D case); or coefficients from top left child node (2D
+  case).
+- `w₂::AbstractVector{T} where T<:Number` or `w₂::AbstractMatrix{T} where T<:Number`:
+  Coefficients of right child node (1D case); or coefficients from top right child node (2D
+  case).
+- `w₃::AbstractVector{T} where T<:Number` or `w₃::AbstractMatrix{T} where T<:Number`:
+  Coefficients from bottom left child node (2D case).
+- `w₄::AbstractVector{T} where T<:Number` or `w₄::AbstractMatrix{T} where T<:Number`:
+  Coefficients from bottom right child node (2D case).
 
 # Returns
-- `v::Vector{T}`: Reconstructed coefficients.
+- `v::Array{T}`: Reconstructed coefficients.
 
 # Examples
 ```julia

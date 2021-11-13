@@ -120,8 +120,8 @@ plot(p0, p1, p2, layout=(1,3))
 ```@example dwt
 using Images, TestImages
 
-x = testimage("cameraman");
-x = convert(Array{Float64}, x);
+img = testimage("cameraman");
+x = convert(Array{Float64}, img);
 
 # Wavelet Transforms
 xw0 = dwt(x, wt, 1);
@@ -135,7 +135,7 @@ p1 = heatmap([xw1[:,:,1] xw1[:,:,2]; xw1[:,:,3] xw1[:,:,4]], yflip=true, color=:
 plot!(p1, title="Stationary WT")
 p2 = heatmap([xw2[:,:,1] xw2[:,:,2]; xw2[:,:,3] xw2[:,:,4]], yflip=true, color=:greys, legend=false, xaxis=false, yaxis=false, xticks=false, yticks=false)
 plot!(p2, title="Autocorrelation WT")
-plot(p0, p1, p2, plot(framestyle=:none), layout=(2,2))
+plot(plot(img, title="Original"), p0, p1, p2, layout=(2,2))
 ```
 
 ### [Shift Invariant Wavelet Packet Decomposition] (@id si_transforms)

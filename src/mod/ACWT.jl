@@ -28,20 +28,19 @@ using LinearAlgebra, Wavelets
 # ========== Autocorrelation Discrete Wavelet Transform ==========
 @doc raw"""
 	acdwt(x, wt[, L])
-    acdwt(x, wt[, Lrow=maxtransformlevels(x[1,:]), Lcol=maxtransformlevels(x[:,1])])
 
 Performs a discrete autocorrelation wavelet transform for a given signal `x`.
 The signal can be 1D or 2D. The wavelet type `wt` determines the transform type.
 Refer to Wavelet.jl for a list of available methods.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+- `x::AbstractArray{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
     \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`::Matrix{T}`: Output from ACDWT on `x`.
+`::Array{T}`: Output from ACDWT on `x`.
 
 # Examples
 ```julia
@@ -82,9 +81,9 @@ end
 Same as `acdwt` but without array allocation.
 
 # Arguments
-- `xw::AbstractArray{T,2}`: An allocated array of dimension `(n,L+1)` to write the outputs
-  of `x` onto.
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+- `xw::AbstractArray{T}`: An allocated array of dimension `(n,L+1)` or `(n,m,3L+1)` to write
+  the outputs of `x` onto.
+- `x::AbstractArray{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
   \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
@@ -223,7 +222,7 @@ and 2D case.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 
 # Returns
-`::Vector{T}`: Inverse transformed signal.
+`::Array{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -258,14 +257,14 @@ end
 Similar to `iacdwt` but without array allocation.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number` or `x::AbstractArray{T,2} where T<:Number`:
+- `x::AbstractArray{T} where T<:Number` or `x::AbstractArray{T,2} where T<:Number`:
   Allocation for reconstructed signal.
-- `xw::AbstractArray{T,2} where T<:Number` or `xw::AbstractArray{T,4}`: ACDWT-transformed
+- `xw::AbstractArray{T} where T<:Number` or `xw::AbstractArray{T,4}`: ACDWT-transformed
   array.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 
 # Returns
-`::Vector{T}`: Inverse transformed signal.
+`x::Array{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -355,13 +354,13 @@ end
 Computes `L` levels of autocorrelation wavelet packet transforms (ACWPT) on `x`.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
-  \in \mathbb{N}``.
+- `x::AbstractArray{T} where T<:Number`: Original signal, preferably of size 2ᴷ or (2ᴷ,2ᴹ)
+  where ``K, M \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`::Matrix{T}`: Output from ACWPT on `x`.
+`::Array{T}`: Output from ACWPT on `x`.
 
 # Examples
 ```julia
@@ -401,14 +400,14 @@ end
 Same as `acwpt` but without array allocation.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: Allocation for transformed signal.
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
-  \in \mathbb{N}``.
+- `xw::AbstractArray{T} where T<:Number`: Allocation for transformed signal.
+- `x::AbstractArray{T} where T<:Number`: Original signal, preferably of size 2ᴷ or (2ᴷ,2ᴹ)
+  where ``K, M \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`xw::Matrix{T}`: Output from ACWPT on `x`.
+`xw::Array{T}`: Output from ACWPT on `x`.
 
 # Examples
 ```julia
@@ -512,11 +511,11 @@ Computes the inverse autocorrelation wavelet packet transform (IACWPT) on `xw`.
     `wpt` and `swpt`, but is ignored during the reconstruction of signals.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: ACWPT-transformed array.
+- `xw::AbstractArray{T} where T<:Number`: ACWPT-transformed array.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 
 # Returns
-`::Vector{T}`: Inverse transformed signal.
+`::Array{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -554,12 +553,12 @@ end
 Same as `iacwpt` but without array allocation.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Allocated array for output.
-- `xw::AbstractArray{T,2} where T<:Number`: ACWPD-transformed array.
+- `x::AbstractArray{T} where T<:Number`: Allocated array for output.
+- `xw::AbstractArray{T} where T<:Number`: ACWPD-transformed array.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 
 # Returns
-`x::Vector{T}`: Inverse transformed signal.
+`x::Array{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -652,17 +651,18 @@ end
 @doc raw"""
     acwpd(x, wt[, L])
 
-Performs a discrete autocorrelation wavelet packet transform for a given signal `x`.
-The wavelet type `wt` determines the transform type. Refer to Wavelet.jl for a list of available methods.
+Performs a discrete autocorrelation wavelet packet transform for a given signal `x`. The
+wavelet type `wt` determines the transform type. Refer to Wavelet.jl for a list of available
+methods.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
-  \in \mathbb{N}``.
+- `x::AbstractArray{T} where T<:Number`: Original signal, preferably of size 2ᴷ or (2ᴷ,2ᴹ)
+  where ``K, M \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`::Matrix{T}`: Output from ACWPD on `x`.
+`::Array{T}`: Output from ACWPD on `x`.
 
 # Examples
 ```julia
@@ -705,14 +705,14 @@ end
 Same as `acwpd` but without array allocation.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: Allocated array for output.
-- `x::AbstractVector{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
+- `xw::AbstractArray{T} where T<:Number`: Allocated array for output.
+- `x::AbstractArray{T} where T<:Number`: Original signal, preferably of size 2ᴷ where ``K
   \in \mathbb{N}``.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition.
 
 # Returns
-`xw::Matrix{T}`: Output from ACWPD on `x`.
+`xw::Array{T}`: Output from ACWPD on `x`.
 
 # Examples
 ```julia
@@ -813,14 +813,14 @@ decomposition tree.
     (`denoise`/`denoiseall`) before being reconstructed.
 
 # Arguments
-- `xw::AbstractArray{T,2} where T<:Number`: ACWPD-transformed array.
+- `xw::AbstractArray{T} where T<:Number`: ACWPD-transformed array.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition used
   for reconstruction.
 - `tree::BitVector`: Binary tree for inverse transform to be computed accordingly. 
 
 # Returns
-`::Vector{T}`: Inverse transformed signal.
+`::Array{T}`: Inverse transformed signal.
 
 # Examples
 ```julia
@@ -883,15 +883,15 @@ end
 Same as `iacwpd` but with no array allocation.
 
 # Arguments
-- `x::AbstractVector{T} where T<:Number`: Allocated array for output.
-- `xw::AbstractArray{T,2} where T<:Number`: ACWPD-transformed array.
+- `x::AbstractArray{T} where T<:Number`: Allocated array for output.
+- `xw::AbstractArray{T} where T<:Number`: ACWPD-transformed array.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `maxtransformlevels(x)`) Number of levels of decomposition used
   for reconstruction.
 - `tree::BitVector`: Binary tree for inverse transform to be computed accordingly. 
 
 # Returns
-`x::Vector{T}`: Inverse transformed signal.
+`x::Array{T}`: Inverse transformed signal.
 
 # Examples
 ```julia

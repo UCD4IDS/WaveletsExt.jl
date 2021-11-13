@@ -6,14 +6,14 @@
 Computes the autocorrelation discrete wavelet transform (ACDWT) on each slice of signal.
 
 # Arguments
-- `x::AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
-  signal.
+- `x::AbstractArray{T} where T<:Number`: Input `N-1`-D signals, where each signal is sliced
+  at dimension `N`.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `minimum(size(xw)[1:end-1]) |> maxtransformlevels`) Number of
   levels of wavelet transforms.
 
 # Returns
-- `::Array{T,3}`: Slices of transformed signals.
+- `::Array{T}`: Slices of transformed signals.
 
 # Examples
 ```julia
@@ -59,11 +59,11 @@ Computes the inverse autocorrelation discrete wavelet transform (IACDWT) on each
 signal.
 
 # Arguments
-- `xw::AbstractArray{T,3} where T<:Number`: ACDWT-transformed signal.
+- `xw::AbstractArray{T} where T<:Number`: ACDWT-transformed signal.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 
 # Returns
-- `::Array{T,2}`: Slices of reconstructed signals.
+- `::Array{T}`: Slices of reconstructed signals.
 
 # Examples
 ```julia
@@ -109,14 +109,14 @@ end
 Computes the autocorrelation wavelet packet transform (ACWPT) on each slice of signal.
 
 # Arguments
-- `x""AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
-  signal.
+- `x::AbstractArray{T} where T<:Number`: Input `N-1`-D signals, where each signal is sliced
+  at dimension `N`.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `minimum(size(xw)[1:end-1]) |> maxtransformlevels`) Number of
   levels of wavelet transforms.
 
 # Returns
-- `::Array{T,3}`: Slices of transformed signals.
+- `::Array{T}`: Slices of transformed signals.
 
 # Examples
 ```julia
@@ -162,11 +162,11 @@ Computes the inverse autocorrelation wavelet packet transform (IACWPT) on each s
 signal.
 
 # Arguments
-- `xw::AbstractArray{T,3} where T<:Number`: ACWPT-transformed signal.
+- `xw::AbstractArray{T} where T<:Number`: ACWPT-transformed signal.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 
 # Returns
-- `::Array{T,2}`: Slices of reconstructed signals.
+- `::Array{T}`: Slices of reconstructed signals.
 
 # Examples
 ```julia
@@ -212,14 +212,14 @@ end
 Computes the autocorrelation wavelet packet decomposition (ACWPD) on each slice of signal.
 
 # Arguments
-- `x""AbstractArray{T,2} where T<:Number`: Input signals, where each column corresponds to a
-  signal.
+- `x::AbstractArray{T} where T<:Number`: Input `N-1`-D signals, where each signal is sliced
+  at dimension `N`.
 - `wt::OrthoFilter`: Orthogonal wavelet filter.
 - `L::Integer`: (Default: `minimum(size(xw)[1:end-1]) |> maxtransformlevels`) Number of
   levels of wavelet transforms.
 
 # Returns
-- `::Array{T,3}`: Slices of transformed signals.
+- `::Array{T}`: Slices of transformed signals.
 
 # Examples
 ```julia
@@ -268,14 +268,14 @@ Computes the inverse autocorrelation wavelet packet decomposition (IACWPD) on ea
 signal.
 
 # Arguments
-- `xw::AbstractArray{T,3} where T<:Number`: ACWPT-transformed signal.
+- `xw::AbstractArray{T} where T<:Number`: ACWPD-transformed signal.
 - `wt::Union{OrthoFilter, Nothing}`: (Default: `nothing`) Orthogonal wavelet filter.
 - `L::Integer`: (Default: `minimum(size(xw)[1:end-2]) |> maxtransformlevels`) Number of
   levels of wavelet transforms.
 - `tree::BitVector`: Binary tree for inverse transform to be computed accordingly.
 
 # Returns
-- `::Array{T,2}`: Slices of reconstructed signals.
+- `::Array{T}`: Slices of reconstructed signals.
 
 # Examples
 ```julia
