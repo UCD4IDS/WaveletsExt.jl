@@ -31,6 +31,7 @@ This package is written and maintained by Zeng Fung Liew and Shozen Dan under th
 
 ## What's New (v0.1.11)
 - **All types of 2D wavelet transforms up and running.** Discrete wavelet transforms, wavelet packet transforms, and wavelet packet decompositions for standard, autocorrelation, and stationary transforms working well with improved speeds and memory allocations.
+- **2D best basis algorithms up and running.** Best basis algorithms such as standard best basis, joint best basis (JBB), and least statistically dependent basis (LSDB) now support 2D wavelet transforms.
 
 ## What's New (v0.1.10)
 - **Direct support for wavelet transform of multiple signals.** Since the current package deals
