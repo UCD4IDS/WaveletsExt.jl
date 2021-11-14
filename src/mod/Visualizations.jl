@@ -1,6 +1,7 @@
 module Visualizations
 export 
     plot_tfbdry,
+    plot_tfbdry2,
     wiggle,
     wiggle!
 
@@ -103,6 +104,8 @@ tree = maketree(128, 7, :dwt)
 # Plot the leaf nodes
 plot_tfbdry(tree)
 ```
+
+**See also:** [`plot_tfbdry2`](@ref)
 """
 function plot_tfbdry(tree::BitVector,
                      depth::Integer = log2(length(tree)+1)-1 |> Int;
@@ -111,7 +114,7 @@ function plot_tfbdry(tree::BitVector,
                      ln_col::Symbol = :white,
                      bg_col::Symbol = :black)
 
-    @assert 0 <= start <= 1
+    @assert 0 ≤ start ≤ 1
     leaf = getleaf(tree,:binary)
 
     ncol = 1 << depth
@@ -141,6 +144,59 @@ function plot_tfbdry(tree::BitVector,
     plot!(p, (start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = ln_col)
     plot!(p, yaxis = :flip)
 
+    return p
+end
+
+"""
+    plot_tfbdry2(tree[, n, m])
+
+Given a quadtree, output the visual representation of the leaf nodes.
+
+# Arguments
+- `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
+- `n::Integer`: Vertical size of signal.
+- `m::Integer`: Horizontal size of signal.
+
+# Returns
+`::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Build a quadtree using Wavelets `maketree`
+tree = maketree(128, 128, 7, :dwt)
+
+# Plot the leaf nodes
+plot_tfbdry2(tree)
+```
+
+**See also:* [`plot_tfbdry`](@ref)
+"""
+plot_tfbdry2(tree::BitVector) = plot_tfbdry2(tree, 2^(getdepth(length(tree),:quad)+1))
+plot_tfbdry2(tree::BitVector, n::Integer) = plot_tfbdry2(tree, n, n)
+function plot_tfbdry2(tree::BitVector, n::T, m::T) where T<:Integer
+    xticks = rem(m,4)==0 && m≥4 ? (0:(m÷4):m) : (0:m:m)
+    yticks = rem(n,4)==0 && n≥4 ? (0:(n÷4):n) : (0:n:n)
+    p = plot(xaxis=false, xticks=xticks, xlims=(0,m), 
+             yaxis=false, yticks=yticks, ylims=(0,n), 
+             grid=false, yflip=true, legend=false)
+    vline!(p, [0,n], color=:black)
+    hline!(p, [0,m], color=:black)
+    for i in eachindex(tree)
+        if tree[i]
+            x_rng = getrowrange(m, i)
+            y_rng = getcolrange(n, i)
+            xₛ = x_rng[begin] - 1
+            yₛ = y_rng[begin] - 1
+            xₑ = x_rng[end]
+            yₑ = y_rng[end]
+            xₘ = (xₛ+xₑ)÷2
+            yₘ = (yₛ+yₑ)÷2
+            plot!(p, [xₘ,xₘ], [yₛ,yₑ], color=:black)
+            plot!(p, [xₛ,xₑ], [yₘ,yₘ], color=:black)
+        end
+    end
     return p
 end
 
