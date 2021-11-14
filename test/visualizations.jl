@@ -5,6 +5,15 @@ tree = BitVector([1,1,1])
 @test_nowarn plot_tfbdry(tree, start=1)
 @test_throws AssertionError plot_tfbdry(tree, start=2)
 @test_nowarn plot_tfbdry(tree, nd_col=:red, bg_col=:white, ln_col=:black)
+# plot_tfbdry2() test
+tree = maketree(4,4,2,:dwt)
+@test isa(plot_tfbdry2(tree), Plots.Plot{Plots.GRBackend})
+@test_nowarn plot_tfbdry2(tree)
+@test_nowarn plot_tfbdry2(tree, 4)
+@test_nowarn plot_tfbdry2(tree, 4, 8)
+@test_throws AssertionError plot_tfbdry2(tree, 3, 8)
+@test_throws AssertionError plot_tfbdry2(tree, 4, 3)
+@test_throws AssertionError plot_tfbdry2(tree, 6, 6)
 x = randn(16,5)
 # wiggle() test
 @test typeof(wiggle(x)) == Plots.Plot{Plots.GRBackend}

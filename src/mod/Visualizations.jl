@@ -176,23 +176,31 @@ plot_tfbdry2(tree)
 plot_tfbdry2(tree::BitVector) = plot_tfbdry2(tree, 2^(getdepth(length(tree),:quad)+1))
 plot_tfbdry2(tree::BitVector, n::Integer) = plot_tfbdry2(tree, n, n)
 function plot_tfbdry2(tree::BitVector, n::T, m::T) where T<:Integer
-    xticks = rem(m,4)==0 && m≥4 ? (0:(m÷4):m) : (0:m:m)
-    yticks = rem(n,4)==0 && n≥4 ? (0:(n÷4):n) : (0:n:n)
+    # Sanity check
+    L = getdepth(length(tree), :quad) + 1               # Max possible decomposition level
+    @assert n ≥ 1<<L
+    @assert m ≥ 1<<L
+    @assert rem(n, 1<<L) == 0
+    @assert rem(m, 1<<L) == 0
+    # Build plot frame
+    xticks = rem(m,4)==0 && m≥4 ? (0:(m÷4):m) : (0:m:m) # Format x-ticks
+    yticks = rem(n,4)==0 && n≥4 ? (0:(n÷4):n) : (0:n:n) # Format y-ticks
     p = plot(xaxis=false, xticks=xticks, xlims=(0,m), 
              yaxis=false, yticks=yticks, ylims=(0,n), 
              grid=false, yflip=true, legend=false)
-    vline!(p, [0,n], color=:black)
-    hline!(p, [0,m], color=:black)
+    vline!(p, [0,n], color=:black)                      # Vertical frames
+    hline!(p, [0,m], color=:black)                      # Horizontal frames
+    # Draw visual representation of leaves
     for i in eachindex(tree)
-        if tree[i]
+        if tree[i]                      # Draw node's children if node exists
             x_rng = getrowrange(m, i)
             y_rng = getcolrange(n, i)
-            xₛ = x_rng[begin] - 1
-            yₛ = y_rng[begin] - 1
-            xₑ = x_rng[end]
-            yₑ = y_rng[end]
-            xₘ = (xₛ+xₑ)÷2
-            yₘ = (yₛ+yₑ)÷2
+            xₛ = x_rng[begin] - 1       # x-axis start index
+            yₛ = y_rng[begin] - 1       # y-axis start index
+            xₑ = x_rng[end]             # x-axis end index
+            yₑ = y_rng[end]             # y-axis end index
+            xₘ = (xₛ+xₑ)÷2              # x-axis mid point
+            yₘ = (yₛ+yₑ)÷2              # y-axis midpoint
             plot!(p, [xₘ,xₘ], [yₛ,yₑ], color=:black)
             plot!(p, [xₛ,xₑ], [yₘ,yₘ], color=:black)
         end
