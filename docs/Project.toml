@@ -8,6 +8,8 @@ WaveletsExt = "8f464e1e-25db-479f-b0a5-b7680379e03f"
 
 [compat]
 Documenter = "0.27.6"
+Images = "0.24"
 Plots = "1.21.3"
+TestIMages = "1"
 Wavelets = "0.9"
 WaveletsExt = "0.1"

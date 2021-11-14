@@ -29,6 +29,10 @@ Extension). It contains additional functionalities that complement Wavelets.jl, 
 ## Authors
 This package is written and maintained by Zeng Fung Liew and Shozen Dan under the supervision of Professor Naoki Saito at the University of California, Davis.
 
+## What's New (v0.1.12)
+- **Bug fixes on best basis algorithms** to allow compatibility when partial wavelet decomposition is run.
+- **New function `plot_tfbdry2()` implemented.** Visual representation of leaf nodes for 2D best basis trees now available.
+
 ## What's New (v0.1.11)
 - **All types of 2D wavelet transforms up and running.** Discrete wavelet transforms, wavelet packet transforms, and wavelet packet decompositions for standard, autocorrelation, and stationary transforms working well with improved speeds and memory allocations.
 - **2D best basis algorithms up and running.** Best basis algorithms such as standard best basis, joint best basis (JBB), and least statistically dependent basis (LSDB) now support 2D wavelet transforms.

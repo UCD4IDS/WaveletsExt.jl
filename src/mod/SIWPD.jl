@@ -17,7 +17,7 @@ Computes the Shift-Invariant Wavelet Packet Decomposition originally developed
 by Cohen, Raz & Malah on the vector `x` using the discrete wavelet filter `wt`
 for `L` levels with depth `d`.
 """
-function siwpd(x::AbstractArray{T}, wt::OrthoFilter, 
+function siwpd(x::AbstractVector{T}, wt::OrthoFilter, 
         L::Integer=maxtransformlevels(x), d::Integer=L) where T<:Number
     
     g, h = WT.makereverseqmfpair(wt, true)       

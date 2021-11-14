@@ -129,8 +129,12 @@ end
 end
 
 @testset "Dataset" begin
-    x = [1, 0, 0, 0]
+    x = [1, 0, 0, 0]            # 1D case
     @test duplicatesignals(x, 2, 1) == [1 0; 0 1; 0 0; 0 0]
+    @test duplicatesignals(x, 2, 1, true) != duplicatesignals(x, 2, 1)
+    @test duplicatesignals(x, 2, 1, true, 0.5) != duplicatesignals(x, 2, 1)
+    x = [1 2 3; 4 5 6; 7 8 9]   # 2D case
+    @test duplicatesignals(x, 2, 1) == cat(x, circshift(x,1), dims=3)
     @test duplicatesignals(x, 2, 1, true) != duplicatesignals(x, 2, 1)
     @test duplicatesignals(x, 2, 1, true, 0.5) != duplicatesignals(x, 2, 1)
 

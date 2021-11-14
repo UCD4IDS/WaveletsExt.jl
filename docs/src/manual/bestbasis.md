@@ -36,9 +36,9 @@ Similarly, a quadtree, used to represent the basis of a 2D wavelet transform, us
 |![](../fig/quad_tree.PNG) |![](../fig/quad_tree_indexing.PNG) |
 
 ## Examples
-### Best Basis of each signal
+### 1D Best Basis
 Assume we are given a large amount of signals to transform to its best basis, one may use
-the following approach.
+the following approach, which uses the standard best basis algorithm to search for the best basis of each signal.
 
 ```@example wt
 using Wavelets, WaveletsExt, Plots
@@ -57,6 +57,17 @@ xw = wpdall(X, wt)
 trees = bestbasistreeall(xw, BB()); 
 nothing # hide
 ```
+
+Similarly, we can also find the best basis of the signals using Joint Best Basis (JBB) and Least Statistically Dependent Basis (LSDB). Note that these algorithms return 1 basis tree that generalizes the best basis over the entire set of signals.
+```@example wt
+# JBB
+treeⱼ = bestbasistree(xw, JBB())
+
+# LSDB
+treeₗ = bestbasistree(xw, LSDB());
+nothing # hide
+```
+
 One can then view the selected nodes from the best basis trees using the [`plot_tfbdry`](@ref WaveletsExt.Visualizations.plot_tfbdry) function as shown below.
 
 ```@example wt
@@ -69,26 +80,48 @@ p3 = plot_tfbdry(trees[:,3])
 plot!(p3, title="Signal 3 best basis")
 p4 = plot_tfbdry(trees[:,4])
 plot!(p4, title="Signal 4 best basis")
+p5 = plot_tfbdry(treeⱼ)
+plot!(p5, title="JBB")
+p6 = plot_tfbdry(treeₗ)
+plot!(p6, title="LSDB")
 
 # Draw all plots
-plot(p1, p2, p3, p4, layout=(2,2))
+plot(p1, p2, p3, p4, p5, p6, layout=(3,2))
 ```
 
-### Generalized Best Basis Algorithm
-Similarly, we can also find the best basis of the signals using Joint Best Basis (JBB) and Least Statistically Dependent Basis (LSDB). Note that these algorithms return 1 basis tree that generalizes the best basis over the entire set of signals.
+### 2D Best Basis
+Similar to the mechanics of the best basis algorithms for 1D signals, WaveletsExt also supports the best basis search for 2D signals.
 ```@example wt
-# JBB
-tree = bestbasistree(xw, JBB())
-p5 = plot_tfbdry(tree)
+using Images, TestImages
 
-# LSDB
-tree = bestbasistree(xw, LSDB())
-p6 = plot_tfbdry(tree)
+img = testimage("moonsurface");
+y = convert(Array{Float64}, img);
+Y = duplicatesignals(y, 4, 2, true, 0.5);
 
-# Show results
+# Decomposition of all signals
+yw = wpdall(Y, wt, 5)
+
+# Best basis trees
+trees = bestbasistreeall(yw, BB())
+treeⱼ = bestbasistree(yw, JBB())
+treeₗ = bestbasistree(yw, LSDB())
+
+# Plot each tree
+p1 = plot_tfbdry2(trees[:,1])
+plot!(p1, title="Signal 1 best basis")
+p2 = plot_tfbdry2(trees[:,2])
+plot!(p2, title="Signal 2 best basis")
+p3 = plot_tfbdry2(trees[:,3])
+plot!(p3, title="Signal 3 best basis")
+p4 = plot_tfbdry2(trees[:,4])
+plot!(p4, title="Signal 4 best basis")
+p5 = plot_tfbdry2(treeⱼ)
 plot!(p5, title="JBB")
+p6 = plot_tfbdry2(treeₗ)
 plot!(p6, title="LSDB")
-plot(p5, p6, layout=(1,2))
+
+# Draw all plots
+plot(p1, p2, p3, p4, p5, p6, layout=(3,2))
 ```
 
 ## [Best Basis of Shift-Invariant Wavelet Packet Decomposition](@id si_bestbasis)

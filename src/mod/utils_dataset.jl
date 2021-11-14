@@ -29,9 +29,9 @@ end
 # ----- Signal Generation -----
 # Make a set of circularly shifted and noisy signals of original signal.
 """
-    duplicatesignals(x, N, k[, noise=false, t=1])
+    duplicatesignals(x, n, k[, noise=false, t=1])
 
-Given a signal `x`, returns N shifted versions of the signal, each with shifts
+Given a signal `x`, returns `n` shifted versions of the signal, each with shifts
 of multiples of `k`. 
 
 Setting `noise = true` allows randomly generated Gaussian noises of μ = 0, 
@@ -39,7 +39,7 @@ Setting `noise = true` allows randomly generated Gaussian noises of μ = 0,
 
 # Arguments
 - `x::AbstractVector{T} where T<:Number`: 1D-signal to be duplicated.
-- `N::Integer`:: Number of duplicated signals.
+- `n::Integer`:: Number of duplicated signals.
 - `k::Integer`:: Circular shift size for each duplicated signal.
 - `noise::Bool`: (Default: `false`) Whether or not to add Gaussian noise.
 - `t::Real`: (Default: 1) Relative size of noise.
@@ -57,20 +57,21 @@ duplicatesignals(x, 5, 0)      # [x x x x x]
 
 *See also:* [`generatesignals`](@ref)
 """
-function duplicatesignals(x::AbstractVector{T}, 
-                          N::Integer, 
+function duplicatesignals(x::AbstractArray{T}, 
+                          n::Integer, 
                           k::Integer, 
                           noise::Bool = false, 
                           t::Real = 1) where T<:Number
 
-    n = length(x)
-    X = Array{T, 2}(undef, (n, N))
+    sz = size(x)
+    N = ndims(x) + 1
+    X = Array{T,N}(undef, (sz..., n))
     @inbounds begin
-        for i in axes(X,2)
-            X[:,i] = circshift(x, k*(i-1)) 
+        @views for (i, Xᵢ) in enumerate(eachslice(X, dims=N))
+            circshift!(Xᵢ, x, k*(i-1)) 
         end
     end
-    X = noise ? X + t*randn(n,N) : X
+    X = noise ? X + t*randn(sz...,n) : X
     return X
 end
 

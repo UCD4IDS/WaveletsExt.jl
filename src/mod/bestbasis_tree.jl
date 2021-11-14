@@ -128,7 +128,7 @@ function tree_costs(X::AbstractArray{T,3}, method::LSDB) where T<:AbstractFloat
             costs[i] = coefcost(X[:,i,:], method.cost) / (1<<j)
         end
     else
-        costs = Vector{T}(undef, gettreelength(2*n))
+        costs = Vector{T}(undef, gettreelength(1<<L))
         i = 1
         for d in 0:(L-1)
             n₀ = nodelength(n, d)
@@ -152,7 +152,7 @@ function tree_costs(X::AbstractArray{T,4}, method::LSDB) where T<:AbstractFloat
             costs[i] = coefcost(X[:,:,i,:], method.cost) / (1<<(2*d))
         end
     else
-        costs = Vector{T}(undef, gettreelength(2*n,2*m))
+        costs = Vector{T}(undef, gettreelength(1<<L,1<<L))
         for i in eachindex(costs)
             d = getdepth(i,:quad)
             rng₁ = getrowrange(n,i)
@@ -181,7 +181,7 @@ function tree_costs(X::AbstractArray{T,3}, method::JBB) where T<:AbstractFloat
             costs[i] = coefcost(σ[:, i], method.cost) / (1<<j)
         end
     else
-        costs = Vector{T}(undef, gettreelength(2*n))
+        costs = Vector{T}(undef, gettreelength(1<<L))
         i = 1   # iterates over the nodes for the costs variable
         for lvl in 0:(L-1)
             n₀ = nodelength(n, lvl)
@@ -212,7 +212,7 @@ function tree_costs(X::AbstractArray{T,4}, method::JBB) where T<:AbstractFloat
             costs[i] = coefcost(σ[:,:,i], method.cost) / (1<<(2*d))
         end
     else
-        costs = Vector{T}(undef,gettreelength(2*n,2*m))
+        costs = Vector{T}(undef,gettreelength(1<<L,1<<L))
         for i in eachindex(costs)
             d = getdepth(i,:quad)
             rng₁ = getrowrange(n,i)
@@ -261,7 +261,7 @@ function tree_costs(X::AbstractArray{T,3}, method::BB) where T<:AbstractFloat
             costs[i] = coefcost(X[:,:,i], method.cost, nrm) / (1<<(2*d))
         end
     else
-        costs = Vector{T}(undef, gettreelength(2*n,2*m))
+        costs = Vector{T}(undef, gettreelength(1<<L,1<<L))
         for i in eachindex(costs)
             d = getdepth(i,:quad)
             rng₁ = getrowrange(n,i)
