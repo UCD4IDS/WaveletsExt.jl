@@ -1,3 +1,6 @@
+ENV["GKSwstype"] = "100"
+ENV["PLOTS_TEST"] = "true"
+
 using 
     Test,
     Distributions,
