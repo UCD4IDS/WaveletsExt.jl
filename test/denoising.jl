@@ -102,6 +102,5 @@ end
     @test typeof(Denoising.surethreshold(x, true, tree)) <: Real
     @test typeof(relerrorthreshold(x, true, tree)) <: Real
     # relative error plot
-    @test typeof(relerrorthreshold(x, true, tree, makeplot=true)[2]) == 
-        Plots.Plot{Plots.GRBackend}
+    # @test typeof(relerrorthreshold(x, true, tree, makeplot=true)[2]) == Plots.Plot{Plots.GRBackend}
 end
