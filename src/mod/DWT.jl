@@ -508,6 +508,7 @@ function Wavelets.Transforms.wpt!(y::AbstractArray{T,2},
     # ----- Allocation and setup to match Wavelets.jl's function requirements -----
     m, n = size(x)
     g, h = WT.makereverseqmfpair(wt, true)      # low & high pass filters
+    y[:] = copy(x)
     yₜ = copy(x)                                 # Placeholder of y
     temp = Array{T,2}(undef, (m,n))             # Temp array
     # ----- Compute transforms based on tree -----
@@ -669,6 +670,7 @@ function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},
     # ----- Setup -----
     m, n = size(xw)
     g, h = WT.makereverseqmfpair(wt, true)      # low & high pass filters
+    x̂[:] = copy(xw)
     xwₜ = copy(xw)                               # Placeholder for xw
     temp = Array{T,2}(undef, (m,n))             # temp array
     # ----- Compute transforms based on tree -----
