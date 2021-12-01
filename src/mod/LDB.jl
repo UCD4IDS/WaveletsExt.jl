@@ -26,6 +26,7 @@ export
     # local discriminant basis
     LocalDiscriminantBasis,
     fit!,
+    fitdec!,
     fit_transform,
     transform,
     inverse_transform,
@@ -95,7 +96,7 @@ following field values:
     dp::DiscriminantPower = BasisDiscriminantMeasure()
     top_k::Union{Integer, Nothing} = nothing
     n_features::Union{Integer, Nothing} = nothing
-    # to be computed in fit!
+    # to be computed in fit! or fitdec!
     sz::Union{Tuple{Vararg{T,N}} where {T<:Integer,N}, Nothing} = nothing
     Γ::Union{AbstractArray{<:AbstractFloat}, 
              AbstractArray{NamedTuple{(:coef, :weight), Tuple{S1, S2}}} where
@@ -183,13 +184,12 @@ function fit!(f::LocalDiscriminantBasis, X::AbstractArray{S}, y::AbstractVector{
     Xw = wpdall(X, f.wt, f.max_dec_level)
 
     # fit local discriminant basis
-    fit!(f, Xw, y)
+    fitdec!(f, Xw, y)
     return nothing
 end
 
-# TODO: parameter types are same as the one above
-function fit!(f::LocalDiscriminantBasis, Xw::AbstractArray{S}, y::AbstractVector{T}) where 
-             {S<:AbstractFloat, T}
+function fitdec!(f::LocalDiscriminantBasis, Xw::AbstractArray{S}, y::AbstractVector{T}) where 
+                {S<:AbstractFloat, T}
     # basic summary of data
     @assert 3 ≤ ndims(Xw) ≤ 4
     c = unique(y)       # unique classes
@@ -316,7 +316,7 @@ function fit_transform(f::LocalDiscriminantBasis,
     Xw = wpdall(X, f.wt, f.max_dec_level)
 
     # fit LDB and return best features
-    fit!(f, Xw, y)
+    fitdec!(f, Xw, y)
     Xw = getbasiscoefall(Xw, f.tree)
     # Extract best features
     Xc = Array{S,2}(undef, f.n_features, N)
@@ -373,7 +373,7 @@ function change_nfeatures(f::LocalDiscriminantBasis, x::AbstractArray{T,2},
     # check measurements
     @assert !isnothing(f.n_features)
     @assert size(x,1) == f.n_features || throw(ArgumentError("f.n_features and number of rows of x do not match!"))
-    @assert 1 ≤ n_features ≤ f.n
+    @assert 1 ≤ n_features ≤ prod(f.sz)
 
     # change number of features
     if f.n_features ≥ n_features

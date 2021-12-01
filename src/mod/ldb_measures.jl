@@ -376,8 +376,13 @@ function discriminant_power(coefs::AbstractArray{T}, y::AbstractVector{S},
     Eα = mean(Eαᵢ, dims = N)                      # overall mean of each entry
     pᵢ = Nᵢ / sum(Nᵢ)                             # proportions of each class
 
-    # TODO: This does not work when dealing with 2D signals (multiplication issue)
-    power = ((Eαᵢ - (Eα .* Eαᵢ)).^2 * pᵢ) ./ (Varαᵢ * pᵢ)
+    if N==2     # For 1D signals, can be done via matrix multiplication
+        power = ((Eαᵢ - (Eα .* Eαᵢ)).^2 * pᵢ) ./ (Varαᵢ * pᵢ)
+    else        # For 2D signals, requires some manual work
+        pᵢ = reshape(pᵢ,1,1,:)
+        power = sum((Eαᵢ-(Eα.*Eαᵢ)).^2 .* pᵢ, dims=N) ./ sum(Varαᵢ.*pᵢ, dims=N)
+        power = reshape(power, sz...)
+    end
     order = sortperm(vec(power), rev = true)
 
     return (power, order)
@@ -411,8 +416,13 @@ function discriminant_power(coefs::AbstractArray{T}, y::AbstractVector{S},
     Medα = median(Medαᵢ, dims = N)               # overall mean of each entry
     pᵢ = Nᵢ / sum(Nᵢ)                            # proportions of each class
 
-    # TODO: This does not work when dealing with 2D signals (multiplication issue)
-    power = ((Medαᵢ - (Medα .* Medαᵢ)).^2 * pᵢ) ./ (Madαᵢ * pᵢ)
+    if N==2     # For 1D signals, can be done via matrix multiplication
+        power = ((Medαᵢ - (Medα.*Medαᵢ)).^2 *pᵢ) ./ (Madαᵢ * pᵢ)
+    else        # For 2D signals, requires some manual work
+        pᵢ = reshape(pᵢ,1,1,:)
+        power = sum((Medαᵢ-(Medα.*Medαᵢ)).^2 .* pᵢ, dims=N) ./ sum(Madαᵢ.*pᵢ, dims=N)
+        power = reshape(power, sz...)
+    end
     order = sortperm(vec(power), rev = true)
 
     return (power, order)
