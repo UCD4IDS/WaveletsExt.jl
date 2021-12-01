@@ -1,4 +1,6 @@
-## DISCRIMINANT MEASURES
+import Combinatorics: combinations
+
+## ---------- DISCRIMINANT MEASURES ----------
 """
 Discriminant measure for Local Discriminant Basis. Current available subtypes
 are:
@@ -44,7 +46,10 @@ this aims to make the measure more symmetric.
 
 Equation: Denote the Asymmetric Relative Entropy as ``D_A(p,q)``, then
 
-``D(p,q) = D_A(p,q) + D_A(q,p) = \sum p(x) \log \frac{p(x)}{q(x)} + q(x) \log \frac{q(x)}{p(x)}``
+``D(p,q) = D_A(p,q) + D_A(q,p) = \sum p(x) \log \frac{p(x)}{q(x)} + q(x) \log
+\frac{q(x)}{p(x)}``
+
+**See also:** [`AsymmetricRelativeEntropy`](@ref)
 """
 struct SymmetricRelativeEntropy <: ProbabilityDensityDM end
 
@@ -75,12 +80,12 @@ struct HellingerDistance <: ProbabilityDensityDM end
 
 Earth Mover Distance discriminant measure for the Signatures energy map.
 
-Equation: 
-``E(P,Q) = \frac{\sum_{k=1}^{m+n+1} |\hat p_k - \hat q_k| (r_{k+1} - r_k)}{w_\Sigma}``
+Equation: ``E(P,Q) = \frac{\sum_{k=1}^{m+n+1} |\hat p_k - \hat q_k| (r_{k+1} -
+r_k)}{w_\Sigma}``
 
-where ``r_1, r_2, \ldots, r_{m+n}`` is the sorted list of ``p_1, \ldots, p_m, 
-q_1, \ldots, q_n`` and ``\hat p_k = \sum_{p_i \leq r_k} w_{p_i}``, 
-``\hat q_k = \sum_{q)i \leq r_k} w_{q_i}``.
+where ``r_1, r_2, \ldots, r_{m+n}`` is the sorted list of ``p_1, \ldots, p_m, q_1, \ldots,
+q_n`` and ``\hat p_k = \sum_{p_i \leq r_k} w_{p_i}``, ``\hat q_k = \sum_{q)i \leq r_k}
+w_{q_i}``.
 """
 struct EarthMoverDistance <: SignaturesDM end
 
@@ -89,163 +94,183 @@ struct EarthMoverDistance <: SignaturesDM end
 
 Returns the discriminant measure of each node calculated from the energy maps.
 """
-function discriminant_measure(Γ::AbstractArray{T}, 
-                              dm::ProbabilityDensityDM) where T<:Number
+function discriminant_measure(Γ::AbstractArray{T}, dm::ProbabilityDensityDM) where 
+                              T<:AbstractFloat
+    # Basic summary of data
+    N = ndims(Γ)
+    nc = size(Γ,N)
+    @assert 3 ≤ N ≤ 5
+    @assert nc > 1
+    #=======================================================================================
+    Classifying the type of signals and energy maps based on Γ
 
-    # basic summary of data
-    @assert 3 <= ndims(Γ) <= 4
-    n = size(Γ,1)
-    L = size(Γ,2)
-    C = size(Γ)[end]
-    @assert C > 1       # ensure more than 1 class
-
-    D = zeros(Float64, (n,L))
-    @inbounds begin
-        for i in 1:(C-1)
-            for j in (i+1):C
-                if ndims(Γ) == 3
-                    D += discriminant_measure(Γ[:,:,i], Γ[:,:,j], dm)
-                else
-                    D += discriminant_measure(Γ[:,:,:,i], Γ[:,:,:,j], dm)
-                end
-            end
-        end
+    1. ndims(Γ)=3                           : Time frequency energy map on 1D signals
+    2. ndims(Γ)=4 and size(Γ,3) small (<100): Time frequency energy map on 2D signals
+    3. ndims(Γ)=4 and size(Γ,3) large (≥100): Probability density energy map on 1D signals
+    4. ndims(Γ)=5                           : Probability density energy map on 2D signals
+    =======================================================================================#
+    if (N==3) || (N==4 && size(Γ,3)≥100)
+        sz = [size(Γ,1)]
+        L = size(Γ,2)
+        pdf_len = N==3 ? 1 : size(Γ,3)
+    elseif (N==4 && size(Γ,3)<100) || (N==5)
+        sz = size(Γ)[1:2]
+        L = size(Γ,3)
+        pdf_len = N==5 ? size(Γ,4) : 1
+    else
+        throw(ArgumentError("Γ has uninterpretable dimensions/unknown size."))
     end
 
+    # --- Compute pairwise discriminant measure ---
+    D = zeros(T, (sz...,L))
+    for (i,j) in combinations(1:nc,2)
+        if N==3
+            Γᵢ = @view Γ[:,:,i]         # Energy map for i-th class
+            Γⱼ = @view Γ[:,:,j]         # Energy map for j-th class
+        elseif N==4
+            Γᵢ = @view Γ[:,:,:,i]       # Energy map for i-th class
+            Γⱼ = @view Γ[:,:,:,j]       # Energy map for j-th class
+        else # N==5
+            Γᵢ = @view Γ[:,:,:,:,i]     # Energy map for i-th class
+            Γⱼ = @view Γ[:,:,:,:,j]     # Energy map for j-th class
+        end
+        D += pairwise_discriminant_measure(Γᵢ, Γⱼ, dm)
+    end
     return D
 end
 
 # discriminant measure for EMD
-function discriminant_measure(Γ::AbstractArray{NamedTuple{(:coef, :weight), Tuple{S1,S2}},1},
+function discriminant_measure(Γ::AbstractArray{NamedTuple{(:coef, :weight), Tuple{S₁,S₂}},1},
                               dm::SignaturesDM) where 
-                             {S1<:Array{<:Number}, 
-                              S2<:Union{AbstractFloat,Array{<:AbstractFloat}}}
+                             {S₁<:Array{T} where T<:AbstractFloat, 
+                              S₂<:Union{T,Array{T}} where T<:AbstractFloat}
     # Basic summary of data
-    C = length(Γ)
-    @assert C > 1
-    n = size(Γ[1][:coef], 1)
-    L = size(Γ[1][:coef], 2)
+    nc = length(Γ)
+    @assert nc > 1
+    T = eltype(Γ[1][:coef])
+    sz = size(Γ[1][:coef])[1:end-2]
+    L = size(Γ[1][:coef])[end-1]
 
-    D = zeros(Float64, (n,L))
-    @inbounds begin
-        for i in 1:(C-1)
-            for j in (i+1):C
-                D += discriminant_measure(Γ[i], Γ[j], dm)
-            end
-        end
+    D = zeros(T, (sz...,L))
+    for (Γᵢ,Γⱼ) in combinations(Γ,2)
+        D += pairwise_discriminant_measure(Γᵢ, Γⱼ, dm)
     end
-
     return D
 end
 
 # discriminant measure between 2 energy maps
-function discriminant_measure(Γ₁::AbstractArray{T}, Γ₂::AbstractArray{T}, 
-        dm::ProbabilityDensityDM) where T<:Number
-
+function pairwise_discriminant_measure(Γ₁::AbstractArray{T}, Γ₂::AbstractArray{T}, 
+                                       dm::ProbabilityDensityDM) where T<:AbstractFloat
     # parameter checking and basic summary
-    @assert 2 <= ndims(Γ₁) <= 3
+    N = ndims(Γ₁)
+    @assert 2 ≤ ndims(Γ₁) ≤ 4
     @assert size(Γ₁) == size(Γ₂)
-    n = size(Γ₁,1)
-    L = size(Γ₁,2)
+    #=======================================================================================
+    Classifying the type of signals and energy maps based on Γ
 
-    D = Array{T, 2}(undef, (n,L))
-    @inbounds begin
-        for i in axes(D,1)
-            for j in axes(D,2)
-                if ndims(Γ₁) == 2       # time frequency energy map case
-                    D[i,j] = discriminant_measure(Γ₁[i,j], Γ₂[i,j], dm)
-                else                    # probability density energy map case
-                    for k in axes(Γ₁,3)
-                        D[i,j] += discriminant_measure(Γ₁[i,j,k], Γ₂[i,j,k], dm)
-                    end
-                end
-            end
-        end
+    1. ndims(Γ)=2                           : Time frequency energy map on 1D signals
+    2. ndims(Γ)=3 and size(Γ,3) small (<100): Time frequency energy map on 2D signals
+    3. ndims(Γ)=3 and size(Γ,3) large (≥100): Probability density energy map on 1D signals
+    4. ndims(Γ)=4                           : Probability density energy map on 2D signals
+    =======================================================================================#
+    if (N==2) || (N==3 && size(Γ₁,3)≥100)
+        sz = [size(Γ₁,1)]
+        L = size(Γ₁,2)
+    elseif (N==3 && size(Γ₁,3)<100) || (N==4)
+        sz = size(Γ₁)[1:2]
+        L = size(Γ₁,3)
+    else
+        throw(ArgumentError("Γ has uninterpretable dimensions/unknown size."))
     end
 
+    # --- Pairwise discriminant measure for each element ---
+    D = zeros(T, (sz...,L))
+    slice_size = prod([sz...,L])        # Number of elements in each slice of the pdf
+    map_size = prod(size(Γ₁))           # Number of elements in entire energy map
+    for i in 1:slice_size
+        for j in i:slice_size:map_size
+            D[i] += pairwise_discriminant_measure(Γ₁[j], Γ₂[j], dm)
+        end
+    end
     return D
 end
 
 # discriminant measure between 2 nergy maps for EMD
-function discriminant_measure(Γ₁::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
-        Γ₂::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
-        dm::SignaturesDM) where
-        {S1<:Array{T} where T<:Number, 
-        S2<:Union{AbstractFloat,Array{<:AbstractFloat}}}
+function pairwise_discriminant_measure(Γ₁::NamedTuple{(:coef, :weight), Tuple{S₁,S₂}}, 
+                                       Γ₂::NamedTuple{(:coef, :weight), Tuple{S₁,S₂}}, 
+                                       dm::SignaturesDM) where
+                                      {S₁<:Array{T} where T<:AbstractFloat, 
+                                       S₂<:Union{T,Array{T}} where T<:AbstractFloat}
 
     # parameter checking and basic summary
-    n = size(Γ₁[:coef],1)
-    L = size(Γ₁[:coef],2)
-    @assert n == size(Γ₁[:coef],1) == size(Γ₂[:coef],1)
-    @assert L == size(Γ₁[:coef],2) == size(Γ₂[:coef],2)
+    N = ndims(Γ₁.coef)
+    T = eltype(Γ₁.coef)
+    sz = size(Γ₁.coef)[1:end-2]
+    L = size(Γ₁.coef)[end-1]
+    @assert isa(Γ₁.weight, AbstractFloat) || size(Γ₁.coef) == size(Γ₁.weight)
+    @assert isa(Γ₂.weight, AbstractFloat) || size(Γ₂.coef) == size(Γ₂.weight)
+    @assert typeof(Γ₁.weight) == typeof(Γ₂.weight)
+    @assert sz == size(Γ₂.coef)[1:end-2]
+    @assert L == size(Γ₂.coef)[end-1]
 
-    D = Array{Float64,2}(undef, (n,L))
-    for i in 1:n
-        for j in 1:L
-            # signatures
-            if typeof(Γ₁[:weight]) <: AbstractFloat # equal weight
-                P = (coef=Γ₁[:coef][i,j,:], weight=Γ₁[:weight])
-                Q = (coef=Γ₂[:coef][i,j,:], weight=Γ₂[:weight])
-            else                                    # probability density weight
-                P = (coef=Γ₁[:coef][i,j,:], weight=Γ₁[:weight][i,j,:])
-                Q = (coef=Γ₂[:coef][i,j,:], weight=Γ₂[:weight][i,j,:])
-            end
-            D[i,j] = discriminant_measure(P, Q, dm)
+    D = Array{T,N-1}(undef, (sz...,L))
+    slice_size = prod([sz...,L])                # Number of elements for each signal's coefficients
+    for i in 1:slice_size
+        # Signatures
+        if isa(Γ₁.weight, AbstractFloat)        # Equal weight
+            P = (coef = Γ₁.coef[i:slice_size:end], weight = Γ₁.weight)
+            Q = (coef = Γ₂.coef[i:slice_size:end], weight = Γ₂.weight)
+        else                                    # Probability density weight
+            P = (coef = Γ₁.coef[i:slice_size:end], weight = Γ₁.weight[i:slice_size:end])
+            Q = (coef = Γ₂.coef[i:slice_size:end], weight = Γ₂.weight[i:slice_size:end])
         end
+        D[i] = pairwise_discriminant_measure(P, Q, dm)
     end
     return D
 end
 
 # Asymmetric Relative Entropy
-function discriminant_measure(p::T, q::T, dm::AsymmetricRelativeEntropy) where 
-        T<:Number
-
-    # parameter checking
-    @assert p >= 0 && q >= 0
-
-    if p == 0 || q == 0
-        return 0
-    else
-        return p * log(p/q)
-    end
+function pairwise_discriminant_measure(p::T, q::T, dm::AsymmetricRelativeEntropy) where 
+                                       T<:AbstractFloat
+    @assert p ≥ 0 && q ≥ 0
+    return (p==0 || q==0) ? 0 : p * log(p/q)
 end
 
 # Symmetric Relative Entropy
-function discriminant_measure(p::T, q::T, dm::SymmetricRelativeEntropy) where 
-        T<:Number
-
-    return discriminant_measure(p, q, AsymmetricRelativeEntropy()) + 
-        discriminant_measure(q, p, AsymmetricRelativeEntropy())
+function pairwise_discriminant_measure(p::T, q::T, dm::SymmetricRelativeEntropy) where 
+                                       T<:AbstractFloat
+    return pairwise_discriminant_measure(p, q, AsymmetricRelativeEntropy()) + 
+           pairwise_discriminant_measure(q, p, AsymmetricRelativeEntropy())
 end
 
 # Hellinger Distance
-function discriminant_measure(p::T, q::T, dm::HellingerDistance) where T<:Number
+function pairwise_discriminant_measure(p::T, q::T, dm::HellingerDistance) where 
+                                       T<:AbstractFloat
     return (sqrt(p) - sqrt(q))^2
 end
 
 # Lᵖ Distance
-function discriminant_measure(p::T, q::T, dm::LpDistance) where T<:Number
+function pairwise_discriminant_measure(p::T, q::T, dm::LpDistance) where T<:AbstractFloat
     return (p - q)^dm.p
 end
 
 # Earth Mover Distance
-function discriminant_measure(P::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
-        Q::NamedTuple{(:coef, :weight), Tuple{S1, S2}}, 
-        dm::EarthMoverDistance) where
-        {S1<:Vector{T} where T<:Number, 
-        S2<:Union{AbstractFloat,Vector{<:AbstractFloat}}}
-
+function pairwise_discriminant_measure(P::NamedTuple{(:coef, :weight), Tuple{S1,S2}}, 
+                                       Q::NamedTuple{(:coef, :weight), Tuple{S1, S2}}, 
+                                       dm::EarthMoverDistance) where
+                                      {S1<:Vector{T} where T<:AbstractFloat, 
+                                       S2<:Union{T,Vector{T}} where T<:AbstractFloat}
     # assigning tuple signatures into coef and weight
     p, w_p = P
     q, w_q = Q
 
     # sort signature values
     p_order = sortperm(p)
-    p = p[p_order]
-    w_p = typeof(w_p)<:AbstractFloat ? repeat([w_p], length(p)) : w_p[p_order]
     q_order = sortperm(q)
+    p = p[p_order]
     q = q[q_order]
-    w_q = typeof(w_q)<:AbstractFloat ? repeat([w_q], length(q)) : w_q[q_order]
+    w_p = isa(w_p, AbstractFloat) ? repeat([w_p], length(p)) : w_p[p_order]
+    w_q = isa(w_q, AbstractFloat) ? repeat([w_q], length(q)) : w_q[q_order]
 
     # concatenate p and q, then sort them
     r = [p; q]
@@ -256,12 +281,10 @@ function discriminant_measure(P::NamedTuple{(:coef, :weight), Tuple{S1,S2}},
     emd = 0
     for i in 1:(n-1)
         # get total weight of p and q less than or equal to r[i]
-        p_less = p .<= r[i]
-        ∑w_p = sum(w_p[p_less])
-        q_less = q .<= r[i]
-        ∑w_q = sum(w_q[q_less])
+        ∑w_p = sum(w_p[p .≤ r[i]])
+        ∑w_q = sum(w_q[q .≤ r[i]])
         # add into emd
-        emd += abs(∑w_p - ∑w_q) * (r[i+1] - r[i])
+        @inbounds emd += abs(∑w_p - ∑w_q) * (r[i+1] - r[i])
     end
     emd /= (sum(w_p) + sum(w_q))
     return emd
@@ -311,72 +334,86 @@ struct RobustFishersClassSeparability <: DiscriminantPower end
 Returns the discriminant power of each leaf from the local discriminant basis
 (LDB) tree. 
 """
-function discriminant_power(D::AbstractArray{T,2}, tree::BitVector, 
-        dp::BasisDiscriminantMeasure) where T<:Number
-
-    @assert length(tree) == size(D,1) - 1
+function discriminant_power(D::AbstractArray{T}, tree::BitVector, 
+                            dp::BasisDiscriminantMeasure) where T<:AbstractFloat
+    @assert 2 ≤ ndims(D) ≤ 3
+    N = ndims(D)
+    sz = size(D)[1:end-1]
+    tmp = Array{T,N-1}(undef, sz)
+    @assert isvalidtree(tmp, tree)
 
     power = getbasiscoef(D, tree)
-    order = sortperm(power, rev = true)
+    order = sortperm(vec(power), rev = true)
 
     return (power, order)
 end
 
-function discriminant_power(coefs::AbstractArray{T,2}, 
-                            y::AbstractVector{S}, 
-                            dp::FishersClassSeparability) where {T<:Number, S}
-
-    n = size(coefs,1)                             # signal length
+function discriminant_power(coefs::AbstractArray{T}, y::AbstractVector{S}, 
+                            dp::FishersClassSeparability) where {T<:AbstractFloat, S}
+    N = ndims(coefs)
+    @assert 2 ≤ N ≤ 3
+    sz = size(coefs)[1:end-1]           # signal length
     
-    classes = unique(y)
-    C = length(coefs)                             # number of classes
+    C = unique(y)
+    Nc = length(C)                      # number of classes
     
-    Nᵢ = Array{T,1}(undef, C)
-    Eαᵢ = Array{T,2}(undef, (n,C))                # mean of each entry
-    Varαᵢ = Array{T,2}(undef, (n,C))              # variance of each entry
-    @inbounds begin
-        for (i, c) in enumerate(classes)
-            idx = findall(yᵢ -> yᵢ == c, y)
-            Nᵢ[i] = length(idx)
-            Eαᵢ[:,i] = mean(coefs[:, idx], dims = 2)
-            Varαᵢ[:,i] = var(coefs[:, idx], dims = 2)
+    Nᵢ = Array{T,1}(undef, Nc)
+    Eαᵢ = Array{T,N}(undef, (sz...,Nc))                # mean of each entry
+    Varαᵢ = Array{T,N}(undef, (sz...,Nc))              # variance of each entry
+    for (i, c) in enumerate(C)
+        idx = findall(yᵢ -> yᵢ==c, y)
+        Nᵢ[i] = length(idx)
+        if N==2
+            coefsᵢ = coefs[:,idx]
+            Eαᵢ[:,i] = mean(coefsᵢ, dims = N)
+            Varαᵢ[:,i] = var(coefsᵢ, dims = N)
+        elseif N==3
+            coefsᵢ = coefs[:,:,idx]
+            Eαᵢ[:,:,i] = mean(coefsᵢ, dims = N)
+            Varαᵢ[:,:,i] = var(coefsᵢ, dims = N)
         end
     end
-    Eα = mean(Eαᵢ, dims = 2)                      # overall mean of each entry
+    Eα = mean(Eαᵢ, dims = N)                      # overall mean of each entry
     pᵢ = Nᵢ / sum(Nᵢ)                             # proportions of each class
 
+    # TODO: This does not work when dealing with 2D signals (multiplication issue)
     power = ((Eαᵢ - (Eα .* Eαᵢ)).^2 * pᵢ) ./ (Varαᵢ * pᵢ)
-    order = sortperm(power, rev = true)
+    order = sortperm(vec(power), rev = true)
 
     return (power, order)
 end
 
-function discriminant_power(coefs::AbstractArray{T,2}, 
-                            y::AbstractVector{S},
-                            dp::RobustFishersClassSeparability) where {T<:Number,S}
-
-    n = size(coefs,1)                            # signal length
+function discriminant_power(coefs::AbstractArray{T}, y::AbstractVector{S},
+                            dp::RobustFishersClassSeparability) where {T<:AbstractFloat,S}
+    N = ndims(coefs)
+    @assert 2 ≤ N ≤ 3
+    sz = size(coefs)[1:end-1]           # signal length
     
-    classes = unique(y)
-    C = length(classes)
+    C = unique(y)
+    Nc = length(C)                      # number of classes
 
-    Nᵢ = Array{T,1}(undef, C)
-    Medαᵢ = Array{T,2}(undef, (n,C))             # mean of each entry
-    Madαᵢ = Array{T,2}(undef, (n,C))             # variance of each entry
-    @inbounds begin
-        for (i, c) in enumerate(classes)
-            idx = findall(yᵢ -> yᵢ == c, y)
-            Nᵢ[i] = length(idx)
-            Medαᵢ[:,i] = median(coefs[:, idx], dims = 2)
-            Madαᵢ[:,i] = mapslices(x -> mad(x, normalize = false), coefs[:, idx], 
-                dims = 2)
+    Nᵢ = Array{T,1}(undef, Nc)
+    Medαᵢ = Array{T,N}(undef, (sz...,Nc))              # mean of each entry
+    Madαᵢ = Array{T,N}(undef, (sz...,Nc))              # variance of each entry
+    for (i, c) in enumerate(C)
+        idx = findall(yᵢ -> yᵢ==c, y)
+        Nᵢ[i] = length(idx)
+        if N==2
+            coefsᵢ = coefs[:,idx]
+            Medαᵢ[:,i] = median(coefsᵢ, dims = N)
+            Madαᵢ[:,i] = mapslices(x -> mad(x, normalize=false), coefsᵢ, dims = N)
+        elseif N==3
+            coefsᵢ = coefs[:,:,idx]
+            Medαᵢ[:,:,i] = median(coefsᵢ, dims = N)
+            Madαᵢ[:,:,i] = mapslices(x -> mad(x, normalize=false), coefsᵢ, dims = N)
         end
     end
-    Medα = median(Medαᵢ, dims = 2)               # overall mean of each entry
+    Medα = median(Medαᵢ, dims = N)               # overall mean of each entry
     pᵢ = Nᵢ / sum(Nᵢ)                            # proportions of each class
 
+    # TODO: This does not work when dealing with 2D signals (multiplication issue)
     power = ((Medαᵢ - (Medα .* Medαᵢ)).^2 * pᵢ) ./ (Madαᵢ * pᵢ)
-    order = sortperm(power, rev = true)
+    order = sortperm(vec(power), rev = true)
 
     return (power, order)
 end

@@ -1,4 +1,4 @@
-import AverageShiftedHistograms: ash, xy, pdf
+import AverageShiftedHistograms: ash, xy, pdf, Kernels
 
 ## ---------- ENERGY MAPS ----------
 """
@@ -66,11 +66,10 @@ end
 """
     energy_map(Xw, y, method)
 
-Returns the Time Frequency Energy map or the Probability Density Energy map
-depending on the input `method` (`TimeFrequency()` or `ProbabilityDensity()`).
+Returns the Time Frequency Energy map or the Probability Density Energy map depending on the
+input `method` (`TimeFrequency()` or `ProbabilityDensity()`).
 
-**See also:** [`EnergyMap`](@ref). [`TimeFrequency`](@ref), 
-    [`ProbabilityDensity`](@ref)
+**See also:** [`EnergyMap`](@ref). [`TimeFrequency`](@ref), [`ProbabilityDensity`](@ref)
 """
 function energy_map(Xw::AbstractArray{S}, y::AbstractVector{T}, method::TimeFrequency) where 
                    {S<:AbstractFloat, T}

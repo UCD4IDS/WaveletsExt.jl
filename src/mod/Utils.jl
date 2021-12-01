@@ -98,31 +98,41 @@ tree = maketree(128, 6, :dwt)
 xw = getbasiscoef(Xw, tree)
 ```
 """
-function getbasiscoef(Xw::AbstractArray{T,2}, 
-                      tree::BitVector) where T<:Number
+function getbasiscoef(Xw::AbstractArray{T}, tree::BitVector) where T<:Number
     # Setup and Sanity Check
-    n, k = size(Xw)
-    nₜ = length(tree)
-    leaf = getleaf(tree, :binary)
-    @assert k-1 ≤ maxtransformlevels(n)
-    @assert isvalidtree(Xw[:,1], tree)
-    @assert n == nₜ+1
-    @assert nₜ+n == length(leaf)
-    xw = Array{T,1}(undef, n)
+    N = ndims(Xw)
+    @assert 2 ≤ N ≤ 3
+    sz = size(Xw)[1:end-1]
+    k = size(Xw)[end]
+    x = N==2 ? view(Xw,:,1) : view(Xw,:,:,1)
+    L = maxtransformlevels(x)
+    @assert isvalidtree(x, tree)
+    @assert k-1 ≤ L
+    leaf = N==2 ? getleaf(tree, :binary) : getleaf(tree, :quad)
+    leaf_len = N==2 ? gettreelength(1<<(L+1)) : gettreelength(1<<(L+1),1<<(L+1))
+    @assert leaf_len == length(leaf)
+    xw = Array{T}(undef, sz)
 
     # Extract basis coefficients
     for (i, isleaf) in enumerate(leaf)
         if isleaf
-            d = getdepth(i,:binary)         # Depth of node (0 for root node)
+            d = N==2 ? getdepth(i,:binary) : getdepth(i, :quad) # Depth of node (0 for root node)
             d < k || throw(ArgumentError("Not enough decomposition levels in Xw."))
-            nn = i-1<<d                     # Node number (0 for leftmost node)
-            n₀ = nodelength(n, d)           # Length of node
-            rng = (nn*n₀+1):((nn+1)*n₀)
-            @inbounds xw[rng] = @view Xw[rng, d+1]
+            if N==2
+                nn = i-1<<d                     # Node number (0 for leftmost node)
+                n₀ = nodelength(sz[1], d)           # Length of node
+                rng = (nn*n₀+1):((nn+1)*n₀)
+                @inbounds xw[rng] = Xw[rng, d+1]
+            elseif N==3
+                rng₁ = getrowrange(sz[1], i)
+                rng₂ = getcolrange(sz[2], i)
+                @inbounds xw[rng₁,rng₂] = Xw[rng₁,rng₂,d+1]
+            end
         end
     end
     return xw
 end
+
 
 """
     getbasiscoefall(Xw, tree)
@@ -156,50 +166,63 @@ tree = maketree(128, 6, :dwt)
 getbasiscoefall(Xw, tree)
 ```
 """
-function getbasiscoefall(Xw::AbstractArray{T,3}, tree::BitVector) where T<:Number
+function getbasiscoefall(Xw::AbstractArray{T}, tree::BitVector) where T<:Number
     # Setup and Sanity Check
-    n, k, m = size(Xw)
+    N = ndims(Xw)
+    sz = size(Xw)[1:end-2]
+    k = size(Xw)[end-1]
+    m = size(Xw)[end]
+    x = N==3 ? view(Xw,:,1,1) : view(Xw,:,:,1,1)
+    @assert 3 ≤ N ≤ 4
+    @assert k-1 ≤ maxtransformlevels(x)
+    @assert isvalidtree(x, tree)
     nₜ = length(tree)
-    leaf = getleaf(tree, :binary)
-    @assert k-1 ≤ maxtransformlevels(n)
-    @assert isvalidtree(Xw[:,1,1], tree)
-    @assert n == nₜ+1
-    @assert nₜ+n == length(leaf)
-    xw = Array{T,2}(undef, (n,m))
+    @assert nₜ == gettreelength(sz...)
+    leaf = N==3 ? getleaf(tree, :binary) : getleaf(tree, :quad)
+    xw = Array{T}(undef, (sz...,m))
 
     # Extract basis coefficients
     for (i, isleaf) in enumerate(leaf)
         if isleaf
-            d = getdepth(i,:binary)         # Depth of node (0 for root node)
+            d = N==3 ? getdepth(i,:binary) : getdepth(i, :quad) # Depth of node (0 for root node)
             d < k || throw(ArgumentError("Not enough decomposition levels in Xw."))
-            nn = i-1<<d                     # Node number (0 for leftmost node)
-            n₀ = nodelength(n, d)           # Length of node
-            rng = (nn*n₀+1):((nn+1)*n₀)
-            @inbounds xw[rng,:] = @view Xw[rng, d+1,:]
+            if N==3
+                nn = i-1<<d                     # Node number (0 for leftmost node)
+                n₀ = nodelength(sz[1], d)           # Length of node
+                rng = (nn*n₀+1):((nn+1)*n₀)
+                @inbounds xw[rng,:] = @view Xw[rng, d+1,:]
+            elseif N==4
+                rng₁ = getrowrange(sz[1], i)
+                rng₂ = getcolrange(sz[2], i)
+                @inbounds xw[rng₁,rng₂,:] = @view Xw[rng₁,rng₂,d+1,:]
+            end
         end
     end
     return xw
 end
 
-function getbasiscoefall(Xw::AbstractArray{T,3}, tree::BitArray{2}) where T<:Number
+function getbasiscoefall(Xw::AbstractArray{T}, tree::BitArray{2}) where T<:Number
     # Setup and Sanity Check
-    n, k, m = size(Xw)
+    N = ndims(Xw)
+    sz = size(Xw)[1:end-2]
+    k = size(Xw)[end-1]
+    m = size(Xw)[end]
+    x = N==3 ? view(Xw,:,1,1) : view(Xw,:,:,1,1)
+    @assert 3 ≤ N ≤ 4
     nₜ, mₜ = size(tree)
-    @assert k-1 ≤ maxtransformlevels(n)
-    @assert all( mapslices(treeᵢ -> isvalidtree(Xw[:,1,1],treeᵢ), tree, dims=1) )
+    @assert k-1 ≤ maxtransformlevels(x)
+    @assert all( mapslices(treeᵢ -> isvalidtree(x,treeᵢ), tree, dims=1) )
     @assert m == mₜ
-    @assert n == nₜ+1
-    xw = Array{T,2}(undef, (n,m))
+    @assert nₜ == gettreelength(sz...)
+    xw = Array{T}(undef, (sz...,m))
 
     # Extract basis coefficients
-    for i in 1:mₜ
-        Xwᵢ = @view Xw[:,:,i]
-        treeᵢ = tree[:,i]
-        @inbounds xw[:,i] = getbasiscoef(Xwᵢ, treeᵢ)
+    for (i, (Xwᵢ, xwᵢ)) in enumerate(zip(eachslice(Xw, dims=N), eachslice(xw, dims=N-1)))
+        @inbounds treeᵢ = tree[:,i]
+        @inbounds xwᵢ[:] = getbasiscoef(Xwᵢ, treeᵢ)
     end
     return xw
 end
-
 
 
 # Length of node at level L
