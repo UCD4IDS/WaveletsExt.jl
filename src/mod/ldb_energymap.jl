@@ -2,6 +2,8 @@ import AverageShiftedHistograms: ash, xy, pdf, Kernels
 
 ## ---------- ENERGY MAPS ----------
 """
+    EnergyMap
+
 Energy map for Local Discriminant Basis. Current available types are:
 - [`TimeFrequency`](@ref)
 - [`ProbabilityDensity`](@ref)
@@ -11,22 +13,19 @@ abstract type EnergyMap end
 @doc raw"""
     TimeFrequency <: EnergyMap
 
-An energy map based on time frequencies, a measure based on the differences of 
-derived quantities from projection ``Z_i``, such as mean class energies or 
-cumulants.
+An energy map based on time frequencies, a measure based on the differences of derived
+quantities from projection ``Z_i``, such as mean class energies or cumulants.
 
-**See also:** [`EnergyMap`](@ref), [`ProbabilityDensity`](@ref),
-    [`Signatures`](@ref)
+**See also:** [`EnergyMap`](@ref), [`ProbabilityDensity`](@ref), [`Signatures`](@ref)
 """
 struct TimeFrequency <: EnergyMap end
 
 @doc raw"""
     ProbabilityDensity <: EnergyMap
 
-An energy map based on probability density, a measure based on the differences 
-among the pdfs of ``Z_i``. Since we do not know the true density functions of
-the coefficients, the PDFs are estimated using the Average Shifted Histogram
-(ASH).
+An energy map based on probability density, a measure based on the differences among the
+pdfs of ``Z_i``. Since we do not know the true density functions of the coefficients, the
+PDFs are estimated using the Average Shifted Histogram (ASH).
 
 **See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref), [`Signatures`](@ref)
 """
@@ -36,7 +35,7 @@ struct ProbabilityDensity <: EnergyMap end
     Signatures <: EnergyMap
 
 An energy map based on signatures, a measure that uses the Earth Mover's Distance (EMD) to
-compute the discriminating  power of a coordinate. Signatures provide us with a fully
+compute the discriminating measure of a coordinate. Signatures provide us with a fully
 data-driven representation, which can be efficiently used with EMD. This representation is
 more efficient than a histogram and is able to represent complex data structure with fewer
 samples.
@@ -50,9 +49,9 @@ where ``\alpha_{i;j,k,l}^{(c)}`` and ``w_{i;j,k,l}^{(c)}`` are the expansion coe
 and weights at location ``(j,k,l)`` for signal ``i`` of class ``c`` respectively. Currently,
 the two valid types of weights are `:equal` and `:pdf`.
 
-# Argumemts
-- `weight::Symbol`: Type of weight to be used to compute ``w_{i;j,k,l}^{(c)}``. Available
-    methods are `:equal` and `:pdf`. Default is set to `:equal`.
+# Parameters
+- `weight::Symbol`: (Default: `:equal`) Type of weight to be used to compute ``w_{i;j,k,l}^{(c)}``. Available
+    methods are `:equal` and `:pdf`.
 
 **See also:** [`EnergyMap`](@ref), [`TimeFrequency`](@ref), [`ProbabilityDensity`](@ref)
 """
@@ -63,11 +62,47 @@ struct Signatures <: EnergyMap
         throw(ValueError("Invalid weight type. Valid weight types are :equal and :pdf."))
 end
 
-"""
+@doc raw"""
     energy_map(Xw, y, method)
 
-Returns the Time Frequency Energy map or the Probability Density Energy map depending on the
-input `method` (`TimeFrequency()` or `ProbabilityDensity()`).
+Computes the energy map based on the decomposed input signals `Xw` and corresponding labels
+`y`.
+
+# Arguments
+- `Xw::AbstractArray{S} where S<:AbstractFloat`: Decomposed 1D or 2D signals.
+- `y::AbstractVector{T} where T`: Corresponding labels to the signals in `Xw`.
+- `method::EnergyMap`: Type of energy map to compute. Supported types are:
+    - `TimeFrequency()`
+    - `ProbabilityDensity()`
+    - `Signatures()`
+
+# Returns
+- `Γ`: Computed energy map. Depending on the input `method`, the data structure of `Γ` is:
+    - `TimeFrequency()` ``\Longrightarrow`` `Array{S,3}` for 1D signals or `Array{S,4}` for
+      2D signals.
+    - `ProbabilityDensity()` ``\Longrightarrow`` `Array{S,4}` for 1D signals or `Array{S,5}`
+      for 2D signals.
+    - `Signatures(weight = :equal)`: ``\Longrightarrow`` Vector{NamedTuple{(:coef, :weight),
+      Tuple{Array{S}, S}}}
+    - `Signatures(weight = :pdf`: ``\Longrightarrow`` Vector{NamedTuple{(:coef, :weight),
+      Tuple{Array{S}, Array{S}}}}
+
+!!! tip
+    When setting `method = Signatures()` of any type of weight, the output is a vector of
+    named tuples, where each named tuple contains the coefficients and weights of all the
+    signals of the same label.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+Xw = wpdall(X, wavelet(WT.haar))
+
+energy_map(Xw, y, TimeFrequency())
+energy_map(Xw, y, ProbabilityDensity())
+energy_map(Xw, y, Signatures())
+```
 
 **See also:** [`EnergyMap`](@ref). [`TimeFrequency`](@ref), [`ProbabilityDensity`](@ref)
 """

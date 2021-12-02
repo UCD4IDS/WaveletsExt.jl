@@ -110,61 +110,11 @@ following field values:
     order::Union{AbstractVector{Integer}, Nothing} = nothing
 end
 
-# """
-#     LocalDiscriminantBasis([; 
-#         wt=wavelet(WT.haar),
-#         max_dec_level=nothing,
-#         dm=AsymmetricRelativeEntropy(), em=TimeFrequency(), 
-#         dp=BasisDiscriminantMeasure(), top_k=nothing,
-#         n_features=nothing]
-#     )
-
-# Class constructor for `LocalDiscriminantBasis`. 
-
-# # Arguments:
-# - `wt::DiscreteWavelet`: Wavelet used for decomposition of signals. Default is
-#     set to be `wavelet(WT.haar)`.
-# - `max_dec_level::Union{Integer, Nothing}`: max level of wavelet packet
-#     decomposition to be computed. When `max_dec_level=nothing`, the maximum
-#     transform levels will be used. Default is set to be `nothing`.
-# - `dm::DiscriminantMeasure`: the discriminant measure for the LDB algorithm. 
-#     Supported measures are the `AsymmetricRelativeEntropy()`, `LpDistance()`, 
-#     `SymmetricRelativeEntropy()`, and `HellingerDistance()`. Default is set to
-#     be `AsymmetricRelativeEntropy()`.
-# - `en::EnergyMap`: the type of energy map used. Supported maps are 
-#     `TimeFrequency()` and `ProbabilityDensity()`. Default is set to be 
-#     `TimeFrequency()`.
-# - `dp::DiscriminantPower=BasisDiscriminantMeasure()`: the measure of 
-#     discriminant power among expansion coefficients. Supported measures are 
-#     `BasisDiscriminantMeasure()`, `FishersClassSeparability()`, and 
-#     `RobustFishersClassSeparability()`. Default is set to be `BasisDiscriminantMeasure()`.
-# - `top_k::Union{Integer, Nothing}`: the top-k coefficients used in each node to 
-#     determine the discriminant measure. When `top_k=nothing`, all coefficients 
-#     are used to determine the discriminant measure. Default is set to be 
-#     `nothing`.
-# - `n_features::Union{Integer, Nothing}`: the dimension of output after 
-#     undergoing feature selection and transformation. When `n_features=nothing`,
-#     all features will be returned as output. Default is set to be `nothing`.
-# """
-# function LocalDiscriminantBasis(; wt::DiscreteWavelet=wavelet(WT.haar),
-#         max_dec_level::Union{Integer, Nothing}=nothing, 
-#         dm::DiscriminantMeasure=AsymmetricRelativeEntropy(),
-#         en::EnergyMap=TimeFrequency(), 
-#         dp::DiscriminantPower=BasisDiscriminantMeasure(), 
-#         top_k::Union{Integer, Nothing}=nothing, 
-#         n_features::Union{Integer, Nothing}=nothing)
-
-#     return LocalDiscriminantBasis(
-#         wt, max_dec_level, dm, en, dp, top_k, n_features, 
-#         nothing, nothing, nothing, nothing, nothing, nothing, nothing
-#     )
-# end
-
 """
     fit!(f, X, y)
 
-Fits the Local Discriminant Basis feature selection algorithm `f` onto the 
-signals `X` (or the decomposed signals `Xw`) with labels `y`.
+Fits the Local Discriminant Basis feature selection algorithm `f` onto the signals `X` (or
+the decomposed signals `Xw`) with labels `y`.
 
 **See also:** [`LocalDiscriminantBasis`](@ref), [`fit_transform`](@ref),
     [`transform`](@ref), [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
@@ -188,6 +138,9 @@ function fit!(f::LocalDiscriminantBasis, X::AbstractArray{S}, y::AbstractVector{
     return nothing
 end
 
+"""
+    fitdec!(f, Xw, y)
+"""
 function fitdec!(f::LocalDiscriminantBasis, Xw::AbstractArray{S}, y::AbstractVector{T}) where 
                 {S<:AbstractFloat, T}
     # basic summary of data

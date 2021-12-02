@@ -29,25 +29,33 @@ abstract type SignaturesDM <: DiscriminantMeasure end
 @doc raw"""
     AsymmetricRelativeEntropy <: ProbabilityDensityDM
 
-Asymmetric Relative Entropy discriminant measure for the Probability Density and
-Time Frequency based energy maps. This measure is also known as cross entropy 
-and Kullback-Leibler divergence.
+Asymmetric Relative Entropy discriminant measure for the Probability Density and Time
+Frequency based energy maps. This measure is also known as cross entropy and
+Kullback-Leibler divergence.
 
-Equation: ``D(p,q) = \sum p(x) \log \frac{p(x)}{q(x)}``
+Equation: 
+
+``D(p,q) = \sum p(x) \log \frac{p(x)}{q(x)}`` 
+
+where ``\int_{-\infty}^{\infty} p(t) dt = \int_{-\infty}^{\infty} q(t) dt = 1`` (``p(t)``
+and ``q(t)`` are probability density functions.)
 """
 struct AsymmetricRelativeEntropy <: ProbabilityDensityDM end
 
 @doc raw"""
     SymmetricRelativeEntropy <: ProbabilityDensityDM
 
-Symmetric Relative Entropy discriminant measure for the Probability Density and 
-Time Frequency energy maps. Similar idea to the Asymmetric Relative Entropy, but 
-this aims to make the measure more symmetric.
+Symmetric Relative Entropy discriminant measure for the Probability Density and Time
+Frequency energy maps. Similar idea to the Asymmetric Relative Entropy, but this aims to
+make the measure more symmetric.
 
 Equation: Denote the Asymmetric Relative Entropy as ``D_A(p,q)``, then
 
 ``D(p,q) = D_A(p,q) + D_A(q,p) = \sum p(x) \log \frac{p(x)}{q(x)} + q(x) \log
 \frac{q(x)}{p(x)}``
+
+where ``\int_{-\infty}^{\infty} p(t) dt = \int_{-\infty}^{\infty} q(t) dt = 1`` (``p(t)``
+and ``q(t)`` are probability density functions.)
 
 **See also:** [`AsymmetricRelativeEntropy`](@ref)
 """
@@ -59,7 +67,9 @@ struct SymmetricRelativeEntropy <: ProbabilityDensityDM end
 ``\ell^p`` Distance discriminant measure for the Probability Density and Time 
 Frequency based energy maps. The default ``p`` value is set to 2.
 
-Equation: ``W(q,r) = ||q-r||_p^p = \sum_{i=1}^n (q_i - r_i)^p``
+Equation: 
+
+``W(q,r) = ||q-r||_p^p = \sum_{i=1}^n (q_i - r_i)^p``
 """
 @with_kw struct LpDistance <: ProbabilityDensityDM 
     p::Number = 2
@@ -71,7 +81,9 @@ end
 Hellinger Distance discriminant measure for the Probability Density energy 
 map.
 
-Equation: ``H(p,q) = \sum_{i=1}^n (\sqrt{p_i} - \sqrt{q_i})^2``
+Equation: 
+
+``H(p,q) = \sum_{i=1}^n (\sqrt{p_i} - \sqrt{q_i})^2``
 """
 struct HellingerDistance <: ProbabilityDensityDM end
 
@@ -80,19 +92,49 @@ struct HellingerDistance <: ProbabilityDensityDM end
 
 Earth Mover Distance discriminant measure for the Signatures energy map.
 
-Equation: ``E(P,Q) = \frac{\sum_{k=1}^{m+n+1} |\hat p_k - \hat q_k| (r_{k+1} -
-r_k)}{w_\Sigma}``
+Equation: 
 
-where ``r_1, r_2, \ldots, r_{m+n}`` is the sorted list of ``p_1, \ldots, p_m, q_1, \ldots,
-q_n`` and ``\hat p_k = \sum_{p_i \leq r_k} w_{p_i}``, ``\hat q_k = \sum_{q_i \leq r_k}
-w_{q_i}``.
+``E(P,Q) = \frac{\sum_{k=1}^{m+n+1} |\hat p_k - \hat q_k| (r_{k+1} - r_k)}{w_\Sigma}``
+
+where 
+- ``r_1, r_2, \ldots, r_{m+n}`` is the sorted list of ``p_1, \ldots, p_m, q_1, \ldots, q_n``
+- ``\hat p_k = \sum_{p_i \leq r_k} w_{p_i}``
+- ``\hat q_k = \sum_{q_i \leq r_k} w_{q_i}``
 """
 struct EarthMoverDistance <: SignaturesDM end
 
 """
     discriminant_measure(Γ, dm)
 
-Returns the discriminant measure of each node calculated from the energy maps.
+Computes the discriminant measure of each subspace calculated from the energy maps.
+
+# Arguments
+- `Γ`: Energy map computed from `energy_map` function. The data structures of `Γ`, depending
+  on their corresponding energy map, should be:
+    - `TimeFrequency()`: `AbstractArray{T,3}` for 1D signals or `AbstractArray{T,4}` for 2D
+      signals.
+    - `ProbabilityDensity()`: `AbstractArray{T,4}` for 1D signals or `AbstractArray{T,5}`
+      for 2D signals.
+    - `Signatures()`: `AbstractVector{NamedTuple{(:coef, :weight), Tuple{S₁,S₂}}}`.
+- `dm::DiscriminantMeasure`: Type of Discriminant Measure. The type of `dm` must match the
+  type of `Γ`.
+
+# Returns
+- `D::Array{T}`: Discriminant measure at each coefficient of the decomposed signals.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+Xw = wpdall(X, wavelet(WT.haar))
+
+Γ = energy_map(Xw, y, TimeFrequency()); discriminant_measure(Γ, AsymmetricRelativeEntropy())
+Γ = energy_map(Xw, y, ProbabilityDensity()); discriminant_measure(Γ, LpDistance())
+Γ = energy_map(Xw, y, Signatures()); discriminant_measure(Γ, EarthMoverDistance())
+```
+
+**See also:** [`pairwise_discriminant_measure`](@ref)
 """
 function discriminant_measure(Γ::AbstractArray{T}, dm::ProbabilityDensityDM) where 
                               T<:AbstractFloat
@@ -140,7 +182,7 @@ function discriminant_measure(Γ::AbstractArray{T}, dm::ProbabilityDensityDM) wh
 end
 
 # discriminant measure for EMD
-function discriminant_measure(Γ::AbstractArray{NamedTuple{(:coef, :weight), Tuple{S₁,S₂}},1},
+function discriminant_measure(Γ::AbstractVector{NamedTuple{(:coef, :weight), Tuple{S₁,S₂}}},
                               dm::SignaturesDM) where 
                              {S₁<:Array{T} where T<:AbstractFloat, 
                               S₂<:Union{T,Array{T}} where T<:AbstractFloat}
@@ -159,6 +201,19 @@ function discriminant_measure(Γ::AbstractArray{NamedTuple{(:coef, :weight), Tup
 end
 
 # discriminant measure between 2 energy maps
+"""
+    pairwise_discriminant_measure(Γ₁, Γ₂, dm)
+
+Computes the discriminant measure between 2 classes based on their energy maps.
+
+# Arguments
+- `Γ₁::AbstractArray{T} where T<:AbstractFloat`: Energy map for class 1.
+- `Γ₂::AbstractArray{T} where T<:AbstractFloat`: Energy map for class 2.
+- `dm::DiscriminantMeasure`: Type of discriminant measure.
+
+# Returns
+- `::Array{T}`: Discriminant measure between `Γ₁` and `Γ₂`.
+"""
 function pairwise_discriminant_measure(Γ₁::AbstractArray{T}, Γ₂::AbstractArray{T}, 
                                        dm::ProbabilityDensityDM) where T<:AbstractFloat
     # parameter checking and basic summary
@@ -230,6 +285,20 @@ function pairwise_discriminant_measure(Γ₁::NamedTuple{(:coef, :weight), Tuple
 end
 
 # Asymmetric Relative Entropy
+"""
+    pairwise_discriminant_measure(p, q, dm)
+
+Computes the discriminant measure between 2 classes at an index ``i``, where `Γ₁[i] = p` and
+`Γ₂[i] = q`.
+
+# Arguments
+- `p::T where T<:AbstractFloat`: Coefficient at index ``i`` from `Γ₁`.
+- `q::T where T<:AbstractFloat`: Coefficient at index ``i`` from `Γ₂`.
+- `dm::DiscriminantMeasure`: Type of discriminant measure.
+
+# Returns
+- `::T`: Discriminant measure between `p` and `q`.
+"""
 function pairwise_discriminant_measure(p::T, q::T, dm::AsymmetricRelativeEntropy) where 
                                        T<:AbstractFloat
     @assert p ≥ 0 && q ≥ 0
@@ -290,7 +359,7 @@ function pairwise_discriminant_measure(P::NamedTuple{(:coef, :weight), Tuple{S1,
     return emd
 end
 
-## DISCRIMINATION POWER
+## ---------- DISCRIMINATION POWER ----------
 """
 Discriminant Power measure for the Local Discriminant Basis. Current available
 measures are
@@ -303,16 +372,15 @@ abstract type DiscriminantPower end
 """
     BasisDiscriminantMeasure <: DiscriminantPower
 
-This is the discriminant measure of a single basis function computed in a 
-previous step to construct the energy maps.
+This is the discriminant measure of a single basis function computed in a previous step to
+construct the energy maps.
 """
 struct BasisDiscriminantMeasure <: DiscriminantPower end
 
 @doc raw"""
     FishersClassSeparability <: DiscriminantPower
 
-The Fisher's class separability of the expansion coefficients in the basis 
-function.
+The Fisher's class separability of the expansion coefficients in the basis function.
 
 Equation: ``\frac{\sum_{c=1}^C \pi_c\{{\rm mean}_i(\alpha_{\lambda,i}^{(c)}) - {\rm mean}_c
 \cdot {\rm mean}_i(\alpha_{\lambda,i}^{(c)})\}^2}{\sum_{c=1}^C \pi_c {\rm
@@ -323,8 +391,8 @@ struct FishersClassSeparability <: DiscriminantPower end
 @doc raw"""
     RobustFishersClassSeparability <: DiscriminantPower
 
-The robust version of Fisher's class separability of the expansion coefficients 
-in the basis function.
+The robust version of Fisher's class separability of the expansion coefficients in the basis
+function.
 
 Equation: ``\frac{\sum_{c=1}^C \pi_c\{{\rm med}_i(\alpha_{\lambda,i}^{(c)}) - {\rm med}_c
 \cdot {\rm med}_i(\alpha_{\lambda,i}^{(c)})\}^2}{\sum_{c=1}^C \pi_c {\rm
@@ -334,9 +402,27 @@ struct RobustFishersClassSeparability <: DiscriminantPower end
 
 """
     discriminant_power(D, tree, dp)
+    discriminant_power(coefs, y, dp)
 
-Returns the discriminant power of each leaf from the local discriminant basis
-(LDB) tree. 
+Returns the discriminant power of each leaf from the local discriminant basis (LDB) tree. 
+
+# Arguments
+- `D::AbstractArray{T} where T<:AbstractFloat`: Discriminant measures.
+- `tree::BitVector`: Best basis tree for selecting coefficients with largest discriminant
+  measures.
+- `coefs::AbstractArray{T} where T<:AbstractFloat`: Best basis coefficients for the input
+  signals.
+- `y::AbstractVector{S} where S`: Labels corresponding to each signal in `coefs`.
+- `dp::DiscriminantPower`: The measure for discriminant power. 
+
+!!! note
+    `discriminant_power(D, tree, dp)` only works for `dp = BasisDiscriminantMeasure()`,
+    whereas `discriminant_power(coefs, y, dp)` works for `dp = FishersClassSeparability()`
+    and `dp = RobustFishersClassSeparability()`.
+
+# Returns
+- `power::Array{T}`: The discriminant power at each index of `D` or `coefs`.
+- `order::Vector{T}`: The order of discriminant power in descending order.
 """
 function discriminant_power(D::AbstractArray{T}, tree::BitVector, 
                             dp::BasisDiscriminantMeasure) where T<:AbstractFloat
