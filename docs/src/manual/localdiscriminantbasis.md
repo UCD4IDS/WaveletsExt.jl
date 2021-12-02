@@ -69,7 +69,7 @@ plot_tfbdry(ldb.tree)
 
 Another thing we can do is observe the heatmap produced by the discriminant measure (`ldb.DM`).
 ```@example ldb_tutorial
-heatmap(1:ldb.n, 0:ldb.max_dec_level, ldb.DM);
+heatmap(1:ldb.sz[1], 0:ldb.max_dec_level, ldb.DM);
 plot!(title="Discriminant Measure Heatmap")
 ```
 
