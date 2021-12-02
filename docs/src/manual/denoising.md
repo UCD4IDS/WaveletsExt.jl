@@ -10,7 +10,7 @@ For more information and examples on wavelet denoising using WaveletsExt.jl, vis
 ## Denoising a single signal
 To denoise a single signal, one can use the `denoise` function from WaveletsExt.jl as shown below. Note the following key parameters:
 - `x`: Input signal.
-- `inputtype`: Type of input. One can input an original signal `:sig`, or first transform the signal and type in one of `:dwt`, `:wpt`, `:sdwt`, `:swpd`, `:acwt`, and `:acwpt`.
+- `inputtype`: Type of input. One can input an original signal `:sig`, or first transform the signal and type in one of `:dwt`, `:wpt`, `:sdwt`, `:swpd`, `:acdwt`, and `:acwpd`.
 - `wt`: Transform wavelet.
 - `L`: Number of decomposition levels. Necessary for input types `:sig`, `:dwt`, and `:sdwt`.
 - `tree`: Decomposition tree of the signals. Necessary for input types `:wpt` and `:swpd`.

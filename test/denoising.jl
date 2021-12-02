@@ -40,9 +40,9 @@ end
     @test relativenorm(y, x0) <= 2*err
 
     ## Autocorrelation wavelet transforms
-    y = denoise(acdwt(x, wt), :acwt, wt, dnt=dnt, smooth=:undersmooth)
+    y = denoise(acdwt(x, wt), :acdwt, wt, dnt=dnt, smooth=:undersmooth)
     @test relativenorm(y, x0) <= 2*err
-    y = denoise(acwpd(x, wt), :acwpt, wt, smooth=:undersmooth)
+    y = denoise(acwpd(x, wt), :acwpd, wt, smooth=:undersmooth)
     @test relativenorm(y, x0) <= 2*err
     
     # Group denoising
@@ -77,9 +77,9 @@ end
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
 
     ## Autocorrelation Wavelet Transforms
-    y = denoiseall(cat([acdwt(x[:,i], wt) for i in 1:5]..., dims=3), :acwt, wt)
+    y = denoiseall(cat([acdwt(x[:,i], wt) for i in 1:5]..., dims=3), :acdwt, wt)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err 
-    y = denoiseall(cat([acwpd(x[:,i], wt) for i in 1:5]..., dims=3), :acwpt, wt,
+    y = denoiseall(cat([acwpd(x[:,i], wt) for i in 1:5]..., dims=3), :acwpd, wt,
         tree=maketree(n, 7, :full), dnt=dnt, estnoise=relerrorthreshold)
     @test mean([relativenorm(y[:,i],x0[:,i]) for i in 1:5]) <= max_err
 end

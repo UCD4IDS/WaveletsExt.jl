@@ -84,7 +84,7 @@ Equation: ``E(P,Q) = \frac{\sum_{k=1}^{m+n+1} |\hat p_k - \hat q_k| (r_{k+1} -
 r_k)}{w_\Sigma}``
 
 where ``r_1, r_2, \ldots, r_{m+n}`` is the sorted list of ``p_1, \ldots, p_m, q_1, \ldots,
-q_n`` and ``\hat p_k = \sum_{p_i \leq r_k} w_{p_i}``, ``\hat q_k = \sum_{q)i \leq r_k}
+q_n`` and ``\hat p_k = \sum_{p_i \leq r_k} w_{p_i}``, ``\hat q_k = \sum_{q_i \leq r_k}
 w_{q_i}``.
 """
 struct EarthMoverDistance <: SignaturesDM end
@@ -314,7 +314,9 @@ struct BasisDiscriminantMeasure <: DiscriminantPower end
 The Fisher's class separability of the expansion coefficients in the basis 
 function.
 
-Equation: ``\frac{\sum_{c=1}^C \pi_c({\rm mean}_i(\alpha_{\lambda,i}^{(c)}) - {\rm mean}_c({\rm mean}_i(\alpha_{\lambda,i}^{(c)})))^2}{\sum_{c=1}^C \pi_c {\rm var}_i(\alpha_{\lambda,i}^{(c)})}``
+Equation: ``\frac{\sum_{c=1}^C \pi_c\{{\rm mean}_i(\alpha_{\lambda,i}^{(c)}) - {\rm mean}_c
+\cdot {\rm mean}_i(\alpha_{\lambda,i}^{(c)})\}^2}{\sum_{c=1}^C \pi_c {\rm
+var}_i(\alpha_{\lambda,i}^{(c)})}``
 """
 struct FishersClassSeparability <: DiscriminantPower end
 
@@ -324,7 +326,9 @@ struct FishersClassSeparability <: DiscriminantPower end
 The robust version of Fisher's class separability of the expansion coefficients 
 in the basis function.
 
-Equation: ``\frac{\sum_{c=1}^C \pi_c({\rm med}_i(\alpha_{\lambda,i}^{(c)}) - {\rm med}_c({\rm med}_i(\alpha_{\lambda,i}^{(c)})))^2}{\sum_{c=1}^C \pi_c {\rm mad}_i(\alpha_{\lambda,i}^{(c)})}``
+Equation: ``\frac{\sum_{c=1}^C \pi_c\{{\rm med}_i(\alpha_{\lambda,i}^{(c)}) - {\rm med}_c
+\cdot {\rm med}_i(\alpha_{\lambda,i}^{(c)})\}^2}{\sum_{c=1}^C \pi_c {\rm
+mad}_i(\alpha_{\lambda,i}^{(c)})}``
 """
 struct RobustFishersClassSeparability <: DiscriminantPower end
 

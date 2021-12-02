@@ -88,7 +88,7 @@ Struct constructor for `SureShrink` based on the signal coefficients `xw`.
 # Examples
 ```julia
 SureShrink(xw)                  # `xw` is output of dwt, wpt
-SureShrink(xw, true)            # `xw` is output of sdwt, acdwt, swpt, acwpt
+SureShrink(xw, true)            # `xw` is output of sdwt, acdwt, swpt, acwpd
 SureShrink(xw, true, tree)      # `xw` is output of swpd, acwpd
 ```
 
@@ -149,7 +149,7 @@ function surethreshold(coef::AbstractArray{T},
     # extract necessary coefficients
     if !redundant                              # dwt or wpt
         y = coef
-    elseif redundant && isa(tree, Nothing)     # sdwt, acdwt, swpt, or acwpt
+    elseif redundant && isa(tree, Nothing)     # sdwt, acdwt, swpt, or acwpd
         y = reshape(coef, :)
     else                                       # swpd or acwpd
         leaves = getleaf(tree,:binary)
@@ -453,10 +453,10 @@ input type `inputtype`.
         with each column representing the coefficients of a node.
     - `:swpd`: `swpd`-transformed signal coefficients; `x` should be a 2-D array
         with each column representing the coefficients of a node.
-    - `:acwt`: `acwt`-transformed signal coefficients from 
+    - `:acdwt`: `acdwt`-transformed signal coefficients from 
         AutocorrelationShell.jl; `x` should be a 2-D array with each column 
         representing the coefficients of a node.
-    - `:acwpt`: `acwpt`-transformed signal coefficients from
+    - `:acwpd`: `acwpd`-transformed signal coefficients from
         AutocorrelationShell.jl; `x` should be a 2-D array with each column 
         representing the coefficients of a node.
 - `wt::Union{DiscreteWavelet, Nothing}`: the discrete wavelet to be used for
@@ -490,7 +490,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         smooth::Symbol=:regular) where {T<:Number, S<:DNFT}
 
     @assert smooth ∈ [:undersmooth, :regular]
-    @assert inputtype ∈ [:sig, :dwt, :wpt, :sdwt, :swpd, :acwt, :acwpt]
+    @assert inputtype ∈ [:sig, :dwt, :wpt, :sdwt, :swpd, :acdwt, :acwpd]
 
     # wavelet transform if inputtype == :sig
     if inputtype == :sig
@@ -559,7 +559,7 @@ function Wavelets.Threshold.denoise(x::AbstractArray{T},
         end
         # reconstruction
         y = wt === nothing ? x̃ : iswpd(x̃, wt, tree)
-    elseif inputtype == :acwt               # autocorrelation dwt
+    elseif inputtype == :acdwt               # autocorrelation dwt
         @assert ndims(x) > 1
         # noise estimation
         σ = isa(estnoise, Function) ? estnoise(x, true, nothing) : estnoise
@@ -616,10 +616,10 @@ Denoise multiple signals of input type `inputtype`.
         with each 2-D slice representing the coefficients of a signal.
     - `:swpd`: `swpd`-transformed signal coefficients; `x` should be a 3-D array
         with each 2-D slice representing the coefficients of a signal.
-    - `:acwt`: `acwt`-transformed signal coefficients from
+    - `:acdwt`: `acdwt`-transformed signal coefficients from
         AutocorrelationShell.jl; `x` should be a 3-D array with each 2-D slice 
         representing the coefficients of a signal.
-    - `:acwpt`: `acwpt`-transformed signal coefficients from
+    - `:acwpd`: `acwpd`-transformed signal coefficients from
         AutocorrelationShell.jl; `x` should be a 3-D array with each 2-D slice 
         representing the coefficients of a signal.
 - `wt::Union{DiscreteWavelet, Nothing}`: the discrete wavelet to be used for
@@ -658,7 +658,7 @@ function denoiseall(x::AbstractArray{T1},
         bestTH::Union{Function,Nothing}=nothing,
         smooth::Symbol=:regular) where {T1<:Number, T2<:Number, S<:DNFT}
 
-    @assert inputtype ∈ [:sig, :dwt, :wpt, :sdwt, :swpd, :acwt, :acwpt]
+    @assert inputtype ∈ [:sig, :dwt, :wpt, :sdwt, :swpd, :acdwt, :acwpd]
     @assert smooth ∈ [:regular, :undersmooth]
     @assert ndims(x) > 1
     n = size(x, 1)              # signal length
