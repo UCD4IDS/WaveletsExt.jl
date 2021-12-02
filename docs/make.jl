@@ -19,7 +19,6 @@ makedocs(
             "DWT" => "api/dwt.md",
             "ACWT" => "api/acwt.md",
             "SWT" => "api/swt.md",
-            "TIWT" => "api/tiwt.md",
             "Best Basis" => "api/bestbasis.md",
             "Denoising" => "api/denoising.md",
             "LDB" => "api/ldb.md",
