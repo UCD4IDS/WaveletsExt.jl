@@ -4,8 +4,7 @@
 Modules = [DWT]
 ```
 
-## Public API
-### Transforms on 1 Signal
+## Transforms on 1 Signal
 ```@docs
 Wavelets.Transforms.wpt
 Wavelets.Transforms.wpt(::AbstractArray{T,2}, ::OrthoFilter, ::Integer; ::Bool) where T<:Number
@@ -21,7 +20,7 @@ DWT.iwpd
 DWT.iwpd!
 ```
 
-### Transforms on Multiple Signals
+## Transforms on Multiple Signals
 ```@docs
 DWT.dwtall
 DWT.idwtall
@@ -31,8 +30,7 @@ DWT.wpdall
 DWT.iwpdall
 ```
 
-## Private API
-### Single Step Transforms
+## Single Step Transforms
 ```@docs
 DWT.dwt_step
 DWT.dwt_step!

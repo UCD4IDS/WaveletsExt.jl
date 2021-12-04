@@ -1,5 +1,4 @@
 module LDB
-using Base: AbstractFloat
 export 
     # energy map
     EnergyMap,
@@ -73,9 +72,9 @@ following field values:
 - `n_features::Union{Integer, Nothing}`: (Default: `nothing`) the dimension of output after
     undergoing feature selection and transformation.
 - `sz::Union{Vector{T} where T<:Integer, Nothing}`: (Default: `nothing`) Size of signal
-- `Γ::Union{AbstractArray{<:AbstractFloat}, AbstractArray{NamedTuple{(:coef, :weight),
-  Tuple{S1, S2}}} where {S1<:Array{T} where T<:AbstractFloat, S2<:Union{T, Array{T}} where
-  T<:AbstractFloat}, Nothing}`: (Default: `nothing`) computed energy map
+- `Γ::Union{AbstractArray{T} where T<:AbstractFloat, AbstractArray{NamedTuple{(:coef,
+  :weight), Tuple{S₁, S₂}}} where {S₁<:Array{T} where T<:AbstractFloat, S2<:Union{T,
+  Array{T}} where T<:AbstractFloat}, Nothing}`: (Default: `nothing`) computed energy map
 - `DM::Union{AbstractArray{<:AbstractFloat}, Nothing}`: (Default: `nothing`) computed
   discriminant measure
 - `cost::Union{AbstractVector{<:AbstractFloat}, Nothing}`: (Default: `nothing`) computed
@@ -113,8 +112,26 @@ end
 """
     fit!(f, X, y)
 
-Fits the Local Discriminant Basis feature selection algorithm `f` onto the signals `X` (or
-the decomposed signals `Xw`) with labels `y`.
+Fits the Local Discriminant Basis feature selection algorithm `f` onto the signals `X` with
+labels `y`.
+
+# Arguments
+- `f::LocalDiscriminantBasis`: Local discriminant basis object.
+- `X::AbstractArray{S} where S<:AbstractFloat`: Group of signals of the same size, arranged
+  in the 2nd (1D signals) or 3rd (2D signals) dimension.
+- `y::AbstractVector{T} where T`: Labels corresponding to each signal in X.
+
+# Returns
+- `f::LocalDiscriminantBasis`: The same LDB object `f` with updated fields.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+f = LocalDiscriminantBasis()
+fit!(f, X, y)
+```
 
 **See also:** [`LocalDiscriminantBasis`](@ref), [`fit_transform`](@ref),
     [`transform`](@ref), [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
@@ -140,6 +157,31 @@ end
 
 """
     fitdec!(f, Xw, y)
+
+Fits the Local Discriminant Basis feature selection algorithm `f` onto the decomposed
+signals `Xw` with labels `y`.
+
+# Arguments
+- `f::LocalDiscriminantBasis`: Local discriminant basis object.
+- `Xw::AbstractArray{S} where S<:AbstractFloat`: Group of decomposed signals of the same
+  size, arranged in the 3rd (1D signals) or 4th (2D signals) dimension.
+- `y::AbstractVector{T} where T`: Labels corresponding to each signal in X.
+
+# Returns
+- `f::LocalDiscriminantBasis`: The same LDB object `f` with updated fields.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+f = LocalDiscriminantBasis()
+Xw = wpdall(X, f.wt)
+fitdec!(f, Xw, y)
+```
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref), [`fit_transform`](@ref),
+    [`transform`](@ref), [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
 """
 function fitdec!(f::LocalDiscriminantBasis, Xw::AbstractArray{S}, y::AbstractVector{T}) where 
                 {S<:AbstractFloat, T}
@@ -211,10 +253,30 @@ end
 """
     transform(f, X)
 
-Extract the LDB features on signals `X`.
+Extract the LDB features from signals `X` based on the LDB tree constructed from previously
+fitted signals.
 
-**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref), 
-    [`fit_transform`](@ref), [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
+# Arguments
+- `f::LocalDiscriminantBasis`: Local discriminant basis object.
+- `X::AbstractArray{S} where S<:AbstractFloat`: Group of signals of the same size, arranged
+  in the 2nd (1D signals) or 3rd (2D signals) dimension.
+
+# Returns
+- `Xc::Matrix{S}`: A matrix of the extracted LDB features from `X`, where each column
+  corresponds to the coefficients extracted from the corresponding signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+f = LocalDiscriminantBasis()
+fit!(f, X, y)
+Xc = transform(f, X)
+```
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref), [`fit_transform`](@ref),
+    [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
 """
 function transform(f::LocalDiscriminantBasis, X::AbstractArray{T}) where T
     # check necessary measurements
@@ -250,10 +312,33 @@ end
 """
     fit_transform(f, X, y)
 
-Fit and transform the signals `X` with labels `y` based on the LDB class `f`.
+Fit and transform the signals `X` with labels `y` based on the LDB class `f`. This function
+essentially combines both `fit!` and `transform` into one, and is the preferred method when
+trying to extract the LDB coefficients of the training dataset. For the test dataset, one
+needs to first run `fit!` on the training dataset before running `transform` on the test
+dataset. 
 
-**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref),
-    [`transform`](@ref), [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
+# Arguments
+- `f::LocalDiscriminantBasis`: Local discriminant basis object.
+- `Xw::AbstractArray{S} where S<:AbstractFloat`: Group of decomposed signals of the same
+  size, arranged in the 3rd (1D signals) or 4th (2D signals) dimension.
+- `y::AbstractVector{T} where T`: Labels corresponding to each signal in X.
+
+# Returns
+- `Xc::Matrix{S}`: A matrix of the extracted LDB features from `X`, where each column
+  corresponds to the coefficients extracted from the corresponding signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+f = LocalDiscriminantBasis()
+Xc = fit_transform(f, X, y)
+```
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref), [`transform`](@ref),
+    [`inverse_transform`](@ref), [`change_nfeatures`](@ref)
 """
 function fit_transform(f::LocalDiscriminantBasis, 
                        X::AbstractArray{S}, 
@@ -282,11 +367,29 @@ end
 """
     inverse_transform(f, X)
 
-Compute the inverse transform on the feature matrix `x` to form the original
-signal based on the LDB class `f`.
+Compute the inverse transform on the feature matrix `X` to form the original signal based on
+the LDB class `f`. This function can be used to reconstruct the signals and compare the
+reconstructed features between different classes.
 
-**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref),
-    [`fit_transform`](@ref), [`transform`](@ref), [`change_nfeatures`](@ref)
+# Arguments
+- `f::LocalDiscriminantBasis`: Local discriminant basis object.
+- `X::Matrix{S} where S<:AbstractFloat`: A matrix of the extracted LDB features from
+  original signals, where each column corresponds to the coefficients extracted from the
+  corresponding signal.
+
+# Returns
+- `Xₜ::Array{S}`: Reconstructed signals.
+
+# Examples
+```julia
+X, y = generateclassdata(ClassData(:tri, 5, 5, 5))
+f = LocalDiscriminantBasis()
+Xc = fit_transform(f, X, y)
+Xₜ = inverse_transform(f, Xc)
+```
+
+**See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref), [`fit_transform`](@ref),
+    [`transform`](@ref), [`change_nfeatures`](@ref)
 """
 function inverse_transform(f::LocalDiscriminantBasis, X::AbstractArray{T,2}) where 
                            T<:AbstractFloat
@@ -310,18 +413,31 @@ end
 """
     change_nfeatures(f, x, n_features)
 
-Change the number of features from `f.n_features` to `n_features`. 
+Change the number of features extracted from the signals from `f.n_features` to
+`n_features`. 
 
-Note that if the input `n_features` is larger than `f.n_features`, it results in
-the regeneration of signals based on the current `f.n_features` before 
-reselecting the features. This will cause additional features to be less 
-accurate and effective.
+!!! warning If the input `n_features` is larger than `f.n_features`, it results in the
+    regeneration of signals based on the current `f.n_features` before reselecting the
+    features. This will cause additional features to be less accurate and effective. Often
+    times, the "additional" features tend to be zeros.
+
+# Arguments
+- `f::LocalDiscriminantBasis`: Local discriminant basis object.
+- `x::AbstractMatrix{S} where S<:AbstractFloat`: A matrix of the extracted LDB features from
+  original signals, where each column corresponds to the coefficients extracted from the
+  corresponding signal.
+- `n_features::Integer`: Desired number of features in selected by LDB.
+
+# Returns
+- `xₜ::Matrix{S}`: Matrix of extracted LDB features, where the number of rows is now
+  `n_features` instead of the previous `f.n_features`.
 
 **See also:** [`LocalDiscriminantBasis`](@ref), [`fit!`](@ref), [`fit_transform`](@ref),
     [`transform`](@ref), [`inverse_transform`](@ref)
 """
-function change_nfeatures(f::LocalDiscriminantBasis, x::AbstractArray{T,2},
-        n_features::Integer) where T<:Number
+function change_nfeatures(f::LocalDiscriminantBasis, 
+                          x::AbstractArray{T,2}, 
+                          n_features::Integer) where T<:AbstractFloat
 
     # check measurements
     @assert !isnothing(f.n_features)
@@ -331,14 +447,14 @@ function change_nfeatures(f::LocalDiscriminantBasis, x::AbstractArray{T,2},
     # change number of features
     if f.n_features ≥ n_features
         f.n_features = n_features
-        y = x[1:f.n_features,:]
+        xₜ = x[1:f.n_features,:]
     else
         @warn "Proposed n_features larger than currently saved n_features. Results will be less accurate since inverse_transform and transform is involved."
         X = inverse_transform(f, x)
         f.n_features = n_features
-        y = transform(f, X)
+        xₜ = transform(f, X)
     end
-    return y
+    return xₜ
 end
 
 end # end module

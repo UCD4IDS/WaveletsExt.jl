@@ -19,10 +19,10 @@ makedocs(
             "DWT" => "api/dwt.md",
             "ACWT" => "api/acwt.md",
             "SWT" => "api/swt.md",
+            "SIWPD" => "api/siwpd.md",
             "Best Basis" => "api/bestbasis.md",
             "Denoising" => "api/denoising.md",
             "LDB" => "api/ldb.md",
-            "SIWPD" => "api/siwpd.md",
             "Utils" => "api/utils.md",
             "Visualizations" => "api/visualizations.md",
         ]

@@ -4,8 +4,7 @@
 Modules = [Utils]
 ```
 
-## Public API
-### Useful wavelet/signal utilities
+## Useful wavelet/signal utilities
 ```@docs
 Wavelets.Util.maxtransformlevels
 Utils.getbasiscoef
@@ -17,7 +16,7 @@ Utils.coarsestscalingrange
 Utils.finestdetailrange
 ```
 
-### Tree traversing functions
+## Tree traversing functions
 ```@docs
 Wavelets.Util.isvalidtree
 Wavelets.Util.maketree
@@ -28,7 +27,7 @@ Utils.getdepth
 Utils.gettreelength
 ```
 
-### Metrics
+## Metrics
 ```@docs
 Utils.relativenorm
 Utils.psnr
@@ -36,7 +35,7 @@ Utils.snr
 Utils.ssim
 ```
 
-### Dataset generation
+## Dataset generation
 ```@docs
 Utils.ClassData
 Utils.duplicatesignals
@@ -44,8 +43,7 @@ Utils.generatesignals
 Utils.generateclassdata
 ```
 
-## Private API
+## Miscellaneous
 ```@docs
 Utils.main2depthshift
-Utils.packet
 ```

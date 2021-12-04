@@ -4,8 +4,7 @@
 Modules = [SWT]
 ```
 
-## Public API
-### Transforms on 1 Signal
+## Transforms on 1 Signal
 ```@docs
 SWT.sdwt
 SWT.sdwt!
@@ -21,7 +20,7 @@ SWT.iswpd
 SWT.iswpd!
 ```
 
-### Transforms on Multiple Signals
+## Transforms on Multiple Signals
 ```@docs
 SWT.sdwtall
 SWT.isdwtall
@@ -31,8 +30,7 @@ SWT.swpdall
 SWT.iswpdall
 ```
 
-## Private API
-### Single Step Transforms
+## Single Step Transforms
 ```@docs
 SWT.sdwt_step
 SWT.sdwt_step!

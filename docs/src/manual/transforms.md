@@ -118,7 +118,7 @@ plot(p0, p1, p2, layout=(1,3))
 
 - 2D Example
 ```@example dwt
-using Images, TestImages
+using TestImages
 
 img = testimage("cameraman");
 x = convert(Array{Float64}, img);

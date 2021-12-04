@@ -49,10 +49,11 @@ o   o
 
 # Examples
 ```@repl
-using Wavelets, WaveletsExt
+using Wavelets
+import WaveletsExt: treenodes_matrix
 
 tree = maketree(8, 3, :dwt)
-WaveletsExt.Visualizations.treenodes_matrix(tree)
+treenodes_matrix(tree)
 ```
 """
 function treenodes_matrix(x::BitVector)  
@@ -171,7 +172,7 @@ tree = maketree(128, 128, 7, :dwt)
 plot_tfbdry2(tree)
 ```
 
-**See also:* [`plot_tfbdry`](@ref)
+**See also:** [`plot_tfbdry`](@ref)
 """
 plot_tfbdry2(tree::BitVector) = plot_tfbdry2(tree, 2^(getdepth(length(tree),:quad)+1))
 plot_tfbdry2(tree::BitVector, n::Integer) = plot_tfbdry2(tree, n, n)
@@ -209,30 +210,17 @@ function plot_tfbdry2(tree::BitVector, n::T, m::T) where T<:Integer
 end
 
 """
-    wiggle(wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
-    wiggle(plt, wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
+    wiggle(args...[; kwargs...])
+    wiggle(plt, args...[; kwargs...])
 
 Plots a set of shaded wiggles.
 
 # Arguments
 - `plt::Plots.Plot`: Input plot to plot shaded wiggles.
-- `wav::AbstractArray{<:Number,2}`: Matrix of waveform columns.
+- `args...`: Additional positional arguments for `wiggle`. See [`wiggle!`](@ref).
 
 # Keyword Arguments
-- `taxis::AbstractVector`: (Default: `1:size(wav,1)`) Time axis vector
-- `zaxis::AbstractVector`: (Default: `1:size(wav,2)`) Space axis vector
-- `sc::Real`: (Default: `1`) Scale factor/magnification.
-- `EdgeColor::Symbol`: (Default: `:black`) Sets edge of wiggles color.
-- `FaceColor::Symbol`: (Default: `:black`) Sets shading color of wiggles.
-- `Overlap::Bool`: (Default: `true`) How signals are scaled.
-    - `true`  - Signals overlap (default);
-    - `false` - Signals are scaled so they do not overlap.
-- `Orient::Symbol`: (Default: `:across`) Controls orientation of wiggles.
-    - `:across` - from left to right
-    - `:down`   - from top to down
-- `ZDir::Symbol`: (Default: `:normal`) Direction of space axis.
-    - `:normal`  - First signal at bottom (default)
-    - `:reverse` - First signal at top.
+- `kwargs...`: Keyword arguments for `wiggle`. See [`wiggle!`](@ref).
 
 # Returns
 `::Plots.Plot`: Shaded wiggles on top of current plot object.

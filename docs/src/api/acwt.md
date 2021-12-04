@@ -4,8 +4,7 @@
 Modules = [ACWT]
 ```
 
-## Public API
-### Transforms on 1 Signal
+## Transforms on 1 Signal
 ```@docs
 ACWT.acdwt
 ACWT.acdwt!
@@ -21,9 +20,7 @@ ACWT.iacwpd
 ACWT.iacwpd!
 ```
 
-### Transforms on Multiple Signals
-!!! note
-    The following functions currently only support 1D-signals. Transforms on multiple 2D-signals are not yet supported.
+## Transforms on Multiple Signals
 ```@docs
 ACWT.acdwtall
 ACWT.iacdwtall
@@ -33,8 +30,7 @@ ACWT.acwpdall
 ACWT.iacwpdall
 ```
 
-## Private API
-### Utilities
+## Utilities
 ```@docs
 ACWT.autocorr
 ACWT.pfilter
@@ -43,7 +39,7 @@ ACWT.make_acqmfpair
 ACWT.make_acreverseqmfpair
 ```
 
-### Single Step Transforms
+## Single Step Transforms
 ```@docs
 ACWT.acdwt_step
 ACWT.acdwt_step!
