@@ -12,15 +12,15 @@ Journal of Mathematical Imaging and Vision, Vol. 5, 337-358 (1995).
 
 **See also:** [`generateclassdata`](@ref)
 """
-struct ClassData{T<:Integer}
+struct ClassData
     "Signal type, accepted inputs are `:tri` and `:cbf`"
     type::Symbol
     "Sample size for class 1"
-    s₁::T
+    s₁::Int
     "Sample size for class 2"
-    s₂::T
+    s₂::Int
     "Sample size for class 3"
-    s₃::T
+    s₃::Int
     ClassData(type, s₁, s₂, s₃) = type ∈ [:tri, :cbf] ? new(type, s₁, s₂, s₃) : 
         throw(ArgumentError("Invalid type. Accepted types are :tri and :cbf only."))
 end
@@ -62,6 +62,7 @@ function duplicatesignals(x::AbstractArray{T},
                           k::Integer, 
                           noise::Bool = false, 
                           t::Real = 1) where T<:Number
+
     sz = size(x)
     N = ndims(x) + 1
     X = Array{T,N}(undef, (sz..., n))
@@ -176,7 +177,7 @@ generateclassdata(c)
 
 **See also:** [`ClassData`](@ref)
 """
-function generateclassdata(c::ClassData{T}, shuffle::Bool = false) where T<:Integer
+function generateclassdata(c::ClassData, shuffle::Bool = false)
     @assert c.s₁ >= 0
     @assert c.s₂ >= 0
     @assert c.s₃ >= 0
