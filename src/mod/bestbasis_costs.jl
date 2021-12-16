@@ -41,8 +41,8 @@ Wickerhauser's original algorithm.
 
 **See also:** [`CostFunction`](@ref), [`JBBCost`](@ref), [`NormCost`](@ref)
 """
-@with_kw struct LoglpCost <: JBBCost 
-    p::Number = 2
+@with_kw struct LoglpCost{T<:Real} <: JBBCost 
+    p::T = 2
 end
 
 @doc raw"""

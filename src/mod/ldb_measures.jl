@@ -71,8 +71,8 @@ Equation:
 
 ``W(q,r) = ||q-r||_p^p = \sum_{i=1}^n (q_i - r_i)^p``
 """
-@with_kw struct LpDistance <: ProbabilityDensityDM 
-    p::Number = 2
+@with_kw struct LpDistance{T<:Real} <: ProbabilityDensityDM 
+    p::T = 2
 end
 
 @doc raw"""
