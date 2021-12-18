@@ -115,8 +115,8 @@ Returns the multi-level, multi-depth binary tree corresponding to the Shift-
 Invariant Wavelet Packet Decomposition. 
 """
 function makesiwpdtree(n::Integer, L::Integer, d::Integer)
-    @assert 0 <= L <= maxtransformlevels(n)
-    @assert 1 <= d <= L
+    @assert 0 ≤ L ≤ maxtransformlevels(n)
+    @assert 1 ≤ d ≤ L
 
     tree = Vector{BitVector}(undef, 2^(L+1)-1)
     for i in eachindex(tree)
