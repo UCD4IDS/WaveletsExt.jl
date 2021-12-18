@@ -184,27 +184,29 @@ function generateclassdata(c::ClassData, shuffle::Bool = false)
 
     if c.type == :tri
         n = 32
-        i = collect(1:n)
         # Define classes
         y = Int64.(vcat(ones(Int, c.s₁), 2*ones(Int, c.s₂), 3*ones(Int, c.s₃)))
         
         # Random value generations
-        u₁ = rand(Uniform(0,1), c.s₁)
-        u₂ = rand(Uniform(0,1), c.s₂)
-        u₃ = rand(Uniform(0,1), c.s₃)
-        ϵ₁ = rand(Normal(0,1), (n, c.s₁))
-        ϵ₂ = rand(Normal(0,1), (n, c.s₂))
-        ϵ₃ = rand(Normal(0,1), (n, c.s₃))
+        u = rand(Uniform(0,1))
+        ϵ = rand(Normal(0,1), (n,c.s₁+c.s₂+c.s₃))
 
-        h₁ = max.(6 .- abs.(i.-7), 0)
-        h₂ = max.(6 .- abs.(i.-15), 0)
-        h₃ = max.(6 .- abs.(i.-11), 0)
-        # Build signals
-        H₁ = h₁ * u₁' + h₂ * (1 .- u₁)' + ϵ₁
-        H₂ = h₁ * u₂' + h₃ * (1 .- u₂)' + ϵ₂
-        H₃ = h₂ * u₃' + h₃ * (1 .- u₃)' + ϵ₃
-        
-        H = hcat(H₁, H₂, H₃)
+        # Define functions h₁, h₂, h₃
+        h₁(k::Int) = max(6 - abs(k-7), 0)
+        h₂(k::Int) = h₁(k - 8)
+        h₃(k::Int) = h₁(k - 4)
+
+        # Build triangular signals
+        H₁ = Matrix{Float64}(undef,(n,c.s₁))
+        H₂ = Matrix{Float64}(undef,(n,c.s₂))
+        H₃ = Matrix{Float64}(undef,(n,c.s₃))
+        for i in 1:n
+            H₁[i,:] .= u * h₁(i) + (1 - u) * h₂(i)
+            H₂[i,:] .= u * h₁(i) + (1 - u) * h₃(i)
+            H₃[i,:] .= u * h₂(i) + (1 - u) * h₃(i)
+        end
+
+        H = hcat(H₁, H₂, H₃) + ϵ
     elseif c.type == :cbf
         n = 128
         ϵ = rand(Normal(0,1), (n, c.s₁+c.s₂+c.s₃))
