@@ -1,13 +1,21 @@
 tree = BitVector([1,1,1])
 @test Visualizations.treenodes_matrix(tree) == BitArray([1 1; 1 1])
 # plot_tfbdry() test
-@test typeof(plot_tfbdry(tree)) == Plots.Plot{Plots.GRBackend}
+p = plot()
+@test isa(plot_tfbdry(tree), Plots.Plot{Plots.GRBackend})
+@test isa(plot_tfbdry(p, tree), Plots.Plot{Plots.GRBackend})
+@test isa(plot_tfbdry!(tree), Plots.Plot{Plots.GRBackend})
+@test isa(plot_tfbdry!(p, tree), Plots.Plot{Plots.GRBackend})
 @test_nowarn plot_tfbdry(tree, start=1)
 @test_throws AssertionError plot_tfbdry(tree, start=2)
-@test_nowarn plot_tfbdry(tree, nd_col=:red, bg_col=:white, ln_col=:black)
+@test_nowarn plot_tfbdry(tree, node_color=:red, background_color=:white, line_color=:black)
 # plot_tfbdry2() test
 tree = maketree(4,4,2,:dwt)
+p = plot()
 @test isa(plot_tfbdry2(tree), Plots.Plot{Plots.GRBackend})
+@test isa(plot_tfbdry2(p, tree), Plots.Plot{Plots.GRBackend})
+@test isa(plot_tfbdry2!(tree), Plots.Plot{Plots.GRBackend})
+@test isa(plot_tfbdry2!(p, tree), Plots.Plot{Plots.GRBackend})
 @test_nowarn plot_tfbdry2(tree)
 @test_nowarn plot_tfbdry2(tree, 4)
 @test_nowarn plot_tfbdry2(tree, 4, 8)

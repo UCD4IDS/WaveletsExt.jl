@@ -1,7 +1,9 @@
 module Visualizations
 export 
     plot_tfbdry,
+    plot_tfbdry!,
     plot_tfbdry2,
+    plot_tfbdry2!,
     wiggle,
     wiggle!
 
@@ -76,21 +78,22 @@ function treenodes_matrix(x::BitVector)
 end
 
 """
-    plot_tfbdry(tree[; start, nd_col, ln_col, bg_col])
+    plot_tfbdry([plt], tree[; start, nd_col, ln_col, bg_col])
 
 Given a tree, output a visual representation of the leaf nodes, user will have the option to
 start the node count of each level with 0 or 1.
 
 # Arguments
+- `plt::Plots.Plot`: Plot object.
 - `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
 - `depth::Integer`: (Default: `log2(length(tree)+1)-1 |> Int`) Maximum depth to be
   displayed.
 
 # Keyword Arguments
 - `start::Integer`: (Default: `0`) Whether to zero-index or one-index the root of the tree.
-- `nd_col::Symbol`: (Default: `:white`) Color of the leaf nodes.
-- `ln_col::Symbol`: (Default: `:white`) Color of lines in plot.
-- `bg_col::Symbol`: (Default: `:black`) Color of background.
+- `node_color::Symbol`: (Default: `:black`) Color of the leaf nodes.
+- `line_color::Symbol`: (Default: `:black`) Color of lines in plot.
+- `background_color::Symbol`: (Default: `:white`) Color of background.
 
 # Returns
 `::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
@@ -106,15 +109,50 @@ tree = maketree(128, 7, :dwt)
 plot_tfbdry(tree)
 ```
 
-**See also:** [`plot_tfbdry2`](@ref)
+**See also:** [`plot_tfbdry!`](@ref), [`plot_tfbdry2`](@ref)
 """
-function plot_tfbdry(tree::BitVector,
-                     depth::Integer = log2(length(tree)+1)-1 |> Int;
-                     start::Integer = 0, 
-                     nd_col::Symbol = :white,
-                     ln_col::Symbol = :white,
-                     bg_col::Symbol = :black)
+function plot_tfbdry end
 
+"""
+    plot_tfbdry!([plt], tree, [depth; start, node_color, line_color, background_color])
+
+Given a tree, output a visual representation of the leaf nodes on top of the current plot
+object `plt`, user will have the option to start the node count of each level with 0 or 1.
+
+# Arguments
+- `plt::Plots.Plot`: Plot object.
+- `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
+- `depth::Integer`: (Default: `log2(length(tree)+1) |> Int`) Maximum depth to be displayed.
+
+# Keyword Arguments
+- `start::Integer`: (Default: `0`) Whether to zero-index or one-index the root of the tree.
+- `node_color::Symbol`: (Default: `:black`) Color of the leaf nodes.
+- `line_color::Symbol`: (Default: `:black`) Color of lines in plot.
+- `background_color::Symbol`: (Default: `:white`) Color of background.
+
+# Returns
+`::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Build a tree using Wavelets `maketree`
+tree = maketree(128, 7, :dwt)
+
+# Plot the leaf nodes
+plot_tfbdry!(tree)
+```
+
+**See also:** [`plot_tfbdry`](@ref), [`plot_tfbdry2`](@ref)
+"""
+function plot_tfbdry!(plt::Plots.Plot,
+                      tree::BitVector,
+                      depth::Integer = log2(length(tree)+1) |> Int;
+                      start::Integer = 0, 
+                      node_color::Symbol = :black,
+                      line_color::Symbol = :black,
+                      background_color::Symbol = :white)
     @assert 0 ≤ start ≤ 1
     leaf = getleaf(tree,:binary)
 
@@ -122,15 +160,15 @@ function plot_tfbdry(tree::BitVector,
     nrow = depth+1
     mat = treenodes_matrix(leaf[1:(1<<(depth+1)-1)])
 
-    p = heatmap(0:(ncol-1), start:(nrow+start-1), mat, color = [bg_col, nd_col], 
-                legend = false, background_color = bg_col)
+    heatmap!(plt, 0:(ncol-1), start:(nrow+start-1), mat, color = [background_color, node_color], 
+             legend = false, background_color = background_color)
 
-    plot!(p, xlims = (start-0.5, ncol+start-0.5), ylims = (-0.5, nrow-0.5), yticks = 0:nrow)
+    plot!(plt, xlims = (start-0.5, ncol+start-0.5), ylims = (-0.5, nrow-0.5), yticks = 0:nrow)
     # plot horizontal lines
     for j in 0:(nrow-1)
         x_rng = (start-0.5):(ncol+start-0.5)
         y_val = (j-0.5)*ones(ncol+1)
-        plot!(p, x_rng, y_val, color = ln_col, legend = false)
+        plot!(plt, x_rng, y_val, color = line_color, legend = false)
     end
 
     # plot vertical lines
@@ -138,25 +176,30 @@ function plot_tfbdry(tree::BitVector,
         for jj in 1:2^(j-1)
             x_val = (ncol/2^j)*(2*jj-1)+start-0.5;
             y_rng = j-0.5:nrow-0.5
-            plot!(p, x_val*ones(nrow-j+1), y_rng, color = ln_col)
+            plot!(plt, x_val*ones(nrow-j+1), y_rng, color = line_color)
         end
     end
-    plot!(p, (ncol+start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = ln_col)
-    plot!(p, (start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = ln_col)
-    plot!(p, yaxis = :flip)
+    plot!(plt, (ncol+start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = line_color)
+    plot!(plt, (start-0.5)*ones(nrow+1), -0.5:nrow-0.5, color = line_color)
+    plot!(plt, yaxis = :flip)
 
-    return p
+    return plt
 end
 
 """
-    plot_tfbdry2(tree[, n, m])
+    plot_tfbdry2([plt], tree[, n, m; line_color, background_color])
 
 Given a quadtree, output the visual representation of the leaf nodes.
 
 # Arguments
+- `plt::Plots.Plot`: Plot object.
 - `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
 - `n::Integer`: Vertical size of signal.
 - `m::Integer`: Horizontal size of signal.
+
+# Keyword Arguments
+- `line_color::Symbol`: (Default: `:black`) Color of lines in plot.
+- `background_color::Symbol`: (Default: `:white`) Color of background.
 
 # Returns
 `::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
@@ -172,11 +215,51 @@ tree = maketree(128, 128, 7, :dwt)
 plot_tfbdry2(tree)
 ```
 
-**See also:** [`plot_tfbdry`](@ref)
+**See also:** [`plot_tfbdry2!`](@ref), [`plot_tfbdry`](@ref)
 """
-plot_tfbdry2(tree::BitVector) = plot_tfbdry2(tree, 2^(getdepth(length(tree),:quad)+1))
-plot_tfbdry2(tree::BitVector, n::Integer) = plot_tfbdry2(tree, n, n)
-function plot_tfbdry2(tree::BitVector, n::T, m::T) where T<:Integer
+function plot_tfbdry2 end
+
+"""
+    plot_tfbdry2!([plt], tree, [n, m; line_color, background_color])
+
+Given a quadtree, output the visual representation of the leaf nodes on top of current plot
+object `plt`.
+
+# Arguments
+- `plt::Plots.Plot`: Plot object.
+- `tree::BitVector`: Tree for plotting the leaf nodes. Comes in the form of a `BitVector`.
+- `n::Integer`: Vertical size of signal.
+- `m::Integer`: Horizontal size of signal.
+
+# Keyword Arguments
+- `line_color::Symbol`: (Default: `:black`) Color of lines in plot.
+- `background_color::Symbol`: (Default: `:white`) Color of background.
+
+# Returns
+`::Plots.Plot`: Plot object with the visual representation of the leaf nodes.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Build a quadtree using Wavelets `maketree`
+tree = maketree(128, 128, 7, :dwt)
+
+# Plot the leaf nodes
+plot_tfbdry2!(tree)
+```
+
+**See also:** [`plot_tfbdry2`](@ref), [`plot_tfbdry`](@ref)
+"""
+function plot_tfbdry2!(plt::Plots.Plot, tree::BitVector; kwargs...)
+    return plot_tfbdry2!(plt, tree, 2^(getdepth(length(tree),:quad)+1); kwargs...)
+end
+function plot_tfbdry2!(plt::Plots.Plot, tree::BitVector, n::Integer; kwargs...)
+    return plot_tfbdry2!(plt, tree, n, n; kwargs...)
+end
+function plot_tfbdry2!(plt::Plots.Plot, tree::BitVector, n::T, m::T;
+                       line_color::Symbol = :black, background_color::Symbol = :white) where 
+                       T<:Integer
     # Sanity check
     L = getdepth(length(tree), :quad) + 1               # Max possible decomposition level
     @assert n ≥ 1<<L
@@ -186,11 +269,11 @@ function plot_tfbdry2(tree::BitVector, n::T, m::T) where T<:Integer
     # Build plot frame
     xticks = rem(m,4)==0 && m≥4 ? (0:(m÷4):m) : (0:m:m) # Format x-ticks
     yticks = rem(n,4)==0 && n≥4 ? (0:(n÷4):n) : (0:n:n) # Format y-ticks
-    p = plot(xaxis=false, xticks=xticks, xlims=(0,m), 
-             yaxis=false, yticks=yticks, ylims=(0,n), 
-             grid=false, yflip=true, legend=false)
-    vline!(p, [0,n], color=:black)                      # Vertical frames
-    hline!(p, [0,m], color=:black)                      # Horizontal frames
+    plot!(plt, xaxis=false, xticks=xticks, xlims=(0,m), 
+          yaxis=false, yticks=yticks, ylims=(0,n), 
+          grid=false, yflip=true, legend=false, background_color = background_color)
+    vline!(plt, [0,n], color = line_color)                      # Vertical frames
+    hline!(plt, [0,m], color = line_color)                      # Horizontal frames
     # Draw visual representation of leaves
     for i in eachindex(tree)
         if tree[i]                      # Draw node's children if node exists
@@ -202,11 +285,11 @@ function plot_tfbdry2(tree::BitVector, n::T, m::T) where T<:Integer
             yₑ = y_rng[end]             # y-axis end index
             xₘ = (xₛ+xₑ)÷2              # x-axis mid point
             yₘ = (yₛ+yₑ)÷2              # y-axis midpoint
-            plot!(p, [xₘ,xₘ], [yₛ,yₑ], color=:black)
-            plot!(p, [xₛ,xₑ], [yₘ,yₘ], color=:black)
+            plot!(plt, [xₘ,xₘ], [yₛ,yₑ], color = line_color)
+            plot!(plt, [xₛ,xₑ], [yₘ,yₘ], color = line_color)
         end
     end
-    return p
+    return plt
 end
 
 """
@@ -249,8 +332,7 @@ compatibility.
 
 **See also:** [`wiggle!`](@ref)
 """
-wiggle(args...; kwargs...) = wiggle!(Plots.Plot(), args...; kwargs...)
-wiggle(plt::Plots.Plot, args...; kwargs...) = wiggle!(deepcopy(plt), args...; kwargs...)
+function wiggle end
 
 """
     wiggle!(wav[; taxis, zaxis, sc, EdgeColor, FaceColor, Orient, Overlap, ZDir])
@@ -307,17 +389,6 @@ compatibility.
 
 **See also:** [`wiggle`](@ref)
 """
-function wiggle!(args...; kwargs...)
-    @nospecialize
-    local plt
-    try
-        plt = current()
-    catch
-        return wiggle(args..., kwargs...)
-    end
-    wiggle!(current(), args...; kwargs...)
-end
-
 function wiggle!(plt::Plots.Plot,
                  wav::AbstractArray{T,2};
                  taxis::AbstractVector=1:size(wav,1),
@@ -403,6 +474,32 @@ function wiggle!(plt::Plots.Plot,
         end
     end
     return plt
+end
+
+for (func, func!) in ((:plot_tfbdry, :plot_tfbdry!), 
+                      (:plot_tfbdry2, :plot_tfbdry2!), 
+                      (:wiggle, :wiggle!))
+    @eval begin
+        # Build a plot object and draw on top of it
+        function ($func)(args...; kwargs...)
+            return ($func!)(Plots.Plot(), args...; kwargs...)
+        end
+        # Copy and draw on top of current available plot
+        function ($func)(plt::Plots.Plot, args...; kwargs...) 
+            return ($func!)(deepcopy(plt), args...; kwargs...)
+        end
+        # Construct plot on top of current available plot
+        function ($func!)(args...; kwargs...)
+            @nospecialize
+            local plt
+            try         # Check for plot objects
+                plt = current()
+            catch       # No existing plot, build a new object and draw on top of it
+                return ($func)(args...; kwargs...)
+            end
+            ($func!)(current(), args...; kwargs...)
+        end
+    end
 end
 
 end # end module
