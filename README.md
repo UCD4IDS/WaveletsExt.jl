@@ -5,6 +5,7 @@
 | [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://UCD4IDS.github.io/WaveletsExt.jl/stable) | [![CI](https://github.com/UCD4IDS/WaveletsExt.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/UCD4IDS/WaveletsExt.jl/actions) | [![codecov](https://codecov.io/gh/UCD4IDS/WaveletsExt.jl/branch/master/graph/badge.svg?token=U3EOscAvPE)](https://codecov.io/gh/UCD4IDS/WaveletsExt.jl) |
 | [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://UCD4IDS.github.io/WaveletsExt.jl/dev) | | |
 
+[![status](https://joss.theoj.org/papers/af5f6558736b9c3ec2bd3cf36b0cdf40/status.svg)](https://joss.theoj.org/papers/af5f6558736b9c3ec2bd3cf36b0cdf40)
 [![deps](https://juliahub.com/docs/WaveletsExt/deps.svg)](https://juliahub.com/ui/Packages/WaveletsExt/iZ29j?t=2)
 [![version](https://juliahub.com/docs/WaveletsExt/version.svg)](https://juliahub.com/ui/Packages/WaveletsExt/iZ29j)
 [![pkgeval](https://juliahub.com/docs/WaveletsExt/pkgeval.svg)](https://juliahub.com/ui/Packages/WaveletsExt/iZ29j)
