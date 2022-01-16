@@ -41,7 +41,7 @@ This package is written and maintained by Zeng Fung Liew and Shozen Dan under th
 ## Installation
 The package is part of the official Julia Registry. It can be install via the Julia REPL.
 ```julia
-(@1.6) pkg> add WaveletsExt
+(@1.7) pkg> add WaveletsExt
 ```
 or
 ```julia
