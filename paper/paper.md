@@ -71,12 +71,12 @@ xw = wpdall(x, wt, 6)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
-p1 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |> 
+p1 = plot_tfbdry(tree, node_color=:green, line_color=:black, background_color=:white) |> 
      p -> plot!(p, title="JBB")
 
 # ----- Least Statistically Dependent Basis (LSDB)
 tree = bestbasistree(xw, LSDB())
-p2 = plot_tfbdry(tree, nd_col=:black, ln_col=:black, bg_col=:white) |> 
+p2 = plot_tfbdry(tree, node_color=:green, line_color=:black, background_color=:white) |> 
      p -> plot!(p, title="LSDB")
 
 # Combine and save plot
@@ -159,7 +159,7 @@ ldb = LocalDiscriminantBasis(
 X̂ = fit_transform(ldb, X, y)
 
 # Plot the best basis for feature extraction
-p2 = plot_tfbdry(ldb.tree, nd_col=:black, ln_col=:black, bg_col=:white)
+p2 = plot_tfbdry(ldb.tree, node_color=:green, line_color=:black, background_color=:white)
 plot!(p2, title="Basis Selection using LDB")
 
 # Combine and save plot
