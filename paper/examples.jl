@@ -24,7 +24,7 @@ p2 = wiggle(y) |> p -> plot!(p, yticks=1:9, title="Stationary WT")
 
 # Combine and save plot
 p = plot(p1, p2, layout=(1,2))
-savefig(p, "transforms.png")
+savefig(p, "tpaper/ransforms.png")
 
 # 2. Best Basis Algorithms -----------------------------------------------------------------
 #    Compared to Wavelets.jl, WaveletsExt.jl has an extended ability of catering toward
@@ -39,12 +39,12 @@ xw = wpdall(x, wt, 6)
 
 # ----- Joint Best Basis (JBB)
 tree = bestbasistree(xw, JBB())
-p1 = plot_tfbdry(tree, 6, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p1 = plot_tfbdry(tree, 6, node_color=:green, line_color=:black, background_color=:white) |> 
      p -> plot!(p, title="JBB")
 
 # ----- Least Statistically Dependent Basis (LSDB)
 tree = bestbasistree(xw, LSDB())
-p2 = plot_tfbdry(tree, 6, nd_col=:green, ln_col=:black, bg_col=:white) |> 
+p2 = plot_tfbdry(tree, 6, node_color=:green, line_color=:black, background_color=:white) |> 
      p -> plot!(p, title="LSDB")
 
 # Combine and save plot
@@ -118,7 +118,7 @@ ldb = LocalDiscriminantBasis(wt=wt,
 X̂ = fit_transform(ldb, X, y)
 
 # Plot the best basis for feature extraction
-p2 = plot_tfbdry(ldb.tree, 6, nd_col=:green, ln_col=:black, bg_col=:white)
+p2 = plot_tfbdry(ldb.tree, 6, node_color=:green, line_color=:black, background_color=:white)
 plot!(p2, title="Basis Selection using LDB")
 
 p = plot(p1, p2, size=(600,300))
