@@ -33,7 +33,7 @@ One of the most distinguishing features of `WaveletsExt.jl` is the presence of a
 
 # Examples
 ## 1. Redundant Wavelet Transforms
-`WaveletsExt.jl` implements several redundant wavelet transforms including Stationary Wavelet Transform (SWT) [@Nason:1995] and Autocorrelation Wavelet Transform [@Saito:1993]. These transformations can be performed using the `acdwt` and `sdwt` functions, and the resulting decomposition can be visualized with the `wiggle` function included in `WaveletsExt.jl`.
+`WaveletsExt.jl` implements several redundant wavelet transforms including Autocorrelation Wavelet Transform [@Saito:1993] and Stationary Wavelet Transform (SWT) [@Nason:1995]. These transformations can be performed using the `acdwt` and `sdwt` functions, and the resulting decomposition can be visualized with the `wiggle` function included in `WaveletsExt.jl`.
 
 ```julia
 using Plots, Wavelets, WaveletsExt
@@ -56,7 +56,7 @@ savefig(p, "transforms.png")
 ```
 !["Wiggle" plots displaying the value of coefficients at each level of the autocorrelation and stationary wavelet transform for a unit impulse signal. \label{fig:transforms}](transforms.png)
 
-## Best Basis Algorithms
+## 2. Best Basis Algorithms
 `WaveletsExt.jl` can select a best basis for a multiple signal input (i.e., an array of signals) through the Joint Best Basis (JBB) [@Wickerhauser:1996] or Least Statistically Dependent Basis (LSDB) [@Saito:2001] algorithms. The resulting best basis tree can be visualized using `plot_tfbdry` also included in `WaveletsExt.jl`.
 
 ```julia
@@ -85,7 +85,7 @@ savefig(p, "bestbasis.png")
 ```
 ![The best basis trees of 100 HeaviSine signals (A sinusoid + two Heaviside step functions) [@Donoho:1995a; @Donoho:1995b] selected by the JBB and LSDB algorithms. Each row represents a decomposition level, where level 0 is the original input signal, and each cell represents a frequency subband (low to high frequency from left to right). The colored cells indicate those subbands selected by the JBB (left) and the LSDB (right) algorithms.  \label{fig:bestbasis}](bestbasis.png)
 
-## Denoising Algorithms
+## 3. Denoising Algorithms
 `WaveletsExt.jl` contains two functions for denoising: `denoise` and `denoiseall`. The former denoises a single signal input whereas the latter denoises multiple signal input. For more examples of denoising algorithms in `WaveletsExt.jl`, see [@Liew:2021].
 
 ```julia
@@ -126,7 +126,7 @@ savefig(p, "denoising.png")
 ```
 ![Left: HeaviSine signals with Gaussian noise. Black lines represent the original (non-noisy) signal. Right: Simultaneously denoised signals using the JBB algorithm with a universal thresholding constant determined by the VisuShrink method [@Donoho:1994]. \label{fig:denoising}](denoising.png)
 
-## Feature Extraction
+## 4. Feature Extraction
 For signal classification problems, users can extract distinguishing features localized in both the time and frequency domains using the Local Discriminant Basis (LDB) algorithm. Further details can be found in the original papers by Saito and his collaborators [@Saito:1995; @Saito:2002] as well as the interactive tutorial [@Dan:2021].
 
 ```julia
