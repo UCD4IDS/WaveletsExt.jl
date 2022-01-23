@@ -1,7 +1,7 @@
 name = "WaveletsExt"
 uuid = "8f464e1e-25db-479f-b0a5-b7680379e03f"
 authors = ["Zeng Fung Liew <lzfliew@ucdavis.edu>", "Shozen Dan <shodan@ucdavis.edu>"]
-version = "0.1.16"
+version = "0.1.17"
 
 [deps]
 AverageShiftedHistograms = "77b51b56-6f8f-5c3a-9cb4-d71f9594ea6e"
