@@ -541,8 +541,8 @@ function getcolrange(n::Integer, idx::T) where T<:Integer
     end
 end
 
-include("utils_tree.jl")
-include("utils_metrics.jl")
-include("utils_dataset.jl")
+include("utils/utils_tree.jl")
+include("utils/utils_metrics.jl")
+include("utils/utils_dataset.jl")
 
 end # end module
