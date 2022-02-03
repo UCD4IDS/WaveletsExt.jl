@@ -9,6 +9,19 @@ standard matrix multiplication to compute the product. This algorithm works in o
 The second is to transform both the matrix and vector to their nonstandard forms and
 multiply the nonstandard forms. If the matrix is sparse in nonstandard form, this can be an
 order ``O(n)`` algorithm.
+
+# Arguments
+- `M::AbstractVector{T} where T<:AbstractFloat`: ``n \times n`` matrix.
+- `NM::SparseMatrixCSC{T,S} where {T<:AbstractFloat, S<:Integer}`: Nonstandard transformed
+  sparse matrix of `M`.
+- `x::AbstractVector{T} where T<:AbstractFloat`: Vector of length ``n`` in natural basis.
+- `wt::OrthoFilter`: Type of wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of decomposition levels.
+- `ϵ::T where T<:AbstractFloat`: (Default: `1e-4`) Truncation criterion for nonstandard
+  transform of `M`.
+
+# Returns
+- `y::Vector{T}`: Nonstandard approximation of ``Mx``.
 """
 function nonstd_wavemult(M::AbstractMatrix{T},
                          x::AbstractVector{T},

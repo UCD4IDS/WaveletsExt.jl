@@ -1,6 +1,8 @@
 module WaveMult
 export mat2sparse_nsform,
-       ns_dwt
+       ns_dwt,
+       ns_idwt,
+       nonstd_wavemult
        
 using Wavelets,
       LinearAlgebra, 

@@ -1,9 +1,24 @@
+"""
+    ns_dwt(x, wt, [L])
+
+Nonstandard wavelet transform on 1D signals.
+
+# Arguments
+- `x::AbstractVector{T} where T<:AbstractFloat`: 1D signal of length ``2^J``.
+- `wt::OrthoFilter`: Type of wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(x)`) Number of decomposition levels.
+
+# Returns
+- `nxw::Vector{T}`: Nonstandard wavelet transform of `x` of length ``2^{J+1}``.
+"""
 function ns_dwt(x::AbstractVector{T}, 
                 wt::OrthoFilter, 
                 L::Integer = maxtransformlevels(x)) where T<:AbstractFloat
     Lmax = maxtransformlevels(x)
-    @assert L ≤ Lmax
     n = length(x)
+    @assert 1 ≤ L ≤ Lmax
+    @assert ispow2(n)
+
     nxw = zeros(T, 2*n)
     g, h = WT.makereverseqmfpair(wt, true)
     for l in 1:L
@@ -21,14 +36,22 @@ end
 Inverse nonstandard wavelet transform on 1D signals.
 
 # Arguments
+- `nxw::AbstractVector{T} where T<:AbstractFloat`: Nonstandard wavelet transformed 1D
+  signal of length ``2^{J+1}``.
+- `wt::OrthoFilter`: Type of wavelet filter.
+- `L::Integer`: (Default: `maxtransformlevels(nxw) - 1`) Number of decomposition levels.
 
+# Returns
+- `x::Vector{T}`: 1D signal of length ``2^J``.
 """
 function ns_idwt(nxw::AbstractVector{T},
                  wt::OrthoFilter,
                  L::Integer = maxtransformlevels(nxw)-1) where T<:AbstractFloat
     Lmax = maxtransformlevels(nxw) - 1
-    @assert L ≤ Lmax
     n = length(nxw) ÷ 2
+    @assert 1 ≤ L ≤ Lmax
+    @assert ispow2(n)
+
     x = zeros(T, n)
     x[1:1<<(Lmax-L)] = nxw[1:1<<(Lmax-L)]
     g, h = WT.makereverseqmfpair(wt, true)
