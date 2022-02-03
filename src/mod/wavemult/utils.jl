@@ -35,8 +35,6 @@ Stretch matrix into BCR nonstandard form.
 # Returns
 - `ie::Vector{T}`: Row indices of elements in nonstandard form of matrix.
 - `je::Vector{T}`: Column indices of elements in nonstandard form of matrix.
-
-# Examples
 """
 function stretchmatrix(i::AbstractVector{T}, j::AbstractVector{T}, n::T, L::T) where 
                        T<:Integer
