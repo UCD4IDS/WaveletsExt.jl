@@ -15,6 +15,24 @@ sparse matrix, and can be used as input to `nonstd_wavemult`.
 # Returns
 - `NM::SparseMatrixCSC{T, Integer}`: Sparse nonstandard form of matrix of size 2n x 2n.
 
+# Examples
+```jldoctest
+julia> using Wavelets, WaveletsExt; import Random: seed!
+
+julia> seed!(1234); M = randn(4,4); wt = wavelet(WT.haar);
+
+julia> mat2sparseform_nonstd(M, wt)
+8×8 SparseArrays.SparseMatrixCSC{Float64, Int64} with 16 stored entries:
+ 1.88685   ⋅    ⋅         ⋅          ⋅         ⋅         ⋅          ⋅
+  ⋅        ⋅    ⋅         ⋅          ⋅         ⋅         ⋅          ⋅
+  ⋅        ⋅    ⋅        0.363656    ⋅         ⋅         ⋅          ⋅
+  ⋅        ⋅   2.49634  -1.08139     ⋅         ⋅         ⋅          ⋅
+  ⋅        ⋅    ⋅         ⋅          ⋅         ⋅       -1.0187     0.539411
+  ⋅        ⋅    ⋅         ⋅          ⋅         ⋅        1.68141    0.0351839
+  ⋅        ⋅    ⋅         ⋅        -1.39713  -1.21352   0.552745   0.427717
+  ⋅        ⋅    ⋅         ⋅        -1.05882   0.16666  -0.124156  -0.218902
+```
+
 **See also:** [`mat2sparseform_std`](@ref), [`stretchmatrix`](@ref)
 """
 function mat2sparseform_nonstd(M::AbstractMatrix{T}, 
@@ -51,6 +69,20 @@ to `std_wavemult`.
 
 # Returns
 - `SM::SparseMatrixCSC{T, Integer}`: Sparse standard form of matrix of size ``n \times n``.
+
+# Examples
+```jldoctest
+julia> using Wavelets, WaveletsExt; import Random: seed!
+
+julia> seed!(1234); M = randn(4,4); wt = wavelet(WT.haar);
+
+julia> mat2sparseform_std(M, wt)
+4×4 SparseArrays.SparseMatrixCSC{Float64, Int64} with 16 stored entries:
+  1.88685    0.363656   0.468602   0.4063
+  2.49634   -1.08139    1.90927   -0.356542
+ -1.84601    0.129829   0.552745   0.427717
+ -0.630852   0.866545  -0.124156  -0.218902
+```
 
 **See also:** [`mat2sparseform_nonstd`](@ref), [`sft`](@ref)
 """
