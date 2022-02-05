@@ -65,6 +65,7 @@ function ns_dwt(x::AbstractVector{T},
         v = l == 1 ? x : @view nxw[ndyad(l-1, Lmax, false)]
         dwt_step!(w₁, w₂, v, h, g)
     end
+    nxw[1:1<<(Lmax-L)] = nxw[ndyad(L, Lmax, false)]
     return nxw
 end
 
@@ -132,7 +133,7 @@ function ns_idwt(nxw::AbstractVector{T},
     x[1:1<<(Lmax-L)] = nxw[1:1<<(Lmax-L)]
     g, h = WT.makereverseqmfpair(wt, true)
     for l in L:-1:1
-        w₁ = nxw[ndyad(l, Lmax, false)] + x[1:1<<(Lmax-l)] 
+        w₁ = nxw[ndyad(l, Lmax, false)] + x[1:1<<(Lmax-l)]
         w₂ = @view nxw[ndyad(l, Lmax, true)]
         v = @view x[1:1<<(Lmax-l+1)]
         idwt_step!(v, w₁, w₂, h, g)

@@ -103,7 +103,7 @@ function stretchmatrix(i::AbstractVector{T}, j::AbstractVector{T}, n::T, L::T) w
     je = copy(j)
     for l in 0:(L-1)
         k = Lmax - l - 1
-        cond = (ie .> 1<<k .| je .> 1<<k) .& (ie .≤ 1<<(k+1) .& je .≤ 1<<(k+1))
+        cond = ((ie .> 1<<k) .| (je .> 1<<k)) .& ((ie .≤ 1<<(k+1)) .& (je .≤ 1<<(k+1)))
         idx = findall(cond)
         if !isempty(idx)
             ie[idx] = ie[idx] .+ 1<<(k+1)
