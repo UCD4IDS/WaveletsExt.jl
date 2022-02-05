@@ -43,7 +43,7 @@ function mat2sparseform_nonstd(M::AbstractMatrix{T},
     n = size(M, 1)
     Mw = dwt(M, wt, L)                          # 2D wavelet transform
     # Find maximum column norm of Mw
-    maxcolnorm = (maximum ∘ mapslices)(norm, Mw, dims = 1)
+    maxcolnorm = mapslices(norm, Mw, dims = 1) |> maximum
     nilMw = Mw .* (abs.(Mw) .> ϵ * maxcolnorm)  # "Remove" values close to zero
     nz_vals = nilMw[nilMw .≠ 0]                 # Extract all nonzero values
     nz_indx = findall(!iszero, nilMw)           # Extract indices of nonzero values
@@ -93,7 +93,7 @@ function mat2sparseform_std(M::AbstractMatrix{T},
     @assert size(M,1) == size(M,2)
     Mw = sft(M, wt, L)                          # Transform to standard form
     # Find maximum column norm of Mw
-    maxcolnorm = (maximum ∘ mapslices)(norm, Mw, dims = 1)
+    maxcolnorm = mapslices(norm, Mw, dims = 1) |> maximum
     nilMw = Mw .* (abs.(Mw) .> ϵ * maxcolnorm)  # Remove values close to zero
     SM = sparse(nilMw)                          # Convert to sparse matrix
     return SM
