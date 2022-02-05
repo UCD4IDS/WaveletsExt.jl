@@ -98,7 +98,7 @@ julia> stretchmatrix(i, j, 4, 2)
 function stretchmatrix(i::AbstractVector{T}, j::AbstractVector{T}, n::T, L::T) where 
                        T<:Integer
     Lmax = maxtransformlevels(n)
-    @assert L ≤ Lmax
+    @assert 1 ≤ L ≤ Lmax
     ie = copy(i)
     je = copy(j)
     for l in 0:(L-1)
