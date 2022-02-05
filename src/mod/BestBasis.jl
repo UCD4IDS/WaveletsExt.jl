@@ -33,8 +33,8 @@ using
     ..DWT,
     ..SIWPD
 
-include("bestbasis_costs.jl")
-include("bestbasis_tree.jl")
+include("bestbasis/bestbasis_costs.jl")
+include("bestbasis/bestbasis_tree.jl")
 
 ## ----- BEST TREE SELECTION -----
 # Tree selection for 1D signals

@@ -1006,8 +1006,8 @@ end
 #   return (v₀ + v₁) / √2
 # end
 
-include("acwt_utils.jl")
-include("acwt_one_level.jl")
-include("acwt_all.jl")
+include("acwt/acwt_utils.jl")
+include("acwt/acwt_one_level.jl")
+include("acwt/acwt_all.jl")
 
 end # end module
