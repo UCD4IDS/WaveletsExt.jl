@@ -13,7 +13,8 @@ makedocs(
             "Transforms" => "manual/transforms.md",
             "Best Basis" => "manual/bestbasis.md",
             "Denoising" => "manual/denoising.md",
-            "Local Discriminant Basis" => "manual/localdiscriminantbasis.md"
+            "Local Discriminant Basis" => "manual/localdiscriminantbasis.md",
+            "Wavelets and Fast Numerical Algorithms" => "manual/wavemult.md"
         ],
         "API" => Any[
             "DWT" => "api/dwt.md",
