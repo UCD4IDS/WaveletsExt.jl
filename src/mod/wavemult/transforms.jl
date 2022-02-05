@@ -213,7 +213,7 @@ M̂ = isft(Mw, wt)
 """
 function isft(Mw::AbstractMatrix{T},
               wt::OrthoFilter,
-              L::Integer = maxtransformlevels(M)) where T<:AbstractFloat
+              L::Integer = maxtransformlevels(Mw)) where T<:AbstractFloat
     @assert 1 ≤ L ≤ maxtransformlevels(Mw)
     n, m = size(Mw)
     
