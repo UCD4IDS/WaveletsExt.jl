@@ -3,7 +3,7 @@ import WaveletsExt.WaveMult: dyadlength, stretchmatrix, ndyad, sft, isft
 @testset "Utilities" begin
     # dyadlength
     @test dyadlength(zeros(16)) == dyadlength(16) == 4
-    @test_warn "Dyadlength n != 2^J" dyadlength(15)
+    @test_logs (:warn, "Dyadlength n != 2^J") dyadlength(15)
 
     # stretchmatrix
     i = [1,2,3,4]; j = copy(i)
