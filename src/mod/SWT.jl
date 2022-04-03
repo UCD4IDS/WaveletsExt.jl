@@ -1198,7 +1198,7 @@ function iswpd!(x::AbstractMatrix{T},
     return x
 end
 
-include("swt_one_level.jl")
-include("swt_all.jl")
+include("swt/swt_one_level.jl")
+include("swt/swt_all.jl")
 
 end # end module

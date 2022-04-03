@@ -9,6 +9,7 @@
 [![deps](https://juliahub.com/docs/WaveletsExt/deps.svg)](https://juliahub.com/ui/Packages/WaveletsExt/iZ29j?t=2)
 [![version](https://juliahub.com/docs/WaveletsExt/version.svg)](https://juliahub.com/ui/Packages/WaveletsExt/iZ29j)
 [![pkgeval](https://juliahub.com/docs/WaveletsExt/pkgeval.svg)](https://juliahub.com/ui/Packages/WaveletsExt/iZ29j)
+[![WaveletsExt Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/WaveletsExt)](https://pkgs.genieframework.com?packages=WaveletsExt)
 
 This package is a [Julia](https://github.com/JuliaLang/julia) extension package to
 [Wavelets.jl](https://github.com/JuliaDSP/Wavelets.jl) (WaveletsExt is short for Wavelets

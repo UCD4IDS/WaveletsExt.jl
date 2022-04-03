@@ -41,8 +41,8 @@ using ..Utils,
       ..DWT
 import ..BestBasis: bestbasis_treeselection
 
-include("ldb_energymap.jl")
-include("ldb_measures.jl")
+include("ldb/ldb_energymap.jl")
+include("ldb/ldb_measures.jl")
 
 ## LOCAL DISCRIMINANT BASIS
 """

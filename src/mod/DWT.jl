@@ -709,7 +709,7 @@ function Wavelets.Transforms.iwpt!(x̂::AbstractArray{T,2},
     return x̂
 end
 
-include("dwt_one_level.jl")
-include("dwt_all.jl")
+include("dwt/dwt_one_level.jl")
+include("dwt/dwt_all.jl")
 
 end # end module

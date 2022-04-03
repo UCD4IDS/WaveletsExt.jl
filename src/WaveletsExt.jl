@@ -11,6 +11,7 @@ include("mod/SWT.jl")
 include("mod/Denoising.jl")
 include("mod/LDB.jl")
 include("mod/Visualizations.jl")
+include("mod/WaveMult.jl")
 
 using Reexport
 @reexport using .DWT,
@@ -21,6 +22,7 @@ using Reexport
                 .SWT,
                 .SIWPD,
                 .ACWT,
-                .Visualizations
+                .Visualizations,
+                .WaveMult
 
 end
