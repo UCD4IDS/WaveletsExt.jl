@@ -11,7 +11,6 @@ struct ShiftInvariantWaveletTransformNode{N, T₁<:Integer, T₂<:AbstractFloat}
     IsShiftedTransform::Bool
     Depth::T₁
     IndexAtDepth::T₁
-    IndexAtTree::T₁
     Cost::Union{T₂, Nothing}
     Value::Array{T₂,N}
 end
