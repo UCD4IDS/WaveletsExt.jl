@@ -8,7 +8,8 @@ using
 
 using 
     ..Utils,
-    ..DWT
+    ..DWT,
+    ..BestBasis
 
 """
     siwpd(x, wt[, L=maxtransformlevels(x), d=L])
