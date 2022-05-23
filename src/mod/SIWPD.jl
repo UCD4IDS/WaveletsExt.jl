@@ -4,12 +4,17 @@ export
     makesiwpdtree
 
 using 
-    Wavelets
+    Wavelets,
+    Parameters,
+    LinearAlgebra
 
 using 
     ..Utils,
-    ..DWT,
-    ..BestBasis
+    ..DWT
+
+include("siwt/siwt_utls.jl")
+include("siwt/siwt_one_level.jl")
+include("bestbasis/bestbasis_costs.jl")
 
 """
     siwpd(x, wt[, L=maxtransformlevels(x), d=L])
@@ -39,6 +44,21 @@ function siwpd(x::AbstractVector{T}, wt::OrthoFilter,
         siwpd_subtree!(y, h, g, i, dₗ, 0, L=lvl, len=len)
     end
     return y
+end
+
+function siwpd2(x::AbstractVector{T}, 
+                wt::OrthoFilter, 
+                L::S = maxtransformlevels(x),
+                d::S = L) where {T<:AbstractFloat, S<:Integer}
+    # Sanity check
+    @assert 0 ≤ L ≤ maxtransformlevels(x)
+    @assert 1 ≤ d ≤ L
+
+    g, h = WT.makereverseqmfpair(wt, true)
+    siwtObj = ShiftInvariantWaveletTransformObject(x, wt, L, d)
+    rootNodeIndex = siwtObj.BestTree[1]
+    siwpd_subtree!(siwtObj, rootNodeIndex, h, g, d)
+    return siwtObj
 end
 
 #=======================================================================================
@@ -85,36 +105,6 @@ function siwpd_subtree!(y::AbstractMatrix{T₁}, h::Vector{T₂}, g::Vector{T₂
     siwpd_subtree!(y, h, g, getchildindex(i, :right), d-1, ss+1<<L, L=L+1, len=len÷2)
 
     return y
-end
-
-# Single step of decomposition
-function sidwt_step!(w₁::AbstractVector{T}, w₂::AbstractVector{T},
-                v::AbstractVector{T},
-                h::Vector{S}, g::Vector{S},
-                s::Bool) where {T<:AbstractFloat, S<:AbstractFloat}
-    # Sanity check
-    @assert length(w₁) == length(w₂) == length(v)÷2
-    @assert length(h) == length(g)
-
-    # Setup
-    n = length(v)           # Parent length
-    n₁ = length(w₁)         # Child length
-    filtlen = length(h)     # Filter length
-
-    # One step of discrete transform
-    for i in 1:n₁
-        k₁ = mod1(2*i-1-s, n)   # Start index for low pass filtering
-        k₂ = 2*i-s              # Start index for high pass filtering
-        @inbounds w₁[i] = g[end] * v[k₁]
-        @inbounds w₂[i] = h[1] * v[k₂]
-        for j in 2:filtlen
-            k₁ = k₁+1 |> k₁ -> k₁>n ? mod1(k₁,n) : k₁
-            k₂ = k₂-1 |> k₂ -> k₂≤0 ? mod1(k₂,n) : k₂
-            @inbounds w₁[i] += g[end-j+1] * v[k₁]
-            @inbounds w₂[i] += h[j] * v[k₂]
-        end
-    end
-    return w₁, w₂
 end
 
 """

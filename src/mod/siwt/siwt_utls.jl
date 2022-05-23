@@ -1,42 +1,4 @@
 """
-    ShiftInvariantWaveletTransformObject{N, T₁<:Integer, T₂<:AbstractFloat}
-
-Data structure to hold all shift-invariant wavelet transform (SIWT) information of a signal.
-
-# Parameters
-- `Nodes::Dict{NTuple{3,T₁}, Vector{ShiftInvariantWaveletTransformNode{N,T₁,T₂}}}`:
-  Dictionary containing the information of each node within a tree.
-- `SignalSize::Union{T₁, NTuple{N,T₁}}`: Size of the original signal.
-- `MaxTransformLevel::T₁`: Maximum levels of transform set for signal.
-- `Wavelet::OrthoFilter`: A discrete wavelet for transform purposes.
-- `MinCost::Union{T₂, Nothing}`: The current minimum [`LogEnergyEntropyCost`](@ref) cost of 
-  the decomposition tree.
-
-!!! note 
-    `MinCost` parameter will contain the cost of the root node by default. To compute the 
-    true minimum cost of the decomposition tree, one will need to first compute the SIWT
-    best basis by calling [`bestbasistree`](@ref).
-
-- `BestTree::Vector{NTuple{3,T₁}}`: A collection of node indices that belong in the best
-  basis tree.
-
-!!! note 
-    `BestTree` parameter will contain all the nodes by default, ie. the full decomposition 
-    will be the best tree. To get the SIWT best basis tree that produce the minimum cost, 
-    one will neeed to call [`bestbasistree`](@ref).
-
-**See also:** [`ShiftInvariantWaveletTransformNode`](@ref)
-"""
-mutable struct ShiftInvariantWaveletTransformObject{N, T₁<:Integer, T₂<:AbstractFloat}
-    Nodes::Dict{NTuple{3,T₁}, Vector{ShiftInvariantWaveletTransformNode{N,T₁,T₂}}}
-    SignalSize::Union{T₁, NTuple{N,T₁}}
-    MaxTransformLevel::T₁
-    Wavelet::OrthoFilter
-    MinCost::Union{T₂, Nothing}
-    BestTree::Vector{NTuple{3,T₁}}
-end
-
-"""
     ShiftInvariantWaveletTransformNode{N, T₁<:Integer, T₂<:AbstractFloat}
 
 Data structure to hold the index, coefficients, and cost value of an SIWT node.
@@ -67,10 +29,11 @@ mutable struct ShiftInvariantWaveletTransformNode{N, T₁<:Integer, T₂<:Abstra
         valueDim = ndims(Value)
         if valueDim == 1
             maxIndexAtDepth = 1<<Depth - 1
-            maxTransformShift = 1
+            maxTransformShift = maxIndexAtDepth
         elseif valueDim == 2
             maxIndexAtDepth = 1<<(Depth<<1) - 1
             maxTransformShift = 3
+            (throw ∘ ArgumentError)("2D SIWT not available yet.")
         else
             (throw ∘ ArgumentError)("Coefficient array has dimension larger than 2.")
         end
@@ -83,25 +46,42 @@ mutable struct ShiftInvariantWaveletTransformNode{N, T₁<:Integer, T₂<:Abstra
 end
 
 """
-    ShiftInvariantWaveletTransformObject(signal, wavelet)
+    ShiftInvariantWaveletTransformObject{N, T₁<:Integer, T₂<:AbstractFloat}
 
-Outer constructor and initialization of SIWT object.
+Data structure to hold all shift-invariant wavelet transform (SIWT) information of a signal.
 
-# Arguments
-- `signal::Array{T} where T<:AbstractFloat`: Input signal.
-- `wavelet::OrthoFilter`: Wavelet filter.
+# Parameters
+- `Nodes::Dict{NTuple{3,T₁}, ShiftInvariantWaveletTransformNode{N,T₁,T₂}}`:
+  Dictionary containing the information of each node within a tree.
+- `SignalSize::Union{T₁, NTuple{N,T₁}}`: Size of the original signal.
+- `MaxTransformLevel::T₁`: Maximum levels of transform set for signal.
+- `Wavelet::OrthoFilter`: A discrete wavelet for transform purposes.
+- `MinCost::Union{T₂, Nothing}`: The current minimum [`LogEnergyEntropyCost`](@ref) cost of 
+  the decomposition tree.
+
+!!! note 
+    `MinCost` parameter will contain the cost of the root node by default. To compute the 
+    true minimum cost of the decomposition tree, one will need to first compute the SIWT
+    best basis by calling [`bestbasistree`](@ref).
+
+- `BestTree::Vector{NTuple{3,T₁}}`: A collection of node indices that belong in the best
+  basis tree.
+
+!!! note 
+    `BestTree` parameter will contain all the nodes by default, ie. the full decomposition 
+    will be the best tree. To get the SIWT best basis tree that produce the minimum cost, 
+    one will neeed to call [`bestbasistree`](@ref).
+
+**See also:** [`ShiftInvariantWaveletTransformNode`](@ref)
 """
-function ShiftInvariantWaveletTransformObject(signal::Array{T}, wavelet::OrthoFilter) where T<:AbstractFloat
-    signalDim = ndims(signal)
-    signalSize = signalDim == 1 ? length(signal) : size(signal)
-    cost = coefcost(signal, LogEnergyEntropyCost())
-    signalNode = ShiftInvariantWaveletTransformNode(0, 0, 0, cost, signal)
-    maxTransformLevel = 0
-    index = (signalNode.Depth, signalNode.IndexAtDepth, signalNode.TransformShift)
-    S = typeof(signalNode.Depth)
-    nodes = Dict{NTuple{3,S}, Vector{ShiftInvariantWaveletTransformNode{signalDim,S,T}}}(index => signal)
-    tree = [index]
-    return ShiftInvariantWaveletTransformObject(nodes, signalSize, maxTransformLevel, wavelet, cost, tree)
+mutable struct ShiftInvariantWaveletTransformObject{N, T₁<:Integer, T₂<:AbstractFloat}
+    Nodes::Dict{NTuple{3,T₁}, ShiftInvariantWaveletTransformNode{N,T₁,T₂}}
+    SignalSize::Union{T₁, NTuple{N,T₁}}
+    MaxTransformLevel::T₁
+    MaxShiftedTransformLevels::T₁
+    Wavelet::OrthoFilter
+    MinCost::Union{T₂, Nothing}
+    BestTree::Vector{NTuple{3,T₁}}
 end
 
 """
@@ -121,5 +101,79 @@ function ShiftInvariantWaveletTransformNode(data::Array{T},
                                             indexAtDepth::S,
                                             transformShift::S) where {T<:AbstractFloat, S<:Integer}
     cost = coefcost(data, LogEnergyEntropyCost())
-    return ShiftInvariantWaveletTransformNode(depth, indexAtDepth, transformShift, cost, data)
+    N = ndims(data)
+    return ShiftInvariantWaveletTransformNode{N,S,T}(depth, indexAtDepth, transformShift, cost, data)
+end
+
+"""
+    ShiftInvariantWaveletTransformObject(signal, wavelet)
+
+Outer constructor and initialization of SIWT object.
+
+# Arguments
+- `signal::Array{T} where T<:AbstractFloat`: Input signal.
+- `wavelet::OrthoFilter`: Wavelet filter.
+"""
+function ShiftInvariantWaveletTransformObject(signal::Array{T}, 
+                                              wavelet::OrthoFilter,
+                                              maxTransformLevel::S = 0,
+                                              maxShiftedTransformLevel::S = 0) where 
+                                             {T<:AbstractFloat, S<:Integer}
+    signalDim = ndims(signal)
+    signalSize = signalDim == 1 ? length(signal) : size(signal)
+    cost = coefcost(signal, LogEnergyEntropyCost())
+    signalNode = ShiftInvariantWaveletTransformNode{signalDim,S,T}(0, 0, 0, cost, signal)
+    index = (signalNode.Depth, signalNode.IndexAtDepth, signalNode.TransformShift)
+    nodes = Dict{NTuple{3,S}, ShiftInvariantWaveletTransformNode{signalDim,S,T}}(index => signalNode)
+    tree = [index]
+    return ShiftInvariantWaveletTransformObject(nodes, signalSize, maxTransformLevel, maxShiftedTransformLevel, wavelet, cost, tree)
+end
+
+
+"""
+    siwpd_subtree(siwtObj, index, h, g, remainingRelativeDepth4ShiftedTransform)
+"""
+function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
+                        index::NTuple{3,T₁},
+                        h::Vector{T₃}, g::Vector{T₃},
+                        remainingRelativeDepth4ShiftedTransform::T₁) where
+                       {N, T₁<:Integer, T₂<:AbstractFloat, T₃<:AbstractFloat}
+    treeMaxTransformLevel = siwtObj.MaxTransformLevel
+    nodeDepth, _, nodeTransformShift = index
+    @info "$index: $remainingRelativeDepth4ShiftedTransform"
+
+    @assert 0 ≤ nodeDepth ≤ treeMaxTransformLevel
+    @assert 0 ≤ remainingRelativeDepth4ShiftedTransform ≤ treeMaxTransformLevel-nodeDepth
+
+    # --- Base case ---
+    isLeafNode = (nodeDepth == treeMaxTransformLevel)
+    isShiftedTransform4NodeRequired = (remainingRelativeDepth4ShiftedTransform > 0)
+    isShiftedTransformNode = nodeTransformShift > 0
+    isShiftedTransformLeafNode = (!isShiftedTransform4NodeRequired && isShiftedTransformNode)
+    if (isLeafNode || isShiftedTransformLeafNode)
+        return nothing
+    end
+    
+    # General step: 
+    #   - Decompose current node without additional shift 
+    #   - Decompose children nodes
+    childDepth = nodeDepth + 1
+    (child1Index, child2Index) = sidwt_step!(siwtObj, index, h, g, false)
+    childRemainingRelativeDepth4ShiftedTransform = isShiftedTransformNode ? 
+        remainingRelativeDepth4ShiftedTransform-1 : 
+        min(remainingRelativeDepth4ShiftedTransform, treeMaxTransformLevel-childDepth)
+    siwpd_subtree!(siwtObj, child1Index, h, g, childRemainingRelativeDepth4ShiftedTransform)
+    siwpd_subtree!(siwtObj, child2Index, h, g, childRemainingRelativeDepth4ShiftedTransform)
+
+    # Case: remainingRelativeDepth4ShiftedTransform > 0
+    #   - Decompose current node with additional shift
+    #   - Decompose children (with additional shift) nodes
+    if isShiftedTransform4NodeRequired
+        (child1Index, child2Index) = sidwt_step!(siwtObj, index, h, g, true)
+        childRemainingRelativeDepth4ShiftedTransform = remainingRelativeDepth4ShiftedTransform-1
+        siwpd_subtree!(siwtObj, child1Index, h, g, childRemainingRelativeDepth4ShiftedTransform)
+        siwpd_subtree!(siwtObj, child2Index, h, g, childRemainingRelativeDepth4ShiftedTransform)
+    end
+
+    return nothing
 end
