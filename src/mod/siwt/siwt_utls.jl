@@ -15,7 +15,7 @@ Data structure to hold the index, coefficients, and cost value of an SIWT node.
       top by 1 index. Not available for 1D signals.
     - `3`: For 2D signals, coefficients of parent node are circularly shifted from bottom to
       top and right to left by 1 index each. Not available for 1D signals.
-- `Cost::T₂`: The [`LogEnergyEntropyCost`](@ref) of current node.
+- `Cost::T₂`: The [`ShannonEntropyCost`](@ref) of current node.
 - `Value::Array{T₂,N}`: Coefficients of current node.
 """
 mutable struct ShiftInvariantWaveletTransformNode{N, T₁<:Integer, T₂<:AbstractFloat}
@@ -56,7 +56,7 @@ Data structure to hold all shift-invariant wavelet transform (SIWT) information 
 - `SignalSize::Union{T₁, NTuple{N,T₁}}`: Size of the original signal.
 - `MaxTransformLevel::T₁`: Maximum levels of transform set for signal.
 - `Wavelet::OrthoFilter`: A discrete wavelet for transform purposes.
-- `MinCost::Union{T₂, Nothing}`: The current minimum [`LogEnergyEntropyCost`](@ref) cost of 
+- `MinCost::Union{T₂, Nothing}`: The current minimum [`ShannonEntropyCost`](@ref) cost of 
   the decomposition tree.
 
 !!! note 
@@ -100,7 +100,7 @@ function ShiftInvariantWaveletTransformNode(data::Array{T},
                                             depth::S,
                                             indexAtDepth::S,
                                             transformShift::S) where {T<:AbstractFloat, S<:Integer}
-    cost = coefcost(data, LogEnergyEntropyCost())
+    cost = coefcost(data, ShannonEntropyCost())
     N = ndims(data)
     return ShiftInvariantWaveletTransformNode{N,S,T}(depth, indexAtDepth, transformShift, cost, data)
 end
@@ -121,7 +121,7 @@ function ShiftInvariantWaveletTransformObject(signal::Array{T},
                                              {T<:AbstractFloat, S<:Integer}
     signalDim = ndims(signal)
     signalSize = signalDim == 1 ? length(signal) : size(signal)
-    cost = coefcost(signal, LogEnergyEntropyCost())
+    cost = coefcost(signal, ShannonEntropyCost())
     signalNode = ShiftInvariantWaveletTransformNode{signalDim,S,T}(0, 0, 0, cost, signal)
     index = (signalNode.Depth, signalNode.IndexAtDepth, signalNode.TransformShift)
     nodes = Dict{NTuple{3,S}, ShiftInvariantWaveletTransformNode{signalDim,S,T}}(index => signalNode)
@@ -140,7 +140,6 @@ function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
                        {N, T₁<:Integer, T₂<:AbstractFloat, T₃<:AbstractFloat}
     treeMaxTransformLevel = siwtObj.MaxTransformLevel
     nodeDepth, _, nodeTransformShift = index
-    @info "$index: $remainingRelativeDepth4ShiftedTransform"
 
     @assert 0 ≤ nodeDepth ≤ treeMaxTransformLevel
     @assert 0 ≤ remainingRelativeDepth4ShiftedTransform ≤ treeMaxTransformLevel-nodeDepth

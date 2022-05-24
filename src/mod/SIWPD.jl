@@ -14,6 +14,7 @@ using
 
 include("siwt/siwt_utls.jl")
 include("siwt/siwt_one_level.jl")
+include("siwt/siwt_bestbasis.jl")
 include("bestbasis/bestbasis_costs.jl")
 
 """
