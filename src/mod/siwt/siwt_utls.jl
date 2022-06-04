@@ -26,11 +26,14 @@ mutable struct ShiftInvariantWaveletTransformNode{N, T₁<:Integer, T₂<:Abstra
     Value::Array{T₂,N}
 
     function ShiftInvariantWaveletTransformNode{N, T₁, T₂}(Depth, IndexAtDepth, TransformShift, Cost, Value) where {N, T₁<:Integer, T₂<:AbstractFloat}
-        valueDim = ndims(Value)
-        if valueDim == 1
+        if N ≠ ndims(Value)
+            (throw ∘ TypeError)("Value array is not of $N dimension.")
+        end
+
+        if N == 1
             maxIndexAtDepth = 1<<Depth - 1
             maxTransformShift = maxIndexAtDepth
-        elseif valueDim == 2
+        elseif N == 2
             maxIndexAtDepth = 1<<(Depth<<1) - 1
             maxTransformShift = 3
             (throw ∘ ArgumentError)("2D SIWT not available yet.")
@@ -39,7 +42,7 @@ mutable struct ShiftInvariantWaveletTransformNode{N, T₁<:Integer, T₂<:Abstra
         end
 
         if (IndexAtDepth > maxIndexAtDepth) | (TransformShift > maxTransformShift)
-            (throw ∘ ArgumentError)("Invalid IndexAtDepth or TransformShift for $(valueDim)D coefficients.")
+            (throw ∘ ArgumentError)("Invalid IndexAtDepth or TransformShift for $(N)D coefficients.")
         end
         return new(Depth, IndexAtDepth, TransformShift, Cost, Value)
     end
@@ -82,6 +85,12 @@ mutable struct ShiftInvariantWaveletTransformObject{N, T₁<:Integer, T₂<:Abst
     Wavelet::OrthoFilter
     MinCost::Union{T₂, Nothing}
     BestTree::Vector{NTuple{3,T₁}}
+
+    function ShiftInvariantWaveletTransformObject{N,T₁,T₂}(nodes, signalSize, maxTransformLevel, maxShiftedTransformLevels, wt, minCost, bestTree) where {N, T₁<:Integer, T₂<:AbstractFloat}
+        0 ≤ maxTransformLevel ≤ maxtransformlevels(nodes[(0,0,0)].Value) || (throw ∘ ArgumentError)("Provided MaxTransformLevels is too large.")
+        0 ≤ maxShiftedTransformLevels < length(nodes[(0,0,0)].Value) || (throw ∘ ArgumentError)("Provided MaxShiftedTransformLevels is too large.")
+        return new(nodes, signalSize, maxTransformLevel, maxShiftedTransformLevels, wt, minCost, bestTree)
+    end
 end
 
 """
@@ -126,7 +135,7 @@ function ShiftInvariantWaveletTransformObject(signal::Array{T},
     index = (signalNode.Depth, signalNode.IndexAtDepth, signalNode.TransformShift)
     nodes = Dict{NTuple{3,S}, ShiftInvariantWaveletTransformNode{signalDim,S,T}}(index => signalNode)
     tree = [index]
-    return ShiftInvariantWaveletTransformObject(nodes, signalSize, maxTransformLevel, maxShiftedTransformLevel, wavelet, cost, tree)
+    return ShiftInvariantWaveletTransformObject{signalDim,S,T}(nodes, signalSize, maxTransformLevel, maxShiftedTransformLevel, wavelet, cost, tree)
 end
 
 

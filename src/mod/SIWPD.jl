@@ -1,5 +1,7 @@
 module SIWPD
 export  
+    ShiftInvariantWaveletTransformNode,
+    ShiftInvariantWaveletTransformObject,
     siwpd,
     makesiwpdtree
 
