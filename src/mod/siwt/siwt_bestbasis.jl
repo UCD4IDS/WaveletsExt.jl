@@ -1,9 +1,9 @@
-function Wavelets.Threshold.bestbasistree(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂}) where
-                                         {N, T₁<:Integer, T₂<:AbstractFloat}
+function bestbasistree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂}) where
+                       {N, T₁<:Integer, T₂<:AbstractFloat}
     rootNodeIndex = (0,0,0)
     bestbasis_treeselection!(siwtObj, rootNodeIndex)
     siwtObj.MinCost = siwtObj.Nodes[rootNodeIndex].Cost
-    return nothing
+    return siwtObj.BestTree
 end
 
 function bestbasis_treeselection!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},

@@ -108,8 +108,9 @@ Outer constructor of SIWT node.
 function ShiftInvariantWaveletTransformNode(data::Array{T},
                                             depth::S,
                                             indexAtDepth::S,
-                                            transformShift::S) where {T<:AbstractFloat, S<:Integer}
-    cost = coefcost(data, ShannonEntropyCost())
+                                            transformShift::S,
+                                            nrm::T = norm(data)) where {T<:AbstractFloat, S<:Integer}
+    cost = coefcost(data, ShannonEntropyCost(), nrm)
     N = ndims(data)
     return ShiftInvariantWaveletTransformNode{N,S,T}(depth, indexAtDepth, transformShift, cost, data)
 end
@@ -145,7 +146,8 @@ end
 function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                         index::NTuple{3,T₁},
                         h::Vector{T₃}, g::Vector{T₃},
-                        remainingRelativeDepth4ShiftedTransform::T₁) where
+                        remainingRelativeDepth4ShiftedTransform::T₁;
+                        signalNorm::T₂ = norm(siwtObj.Nodes[(0,0,0)].Value)) where
                        {N, T₁<:Integer, T₂<:AbstractFloat, T₃<:AbstractFloat}
     treeMaxTransformLevel = siwtObj.MaxTransformLevel
     nodeDepth, _, nodeTransformShift = index
@@ -170,8 +172,8 @@ function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
     childRemainingRelativeDepth4ShiftedTransform = isShiftedTransformNode ? 
         remainingRelativeDepth4ShiftedTransform-1 : 
         min(remainingRelativeDepth4ShiftedTransform, treeMaxTransformLevel-childDepth)
-    siwpd_subtree!(siwtObj, child1Index, h, g, childRemainingRelativeDepth4ShiftedTransform)
-    siwpd_subtree!(siwtObj, child2Index, h, g, childRemainingRelativeDepth4ShiftedTransform)
+    siwpd_subtree!(siwtObj, child1Index, h, g, childRemainingRelativeDepth4ShiftedTransform, signalNorm=signalNorm)
+    siwpd_subtree!(siwtObj, child2Index, h, g, childRemainingRelativeDepth4ShiftedTransform, signalNorm=signalNorm)
 
     # Case: remainingRelativeDepth4ShiftedTransform > 0
     #   - Decompose current node with additional shift
@@ -179,8 +181,8 @@ function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
     if isShiftedTransform4NodeRequired
         (child1Index, child2Index) = sidwt_step!(siwtObj, index, h, g, true)
         childRemainingRelativeDepth4ShiftedTransform = remainingRelativeDepth4ShiftedTransform-1
-        siwpd_subtree!(siwtObj, child1Index, h, g, childRemainingRelativeDepth4ShiftedTransform)
-        siwpd_subtree!(siwtObj, child2Index, h, g, childRemainingRelativeDepth4ShiftedTransform)
+        siwpd_subtree!(siwtObj, child1Index, h, g, childRemainingRelativeDepth4ShiftedTransform, signalNorm=signalNorm)
+        siwpd_subtree!(siwtObj, child2Index, h, g, childRemainingRelativeDepth4ShiftedTransform, signalNorm=signalNorm)
     end
 
     return nothing

@@ -1,7 +1,8 @@
 function sidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                      index::NTuple{3,T₁},
                      h::Vector{T₃}, g::Vector{T₃},
-                     shiftedTransform::Bool) where 
+                     shiftedTransform::Bool;
+                     signalNorm::T₂ = norm(siwtObj.Nodes[(0,0,0)].Value)) where 
                     {N, T₁<:Integer, T₂<:AbstractFloat, T₃<:AbstractFloat}
     nodeObj = siwtObj.Nodes[index]
     nodeValue = nodeObj.Value
@@ -12,8 +13,8 @@ function sidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
     child1Value = Vector{T₂}(undef, childLength)
     child2Value = Vector{T₂}(undef, childLength)
     sidwt_step!(child1Value, child2Value, nodeValue, h, g, shiftedTransform)
-    child1Obj = ShiftInvariantWaveletTransformNode(child1Value, nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift+(1<<nodeDepth)*shiftedTransform)
-    child2Obj = ShiftInvariantWaveletTransformNode(child2Value, nodeDepth+1, nodeIndexAtDepth<<1+1, nodeTransformShift+(1<<nodeDepth)*shiftedTransform)
+    child1Obj = ShiftInvariantWaveletTransformNode(child1Value, nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift+(1<<nodeDepth)*shiftedTransform, signalNorm)
+    child2Obj = ShiftInvariantWaveletTransformNode(child2Value, nodeDepth+1, nodeIndexAtDepth<<1+1, nodeTransformShift+(1<<nodeDepth)*shiftedTransform, signalNorm)
     siwtObj.Nodes[(child1Obj.Depth, child1Obj.IndexAtDepth, child1Obj.TransformShift)] = child1Obj
     siwtObj.Nodes[(child2Obj.Depth, child2Obj.IndexAtDepth, child2Obj.TransformShift)] = child2Obj
 

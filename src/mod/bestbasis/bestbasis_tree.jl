@@ -64,20 +64,20 @@ Standard Best Basis (BB).
     redundant::Bool = false
 end
 
-"""
-    SIBB([; cost])
+# """
+#     SIBB([; cost])
 
-Shift Invariant Best Basis (SIBB).
+# Shift Invariant Best Basis (SIBB).
 
-# Keyword Arguments
-- `cost::BBCost`: (Default: `ShannonEntropyCost()`) Cost function for SIBB.
+# # Keyword Arguments
+# - `cost::BBCost`: (Default: `ShannonEntropyCost()`) Cost function for SIBB.
 
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), 
-    [`BB`](@ref)
-"""
-@with_kw struct SIBB <: BestBasisType   # Shift invariant best basis
-    cost::BBCost = ShannonEntropyCost()
-end                     
+# **See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), 
+#     [`BB`](@ref)
+# """
+# @with_kw struct SIBB <: BestBasisType   # Shift invariant best basis
+#     cost::BBCost = ShannonEntropyCost()
+# end                     
 
 
 ## ----- TREE COST -----
@@ -273,46 +273,46 @@ function tree_costs(X::AbstractArray{T,3}, method::BB) where T<:AbstractFloat
 end
 
 # SIWPD for 1D signals
-"""
-    tree_costs(y, tree, method)
+# """
+#     tree_costs(y, tree, method)
 
-Computes the cost for each node from the SIWPD decomposition.
+# Computes the cost for each node from the SIWPD decomposition.
 
-# Arguments
-- `y::AbstractArray{T,2} where T<:Number`: A SIWPD decomposed signal.
-- `tree::AbstractVector{BitVector}`: The full SIWPD tree.
-- `method::SIBB`: The `SIBB()` method.
+# # Arguments
+# - `y::AbstractArray{T,2} where T<:Number`: A SIWPD decomposed signal.
+# - `tree::AbstractVector{BitVector}`: The full SIWPD tree.
+# - `method::SIBB`: The `SIBB()` method.
 
-# Returns
-- `Vector{Vector{Union{T,Nothing}}}`: SIWPD best basis tree.
+# # Returns
+# - `Vector{Vector{Union{T,Nothing}}}`: SIWPD best basis tree.
 
-!!! warning
-    Current implementation works but is unstable, ie. we are still working on better
-    syntax/more optimized computations/better data structure.
-"""
-function tree_costs(y::AbstractArray{T,2}, tree::AbstractVector{BitVector}, 
-        method::SIBB) where T<:Number
+# !!! warning
+#     Current implementation works but is unstable, ie. we are still working on better
+#     syntax/more optimized computations/better data structure.
+# """
+# function tree_costs(y::AbstractArray{T,2}, tree::AbstractVector{BitVector}, 
+#         method::SIBB) where T<:Number
 
-    nn = length(tree)                           
-    ns = size(y,1)                              
-    @assert size(y,2) == nn                     
-    tree_costs = Vector{Vector{Union{T,Nothing}}}(undef, nn)
-    nrm = norm(y[:,1])                          
+#     nn = length(tree)                           
+#     ns = size(y,1)                              
+#     @assert size(y,2) == nn                     
+#     tree_costs = Vector{Vector{Union{T,Nothing}}}(undef, nn)
+#     nrm = norm(y[:,1])                          
 
-    for i in eachindex(tree)
-        level = floor(Int, log2(i))
-        len = nodelength(ns, level)
-        # number of nodes corresponding to Ω(i,j)
-        costs = Vector{Union{AbstractFloat,Nothing}}(nothing, length(tree[i]))
-        for j in eachindex(tree[i])
-            if tree[i][j]
-                shift = j-1                     # current shift
-                nstart = shift*len + 1
-                nend = (shift+1) * len
-                costs[j] = coefcost(y[nstart:nend,i], method.cost, nrm)
-            end
-        end
-        tree_costs[i] = costs
-    end
-    return tree_costs
-end
+#     for i in eachindex(tree)
+#         level = floor(Int, log2(i))
+#         len = nodelength(ns, level)
+#         # number of nodes corresponding to Ω(i,j)
+#         costs = Vector{Union{AbstractFloat,Nothing}}(nothing, length(tree[i]))
+#         for j in eachindex(tree[i])
+#             if tree[i][j]
+#                 shift = j-1                     # current shift
+#                 nstart = shift*len + 1
+#                 nend = (shift+1) * len
+#                 costs[j] = coefcost(y[nstart:nend,i], method.cost, nrm)
+#             end
+#         end
+#         tree_costs[i] = costs
+#     end
+#     return tree_costs
+# end

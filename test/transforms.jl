@@ -175,9 +175,9 @@ end
 end
 
 @testset verbose=true "SIWT" begin
+    signal = [2,3,-4,5.0];
+    wt = wavelet(WT.haar);
     @testset "Data structures" begin
-        signal = [2,3,-4,5.0];
-        wt = wavelet(WT.haar);
         cost = BestBasis.coefcost(signal, ShannonEntropyCost());
         @test isa(ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,0,signal), ShiftInvariantWaveletTransformNode);
         @test_throws MethodError ShiftInvariantWaveletTransformNode{2,Int64,Float64}(0,0,0,0,signal);  # signal dimension and N do not match
@@ -205,6 +205,53 @@ end
         @test_throws ArgumentError ShiftInvariantWaveletTransformObject(signal, wt, -1);
         @test_throws ArgumentError ShiftInvariantWaveletTransformObject(signal, wt, 0, maxTransformShift+1);
         @test_throws ArgumentError ShiftInvariantWaveletTransformObject(signal, wt, 0, -1);
+    end
+
+    @testset "Transform" begin
+        expectedNodes = Dict{NTuple{3,Int64}, ShiftInvariantWaveletTransformNode{1,Int64,Float64}}();
+        expectedNodes[(0,0,0)] = ShiftInvariantWaveletTransformNode(signal,0,0,0);
+        signalTransformedL1S0 = dwt(signal, wt, 1);
+        expectedNodes[(1,0,0)] = ShiftInvariantWaveletTransformNode(signalTransformedL1S0[1:2],1,0,0);
+        expectedNodes[(1,1,0)] = ShiftInvariantWaveletTransformNode(signalTransformedL1S0[3:4],1,1,0);
+        signalTransformedL1S1 = dwt(circshift(signal,1), wt, 1);
+        expectedNodes[(1,0,1)] = ShiftInvariantWaveletTransformNode(signalTransformedL1S1[1:2],1,0,1);
+        expectedNodes[(1,1,1)] = ShiftInvariantWaveletTransformNode(signalTransformedL1S1[3:4],1,1,1);
+        @test isa(siwpd(signal,wt,1,1), ShiftInvariantWaveletTransformObject)
+    end
+
+    @testset "Best Basis" begin
+        # Best basis on original object without decomposition
+        siwtObject = ShiftInvariantWaveletTransformObject(signal, wt, 0, 0);
+        rootOnlyTree = [(0,0,0)];
+        bestbasistree!(siwtObject);
+        @test siwtObject.BestTree == rootOnlyTree;
+        @test siwtObject.MinCost == siwtObject.Nodes[(0,0,0)].Cost;
+
+        # Cost check before best basis operation
+        expectedNodeCost = Dict{NTuple{3,Int64}, Float64}(
+            (0,0,0) => 1.208,
+            (1,0,0) => 0.382,
+            (1,0,1) => 0.402,
+            (1,1,0) => 0.259,
+            (1,1,1) => 0.566
+        )
+        siwtObj = siwpd(signal, wt, 1);
+        for index in keys(expectedNodeCost)
+            @test expectedNodeCost[index] ≈ siwtObj.Nodes[index].Cost atol=1e-3;
+        end
+
+        # Cost check after best basis operation
+        expectedNodeCost = Dict{NTuple{3,Int64}, Float64}(
+            (0,0,0) => 0.641,
+            (1,0,0) => 0.382,
+            (1,1,0) => 0.259
+        )
+        bestbasistree!(siwtObj)
+        @test (Set ∘ keys)(expectedNodeCost) == Set(siwtObj.BestTree) == (Set ∘ keys)(siwtObj.Nodes)
+        for index in keys(expectedNodeCost)
+            @test expectedNodeCost[index] ≈ siwtObj.Nodes[index].Cost atol=1e-3
+        end
+        @test expectedNodeCost[(0,0,0)] ≈ siwtObj.MinCost atol=1e-3
     end
 end
 
