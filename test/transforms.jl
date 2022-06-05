@@ -226,6 +226,7 @@ end
         bestbasistree!(siwtObject);
         @test siwtObject.BestTree == rootOnlyTree;
         @test siwtObject.MinCost == siwtObject.Nodes[(0,0,0)].Cost;
+        @test isvalidtree(siwtObject);
 
         # Cost check before best basis operation
         expectedNodeCost = Dict{NTuple{3,Int64}, Float64}(
@@ -252,6 +253,7 @@ end
             @test expectedNodeCost[index] ≈ siwtObj.Nodes[index].Cost atol=1e-3
         end
         @test expectedNodeCost[(0,0,0)] ≈ siwtObj.MinCost atol=1e-3
+        @test isvalidtree(siwtObj)
     end
 end
 

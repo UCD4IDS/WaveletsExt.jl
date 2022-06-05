@@ -3,6 +3,7 @@ function bestbasistree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T‚ÇÅ,T‚Ç
     rootNodeIndex = (0,0,0)
     bestbasis_treeselection!(siwtObj, rootNodeIndex)
     siwtObj.MinCost = siwtObj.Nodes[rootNodeIndex].Cost
+    @assert isvalidtree(siwtObj)
     return siwtObj.BestTree
 end
 

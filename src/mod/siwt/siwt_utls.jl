@@ -187,3 +187,30 @@ function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
 
     return nothing
 end
+
+function Wavelets.Util.isvalidtree(siwtObj::ShiftInvariantWaveletTransformObject)
+    @assert (Set ∘ keys)(siwtObj.Nodes) == Set(siwtObj.BestTree)
+
+    # Each node needs to:
+    #   - Be a root node OR have a parent node
+    #   - Have child nodes XOR have shifted child nodes XOR have no child nodes
+    nodeSet = Set(siwtObj.BestTree)
+    for index in nodeSet
+        depth, indexAtDepth, transformShift = index
+
+        isRootNode = index == (0,0,0)
+        hasParentNode = (depth-1, indexAtDepth>>1, transformShift) ∈ nodeSet
+
+        hasChildNodes = (depth+1, indexAtDepth<<1, transformShift) ∈ nodeSet && (depth+1, indexAtDepth<<1+1, transformShift) ∈ nodeSet
+        hasShiftedChildNodes = (depth+1, indexAtDepth<<1, transformShift+(1<<depth)) ∈ nodeSet && (depth+1, indexAtDepth<<1+1, transformShift+(1<<depth)) ∈ nodeSet
+        isLeafNode = !hasChildNodes && !hasShiftedChildNodes
+
+        parentCheck = isRootNode ⊻ hasParentNode
+        childCheck = isLeafNode ⊻ hasChildNodes ⊻ hasShiftedChildNodes
+
+        if !(parentCheck && childCheck)
+            return false
+        end
+    end
+    return true
+end
