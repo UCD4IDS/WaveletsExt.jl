@@ -6,7 +6,7 @@ include("mod/Utils.jl")
 include("mod/DWT.jl")
 include("mod/ACWT.jl")
 include("mod/BestBasis.jl")
-include("mod/SIWPD.jl")
+include("mod/SIWT.jl")
 include("mod/SWT.jl")
 include("mod/Denoising.jl")
 include("mod/LDB.jl")
@@ -20,7 +20,7 @@ using Reexport
                 .Utils,
                 .LDB,
                 .SWT,
-                .SIWPD,
+                .SIWT,
                 .ACWT,
                 .Visualizations,
                 .WaveMult

@@ -39,14 +39,6 @@ ysw = swpdall(y,wt)
 @test isvalidtree(y[:,:,1], bestbasistree(ysw, LSDB(redundant=true)))
 # @test isvalidtree(y[:,:,1], bestbasistree(yacw, LSDB(redundant=true)))
 
-# siwpd_bb
-x = randn(16)
-xw0 = siwpd(x, wt)
-xw4 = siwpd(circshift(x,4), wt)
-bt0 = map(node -> sum(node), bestbasistree(xw0, 4, SIBB()))
-bt4 = map(node -> sum(node), bestbasistree(xw4, 4, SIBB()))
-@test bt0 == bt4
-
 # misc
 @test_throws ArgumentError BestBasis.bestbasis_treeselection(randn(15), 8, :fail)
 @test_throws AssertionError BestBasis.bestbasis_treeselection(randn(7), 3, :fail) # true n=4
