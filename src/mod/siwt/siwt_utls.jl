@@ -164,7 +164,7 @@ function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
         return nothing
     end
     
-    # General step: 
+    #  --- General step ---
     #   - Decompose current node without additional shift 
     #   - Decompose children nodes
     childDepth = nodeDepth + 1
@@ -188,6 +188,54 @@ function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
     return nothing
 end
 
+"""
+    isiwpd_subtree!(siwtObj, index, h, g)
+"""
+function isiwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
+                         index::NTuple{3,T₁},
+                         h::Vector{T₃}, g::Vector{T₃}) where
+                        {N, T₁<:Integer, T₂<:AbstractFloat, T₃<:AbstractFloat}
+    # Check for children nodes
+    nodeDepth, nodeIndexAtDepth, nodeTransformShift = index
+    hasNonShiftedChildren = (nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift) ∈ siwtObj.BestTree
+    hasShiftedChildren = (nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift+(1<<nodeDepth)) ∈ siwtObj.BestTree
+
+    # --- Base Case ---
+    # If node has no children, return
+    hasNoChildren = !(hasNonShiftedChildren && hasShiftedChildren)
+    if hasNoChildren
+        return nothing
+    end
+
+    # --- General Steps ---
+    #   - If node has children, compute reconstruction from children nodes first
+    #   - Once children nodes are reconstructed, compute reconstruction of current node
+    #     based on coefficients of children nodes
+    #   - After reconstruction of children nodes, delete children nodes
+    #   - Return nothing
+    @assert hasNonShiftedChildren ⊻ hasShiftedChildren
+    childDepth = nodeDepth + 1
+    child1IndexAtDepth = nodeIndexAtDepth<<1
+    child2IndexAtDepth = nodeIndexAtDepth<<1 + 1
+    childTransformShift = hasNonShiftedChildren ? nodeTransformShift : nodeTransformShift + (1<<nodeDepth)
+    child1Index = (childDepth, child1IndexAtDepth, childTransformShift)
+    child2Index = (childDepth, child2IndexAtDepth, childTransformShift)
+
+    isiwpd_subtree!(siwtObj, child1Index, h, g)
+    isiwpd_subtree!(siwtObj, child2Index, h, g)
+
+    # TODO: Write this function
+    isiwpd_step!()
+
+    delete_node!(siwtObj, child1Index)
+    delete_node!(siwtObj, child2Index)
+
+    return nothing
+end
+
+"""
+    isvalidtree(siwtObj)
+"""
 function Wavelets.Util.isvalidtree(siwtObj::ShiftInvariantWaveletTransformObject)
     @assert (Set ∘ keys)(siwtObj.Nodes) == Set(siwtObj.BestTree)
 

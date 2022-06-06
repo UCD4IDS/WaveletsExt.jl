@@ -56,3 +56,55 @@ function sidwt_step!(w₁::AbstractVector{T}, w₂::AbstractVector{T},
 end
 
 # TODO: Function to compute one level of recomposition
+function isidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
+                      nodeIndex::NTuple{3,T₁},
+                      child1Index::NTuple{3,T₁}, child2Index::NTuple{3,T₁},
+                      h::Vector{T₃}, g::Vector{T₃}) where
+                     {N, T₁<:Integer, T₂<:AbstractFloat, T₃<:AbstractFloat}
+    nodeObj = siwtObj.Nodes[nodeIndex]
+    child1Obj = siwtObj.Nodes[child1Index]
+    child2Obj = siwtObj.Nodes[child2Index]
+
+    @assert child1Obj.TransformShift == child2Obj.TransformShift
+    isShiftedTransform = nodeObj.TransformShift == child1Obj.TransformShift
+
+    nodeValue = nodeObj.Value
+    child1Value = child1Obj.Value
+    child2Value = child2Obj.Value
+    isidwt_step!(nodeValue, child1Value, child2Value, h, g, isShiftedTransform)
+
+    return nothing
+end
+
+function isidwt_step!(v::AbstractVector{T},
+                      w₁::AbstractVector{T}, w₂::AbstractVector{T},
+                      h::Array{S,1}, g::Array{S,1},
+                      s::Bool) where {T<:AbstractFloat, S<:AbstractFloat}
+    # Sanity check
+    @assert length(w₁) == length(w₂) == length(v)÷2
+    @assert length(h) == length(g)
+
+    # Setup
+    n = length(v)           # Parent length
+    n₁ = length(w₁)         # Child length
+    filtlen = length(h)     # Filter length
+
+    # One step of inverse discrete transform
+    for i in 1:n
+        ℓ = mod1(i-s,n)     # Index of reconstructed vector
+        j₀ = mod1(i,2)      # Pivot point to determine start index for filter
+        j₁ = filtlen-j₀+1   # Index for low pass filter g
+        j₂ = mod1(i+1,2)    # Index for high pass filter h
+        k₁ = (i+1)>>1       # Index for approx coefs w₁
+        k₂ = (i+1)>>1       # Index for detail coefs w₂
+        @inbounds v[ℓ] = g[j₁] * w₁[k₁] + h[j₂] * w₂[k₂]
+        for j in (j₀+2):2:filtlen
+            j₁ = filtlen-j+1
+            j₂ = j + isodd(j) - iseven(j)
+            k₁ = k₁-1 |> k₁ -> k₁≤0 ? mod1(k₁,n₁) : k₁
+            k₂ = k₂+1 |> k₂ -> k₂>n₁ ? mod1(k₂,n₁) : k₂
+            @inbounds v[ℓ] += g[j₁] * w₁[k₁] + h[j₂] * w₂[k₂]
+        end
+    end
+    return v
+end

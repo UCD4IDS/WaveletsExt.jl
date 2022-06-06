@@ -1,6 +1,7 @@
 module SIWT
 export  
     bestbasistree!,
+    isiwpd,
     ShiftInvariantWaveletTransformNode,
     ShiftInvariantWaveletTransformObject,
     siwpd
@@ -49,6 +50,15 @@ function siwpd(x::AbstractVector{T},
     rootNodeIndex = siwtObj.BestTree[1]
     siwpd_subtree!(siwtObj, rootNodeIndex, h, g, d)
     return siwtObj
+end
+
+function isiwpd(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂}) where
+               {N, T₁<:Integer, T₂<:AbstractFloat}
+    g, h = WT.makereverseqmfpair(siwtObj.Wavelet, true)
+    rootNodeIndex = (0,0,0)
+    isiwpd_subtree!(siwtObj, rootNodeIndex, h, g)
+
+    return siwtObj.Nodes[rootNodeIndex].Value
 end
 
 end # end module
