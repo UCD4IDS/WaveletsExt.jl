@@ -44,6 +44,6 @@ SIWT.isidwt_step!
 ## Other Utils
 ### Private API
 ```@docs
-Wavelets.Util.isvalidtree
+Wavelets.Util.isvalidtree(::ShiftInvariantWaveletTransformObject)
 SIWT.delete_node!
 ```

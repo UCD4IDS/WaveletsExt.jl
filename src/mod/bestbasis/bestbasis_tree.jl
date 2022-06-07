@@ -6,7 +6,6 @@ Abstract type for best basis. Current available types are:
 - [`LSDB`](@ref)
 - [`JBB`](@ref)
 - [`BB`](@ref)
-- [`SIBB`](@ref)
 """
 abstract type BestBasisType end
 
@@ -21,7 +20,7 @@ Least Statistically Dependent Basis (LSDB).
   redundant. Set `redundant=true` when running LSDB with redundant wavelet transforms such
   as SWT or ACWT.
 
-**See also:** [`BestBasisType`](@ref), [`JBB`](@ref), [`BB`](@ref), [`SIBB`](@ref)
+**See also:** [`BestBasisType`](@ref), [`JBB`](@ref), [`BB`](@ref)
 """
 @with_kw struct LSDB <: BestBasisType
     cost::LSDBCost = DifferentialEntropyCost()
@@ -39,7 +38,7 @@ Joint Best Basis (JBB).
   redundant. Set `redundant=true` when running LSDB with redundant wavelet transforms such
   as SWT or ACWT.
 
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`BB`](@ref), [`SIBB`](@ref)
+**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`BB`](@ref)
 """
 @with_kw struct JBB <: BestBasisType    # Joint Best Basis
     cost::JBBCost = LoglpCost(2)
@@ -57,7 +56,7 @@ Standard Best Basis (BB).
   redundant. Set `redundant=true` when running LSDB with redundant wavelet transforms such
   as SWT or ACWT.
 
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), [`SIBB`](@ref)
+**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref)
 """
 @with_kw struct BB <: BestBasisType     # Individual Best Basis
     cost::BBCost = ShannonEntropyCost()
