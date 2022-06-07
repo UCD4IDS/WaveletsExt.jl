@@ -143,6 +143,7 @@ The [Shift-Invariant Wavelet Decomposition (SIWPD)](https://israelcohen.com/wp-c
 
 One can compute the SIWPD of a single signal as follows.
 ```@repl
+using Wavelets, WaveletsExt
 x = [2,3,-4,5.0];
 wt = wavelet(WT.haar);
 xwObj = siwpd(x, wt, 1, 1);
