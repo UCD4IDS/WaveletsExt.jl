@@ -7,7 +7,9 @@ Modules = [SIWT]
 ## Data Structures
 ```@docs
 SIWT.ShiftInvariantWaveletTransformNode
+SIWT.ShiftInvariantWaveletTransformNode(::Array{T},::S,::S,::S,::T) where {T<:AbstractFloat, S<:Integer}
 SIWT.ShiftInvariantWaveletTransformObject
+SIWT.ShiftInvariantWaveletTransformObject(::Array{T}, ::OrthoFilter,::S,::S) where {T<:AbstractFloat, S<:Integer}
 ```
 
 ## Signal Transform and Reconstruction

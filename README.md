@@ -31,14 +31,6 @@ Extension). It contains additional functionalities that complement Wavelets.jl, 
 ## Authors
 This package is written and maintained by Zeng Fung Liew and Shozen Dan under the supervision of Professor Naoki Saito at the University of California, Davis.
 
-## What's New (v0.1.13)
-- **Changes in supported types in `denoise` and `denoiseall` functions.** For the `inputtype` positional argument, the initially supported arguments `:acwt` and `:acwpt` are now changed to `:acdwt` and `:acwpd` to match the function name change in `WaveletsExt.ACWT`.
-- **2D Local Discriminant Basis now supported.** 2D version of LDB is now up and running without any changes in the syntax compared to the 1D version.
-
-## What's New (v0.1.12)
-- **Bug fixes on best basis algorithms** to allow compatibility when partial wavelet decomposition is run.
-- **New function `plot_tfbdry2()` implemented.** Visual representation of leaf nodes for 2D best basis trees now available.
-
 ## Installation
 The package is part of the official Julia Registry. It can be install via the Julia REPL.
 ```julia
@@ -85,5 +77,4 @@ Using the Multiscale Basis Dictionaries*. DOI: [10.1109/TSIPN.2016.2632039](http
 
 
 ## TODO(long term):
-* Inverse Transforms for Shift-Invariant WPT
 * nD wavelet transforms for redundant and non-redundant versions
