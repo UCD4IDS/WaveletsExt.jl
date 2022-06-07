@@ -1,3 +1,24 @@
+"""
+    sidwt_step!(siwtObj, index, h, g, shiftedTransform[; signalNorm])
+
+Computes one step of the SIWT decomposition on the node `index`.
+
+# Arguments
+- `siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂} where
+  {N,T₁<:Integer,T₂<:AbstractFloat`: SIWT object.
+- `index::NTuple{3,T₁} where T₁<:Integer`: Index of current node to be decomposed.
+- `h::Vector{T₃} where T₃<:AbstractFloat`: High pass filter.
+- `g::Vector{T₃} where T₃<:AbstractFloat`: Low pass filter.
+- `shiftedTransform::Bool`: Whether a shifted transform should be performed.
+
+# Keyword Arguments
+- `signalNorm::T₂ where T₂<:AbstractFloat`: (Default: `norm(siwtObj.Nodes[(0,0,0)].Value`)
+  Signal Euclidean-norm.
+
+# Returns
+- `child1Index::NTuple{3,T₁}`: Child 1 index.
+- `child2Index::NTuple{3,T₁}`: Child 2 index.
+"""
 function sidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                      index::NTuple{3,T₁},
                      h::Vector{T₃}, g::Vector{T₃},
@@ -26,6 +47,25 @@ function sidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
     return (child1Index, child2Index)
 end
 
+"""
+    sidwt_step!(w₁, w₂, v, h, g, s)
+
+Computes one step of the SIWT decomposition on the node `v`.
+
+# Arguments
+- `w₁::AbstractVector{T} where T<:AbstractFloat`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:AbstractFloat`: Vector allocation for output from high pass
+  filter.
+- `v::AbstractVector{T} where T<:AbstractFloat`: Vector of coefficients from a node at level `d`.
+- `h::Vector{S} where S<:AbstractFloat`: High pass filter.
+- `g::Vector{S} where S<:AbstractFloat`: Low pass filter.
+- `s::Bool`: Whether a shifted transform should be performed.
+
+# Returns
+- `w₁::Vector{T}`: Output from the low pass filter.
+- `w₂::Vector{T}`: Output from the high pass filter.
+"""
 function sidwt_step!(w₁::AbstractVector{T}, w₂::AbstractVector{T},
                      v::AbstractVector{T},
                      h::Vector{S}, g::Vector{S},
@@ -55,7 +95,20 @@ function sidwt_step!(w₁::AbstractVector{T}, w₂::AbstractVector{T},
     return w₁, w₂
 end
 
-# TODO: Function to compute one level of recomposition
+"""
+    isidwt_step!(siwtObj, index, child1Index, child2Index, h, g)
+
+Computes one step of the inverse SIWT decomposition on the node `index`.
+
+# Arguments
+- `siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂} where
+  {N,T₁<:Integer,T₂<:AbstractFloat`: SIWT object.
+- `index::NTuple{3,T₁} where T₁<:Integer`: Index of current node to be decomposed.
+- `child1Index::NTuple{T,T₁} where T₁<:Integer`: Index of child 1.
+- `child2Index::NTuple{T,T₁} where T₁<:Integer`: Index of child 2.
+- `h::Vector{T₃} where T₃<:AbstractFloat`: High pass filter.
+- `g::Vector{T₃} where T₃<:AbstractFloat`: Low pass filter.
+"""
 function isidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                       nodeIndex::NTuple{3,T₁},
                       child1Index::NTuple{3,T₁}, child2Index::NTuple{3,T₁},
@@ -76,6 +129,24 @@ function isidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂}
     return nothing
 end
 
+"""
+    isidwt_step!(v, w₁, w₂, h, g, s)
+
+Computes one step of the inverse SIWT decomposition on the node `w₁` and `w₂`.
+
+# Arguments
+- `v::AbstractVector{T} where T<:AbstractFloat`: Vector allocation for reconstructed coefficients.
+- `w₁::AbstractVector{T} where T<:AbstractFloat`: Vector allocation for output from low pass
+  filter.
+- `w₂::AbstractVector{T} where T<:AbstractFloat`: Vector allocation for output from high pass
+  filter.
+- `h::Vector{S} where S<:AbstractFloat`: High pass filter.
+- `g::Vector{S} where S<:AbstractFloat`: Low pass filter.
+- `s::Bool`: Whether a shifted inverse transform should be performed.
+
+# Returns
+- `v::Vector{T}`: Reconstructed coefficients.
+"""
 function isidwt_step!(v::AbstractVector{T},
                       w₁::AbstractVector{T}, w₂::AbstractVector{T},
                       h::Array{S,1}, g::Array{S,1},

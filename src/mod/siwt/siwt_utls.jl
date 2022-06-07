@@ -104,6 +104,7 @@ Outer constructor of SIWT node.
 - `indexAtDepth::S where S<:Integer`: Node index at current depth.
 - `transformShift::S where S<:Integer`: The type of shift operated on the parent node before
   computing the transform.
+- `nrm::T where T<:AbstractFloat`: (Default: `norm(data)`) Norm of the signal.
 """
 function ShiftInvariantWaveletTransformNode(data::Array{T},
                                             depth::S,
@@ -123,6 +124,9 @@ Outer constructor and initialization of SIWT object.
 # Arguments
 - `signal::Array{T} where T<:AbstractFloat`: Input signal.
 - `wavelet::OrthoFilter`: Wavelet filter.
+- `maxTransformLevel::S where S<:Integer`: (Default: `0`) Max transform level.
+- `maxShiftedTransformLevel::S where S<:Integer`: (Default: `0`) Max shifted transform
+  levels.
 """
 function ShiftInvariantWaveletTransformObject(signal::Array{T}, 
                                               wavelet::OrthoFilter,
@@ -139,102 +143,22 @@ function ShiftInvariantWaveletTransformObject(signal::Array{T},
     return ShiftInvariantWaveletTransformObject{signalDim,S,T}(nodes, signalSize, maxTransformLevel, maxShiftedTransformLevel, wavelet, cost, tree)
 end
 
-
 """
-    siwpd_subtree(siwtObj, index, h, g, remainingRelativeDepth4ShiftedTransform)
-"""
-function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
-                        index::NTuple{3,T₁},
-                        h::Vector{T₃}, g::Vector{T₃},
-                        remainingRelativeDepth4ShiftedTransform::T₁;
-                        signalNorm::T₂ = norm(siwtObj.Nodes[(0,0,0)].Value)) where
-                       {N, T₁<:Integer, T₂<:AbstractFloat, T₃<:AbstractFloat}
-    treeMaxTransformLevel = siwtObj.MaxTransformLevel
-    nodeDepth, _, nodeTransformShift = index
+    Wavelets.Util.isvalidtree(siwtObj)
 
-    @assert 0 ≤ nodeDepth ≤ treeMaxTransformLevel
-    @assert 0 ≤ remainingRelativeDepth4ShiftedTransform ≤ treeMaxTransformLevel-nodeDepth
+Checks if tree within SIWT object is a valid tree.
 
-    # --- Base case ---
-    isLeafNode = (nodeDepth == treeMaxTransformLevel)
-    isShiftedTransform4NodeRequired = (remainingRelativeDepth4ShiftedTransform > 0)
-    isShiftedTransformNode = nodeTransformShift > 0
-    isShiftedTransformLeafNode = (!isShiftedTransform4NodeRequired && isShiftedTransformNode)
-    if (isLeafNode || isShiftedTransformLeafNode)
-        return nothing
-    end
-    
-    #  --- General step ---
-    #   - Decompose current node without additional shift 
-    #   - Decompose children nodes
-    childDepth = nodeDepth + 1
-    (child1Index, child2Index) = sidwt_step!(siwtObj, index, h, g, false)
-    childRemainingRelativeDepth4ShiftedTransform = isShiftedTransformNode ? 
-        remainingRelativeDepth4ShiftedTransform-1 : 
-        min(remainingRelativeDepth4ShiftedTransform, treeMaxTransformLevel-childDepth)
-    siwpd_subtree!(siwtObj, child1Index, h, g, childRemainingRelativeDepth4ShiftedTransform, signalNorm=signalNorm)
-    siwpd_subtree!(siwtObj, child2Index, h, g, childRemainingRelativeDepth4ShiftedTransform, signalNorm=signalNorm)
+# Arguments
+- `siwtObj::ShiftInvariantWaveletTransformObject`: SIWT object.
 
-    # Case: remainingRelativeDepth4ShiftedTransform > 0
-    #   - Decompose current node with additional shift
-    #   - Decompose children (with additional shift) nodes
-    if isShiftedTransform4NodeRequired
-        (child1Index, child2Index) = sidwt_step!(siwtObj, index, h, g, true)
-        childRemainingRelativeDepth4ShiftedTransform = remainingRelativeDepth4ShiftedTransform-1
-        siwpd_subtree!(siwtObj, child1Index, h, g, childRemainingRelativeDepth4ShiftedTransform, signalNorm=signalNorm)
-        siwpd_subtree!(siwtObj, child2Index, h, g, childRemainingRelativeDepth4ShiftedTransform, signalNorm=signalNorm)
-    end
+# Returns
+- `bool`: `true` if tree is valid, `false` otherwise.
 
-    return nothing
-end
-
-"""
-    isiwpd_subtree!(siwtObj, index, h, g)
-"""
-function isiwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
-                         index::NTuple{3,T₁},
-                         h::Vector{T₃}, g::Vector{T₃}) where
-                        {N, T₁<:Integer, T₂<:AbstractFloat, T₃<:AbstractFloat}
-    # Check for children nodes
-    nodeDepth, nodeIndexAtDepth, nodeTransformShift = index
-    hasNonShiftedChildren = (nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift) ∈ siwtObj.BestTree
-    hasShiftedChildren = (nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift+(1<<nodeDepth)) ∈ siwtObj.BestTree
-
-    # --- Base Case ---
-    # If node has no children, return
-    hasNoChildren = !(hasNonShiftedChildren && hasShiftedChildren)
-    if hasNoChildren
-        return nothing
-    end
-
-    # --- General Steps ---
-    #   - If node has children, compute reconstruction from children nodes first
-    #   - Once children nodes are reconstructed, compute reconstruction of current node
-    #     based on coefficients of children nodes
-    #   - After reconstruction of children nodes, delete children nodes
-    #   - Return nothing
-    @assert hasNonShiftedChildren ⊻ hasShiftedChildren
-    childDepth = nodeDepth + 1
-    child1IndexAtDepth = nodeIndexAtDepth<<1
-    child2IndexAtDepth = nodeIndexAtDepth<<1 + 1
-    childTransformShift = hasNonShiftedChildren ? nodeTransformShift : nodeTransformShift + (1<<nodeDepth)
-    child1Index = (childDepth, child1IndexAtDepth, childTransformShift)
-    child2Index = (childDepth, child2IndexAtDepth, childTransformShift)
-
-    isiwpd_subtree!(siwtObj, child1Index, h, g)
-    isiwpd_subtree!(siwtObj, child2Index, h, g)
-
-    # TODO: Write this function
-    isiwpd_step!()
-
-    delete_node!(siwtObj, child1Index)
-    delete_node!(siwtObj, child2Index)
-
-    return nothing
-end
-
-"""
-    isvalidtree(siwtObj)
+!!! note
+    `isvalidtree` checks the criteria that each node has a parent (except root node) and one
+    set of children. A node can have either non-shifted or shifted children, but not both.
+    Using this function on a decomposed `siwtObj` prior to its best basis search will return
+    `false`. 
 """
 function Wavelets.Util.isvalidtree(siwtObj::ShiftInvariantWaveletTransformObject)
     @assert (Set ∘ keys)(siwtObj.Nodes) == Set(siwtObj.BestTree)
@@ -261,4 +185,40 @@ function Wavelets.Util.isvalidtree(siwtObj::ShiftInvariantWaveletTransformObject
         end
     end
     return true
+end
+
+"""
+    delete_node!(siwtObj, index)
+
+Deletes a node and all its children from an SIWT object.
+
+# Arguments
+- `siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂} where {N, T₁<:Integer,
+  T₂<:AbstractFloat}`: SIWT object.
+- `index::NTuple{3,T₁} where T₁<:Integer`: Index of node to be deleted.
+"""
+function delete_node!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
+                      index::NTuple{3,T₁}) where
+                     {N, T₁<:Integer, T₂<:AbstractFloat}
+    # Node unavailable
+    if index ∉ siwtObj.BestTree
+        return nothing
+    end
+
+    # Delete node
+    delete!(siwtObj.Nodes, index)
+    deleteat!(siwtObj.BestTree, findall(x -> x==index, siwtObj.BestTree))
+
+    # Delete children nodes
+    nodeDepth, nodeIndexAtDepth, nodeTransformShift = index
+    child1Index = (nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift)
+    child2Index = (nodeDepth+1, nodeIndexAtDepth<<1+1, nodeTransformShift)
+    shiftedChild1Index = (nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift+(1<<nodeDepth))
+    shiftedChild2Index = (nodeDepth+1, nodeIndexAtDepth<<1+1, nodeTransformShift+(1<<nodeDepth))
+    delete_node!(siwtObj, child1Index)
+    delete_node!(siwtObj, child2Index)
+    delete_node!(siwtObj, shiftedChild1Index)
+    delete_node!(siwtObj, shiftedChild2Index)
+    
+    return nothing
 end

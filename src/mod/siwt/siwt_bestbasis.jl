@@ -1,3 +1,13 @@
+"""
+    bestbasistree!(siwtObj)
+
+Computes the best basis tree of an SIWT object and discards all nodes that are not part of
+the best basis tree.
+
+# Arguments
+- `siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂} where {N, T₁<:Integer,
+  T₂<:AbstractFloat}`: SIWT object.
+"""
 function bestbasistree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂}) where
                        {N, T₁<:Integer, T₂<:AbstractFloat}
     rootNodeIndex = (0,0,0)
@@ -7,6 +17,17 @@ function bestbasistree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
     return siwtObj.BestTree
 end
 
+"""
+    bestbasis_treeselection!(siwtObj, index)
+
+Recursive call to select the best basis tree based on the Shannon entropy cost of the
+`index` node and its children (shifted and non-shifted).
+
+# Arguments
+- `siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂} where {N, T₁<:Integer,
+  T₂<:AbstractFloat}`: SIWT object.
+- `index::NTuple{3,T₁} where T₁<:Integer`: Node index for subtree selection.
+"""
 function bestbasis_treeselection!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                                   index::NTuple{3,T₁}) where
                                  {N, T₁<:Integer, T₂<:AbstractFloat}
@@ -60,30 +81,4 @@ function bestbasis_treeselection!(siwtObj::ShiftInvariantWaveletTransformObject{
     end
 
     return siwtObj.Nodes[index].Cost
-end
-
-function delete_node!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
-                      index::NTuple{3,T₁}) where
-                     {N, T₁<:Integer, T₂<:AbstractFloat}
-    # Node unavailable
-    if index ∉ siwtObj.BestTree
-        return nothing
-    end
-
-    # Delete node
-    delete!(siwtObj.Nodes, index)
-    deleteat!(siwtObj.BestTree, findall(x -> x==index, siwtObj.BestTree))
-
-    # Delete children nodes
-    nodeDepth, nodeIndexAtDepth, nodeTransformShift = index
-    child1Index = (nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift)
-    child2Index = (nodeDepth+1, nodeIndexAtDepth<<1+1, nodeTransformShift)
-    shiftedChild1Index = (nodeDepth+1, nodeIndexAtDepth<<1, nodeTransformShift+(1<<nodeDepth))
-    shiftedChild2Index = (nodeDepth+1, nodeIndexAtDepth<<1+1, nodeTransformShift+(1<<nodeDepth))
-    delete_node!(siwtObj, child1Index)
-    delete_node!(siwtObj, child2Index)
-    delete_node!(siwtObj, shiftedChild1Index)
-    delete_node!(siwtObj, shiftedChild2Index)
-    
-    return nothing
 end

@@ -255,6 +255,14 @@ end
         @test expectedNodeCost[(0,0,0)] ≈ siwtObj.MinCost atol=1e-3
         @test isvalidtree(siwtObj)
     end
+
+    @testset "Signal Reconstruction" begin
+        siwtObj = siwpd(signal, wt)
+        bestbasistree!(siwtObj)
+        @test isa(isiwpd(siwtObj), Vector)
+        reconstructedSignal = isiwpd(siwtObj)
+        @test reconstructedSignal ≈ signal
+    end
 end
 
 @testset "Transform All" begin
