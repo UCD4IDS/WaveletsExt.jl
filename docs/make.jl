@@ -20,7 +20,7 @@ makedocs(
             "DWT" => "api/dwt.md",
             "ACWT" => "api/acwt.md",
             "SWT" => "api/swt.md",
-            "SIWPD" => "api/siwpd.md",
+            "SIWT" => "api/siwt.md",
             "WaveMult" => "api/wavemult.md",
             "Best Basis" => "api/bestbasis.md",
             "Denoising" => "api/denoising.md",

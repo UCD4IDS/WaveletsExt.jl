@@ -18,7 +18,7 @@ Utils.finestdetailrange
 
 ## Tree traversing functions
 ```@docs
-Wavelets.Util.isvalidtree
+Wavelets.Util.isvalidtree(::AbstractMatrix,::BitVector)
 Wavelets.Util.maketree
 Utils.getchildindex
 Utils.getparentindex

@@ -6,7 +6,6 @@ Abstract type for best basis. Current available types are:
 - [`LSDB`](@ref)
 - [`JBB`](@ref)
 - [`BB`](@ref)
-- [`SIBB`](@ref)
 """
 abstract type BestBasisType end
 
@@ -21,7 +20,7 @@ Least Statistically Dependent Basis (LSDB).
   redundant. Set `redundant=true` when running LSDB with redundant wavelet transforms such
   as SWT or ACWT.
 
-**See also:** [`BestBasisType`](@ref), [`JBB`](@ref), [`BB`](@ref), [`SIBB`](@ref)
+**See also:** [`BestBasisType`](@ref), [`JBB`](@ref), [`BB`](@ref)
 """
 @with_kw struct LSDB <: BestBasisType
     cost::LSDBCost = DifferentialEntropyCost()
@@ -39,7 +38,7 @@ Joint Best Basis (JBB).
   redundant. Set `redundant=true` when running LSDB with redundant wavelet transforms such
   as SWT or ACWT.
 
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`BB`](@ref), [`SIBB`](@ref)
+**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`BB`](@ref)
 """
 @with_kw struct JBB <: BestBasisType    # Joint Best Basis
     cost::JBBCost = LoglpCost(2)
@@ -57,28 +56,12 @@ Standard Best Basis (BB).
   redundant. Set `redundant=true` when running LSDB with redundant wavelet transforms such
   as SWT or ACWT.
 
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), [`SIBB`](@ref)
+**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref)
 """
 @with_kw struct BB <: BestBasisType     # Individual Best Basis
     cost::BBCost = ShannonEntropyCost()
     redundant::Bool = false
 end
-
-"""
-    SIBB([; cost])
-
-Shift Invariant Best Basis (SIBB).
-
-# Keyword Arguments
-- `cost::BBCost`: (Default: `ShannonEntropyCost()`) Cost function for SIBB.
-
-**See also:** [`BestBasisType`](@ref), [`LSDB`](@ref), [`JBB`](@ref), 
-    [`BB`](@ref)
-"""
-@with_kw struct SIBB <: BestBasisType   # Shift invariant best basis
-    cost::BBCost = ShannonEntropyCost()
-end                     
-
 
 ## ----- TREE COST -----
 # LSDB for 1D signals
@@ -270,49 +253,4 @@ function tree_costs(X::AbstractArray{T,3}, method::BB) where T<:AbstractFloat
         end
     end
     return costs
-end
-
-# SIWPD for 1D signals
-"""
-    tree_costs(y, tree, method)
-
-Computes the cost for each node from the SIWPD decomposition.
-
-# Arguments
-- `y::AbstractArray{T,2} where T<:Number`: A SIWPD decomposed signal.
-- `tree::AbstractVector{BitVector}`: The full SIWPD tree.
-- `method::SIBB`: The `SIBB()` method.
-
-# Returns
-- `Vector{Vector{Union{T,Nothing}}}`: SIWPD best basis tree.
-
-!!! warning
-    Current implementation works but is unstable, ie. we are still working on better
-    syntax/more optimized computations/better data structure.
-"""
-function tree_costs(y::AbstractArray{T,2}, tree::AbstractVector{BitVector}, 
-        method::SIBB) where T<:Number
-
-    nn = length(tree)                           
-    ns = size(y,1)                              
-    @assert size(y,2) == nn                     
-    tree_costs = Vector{Vector{Union{T,Nothing}}}(undef, nn)
-    nrm = norm(y[:,1])                          
-
-    for i in eachindex(tree)
-        level = floor(Int, log2(i))
-        len = nodelength(ns, level)
-        # number of nodes corresponding to Ω(i,j)
-        costs = Vector{Union{AbstractFloat,Nothing}}(nothing, length(tree[i]))
-        for j in eachindex(tree[i])
-            if tree[i][j]
-                shift = j-1                     # current shift
-                nstart = shift*len + 1
-                nend = (shift+1) * len
-                costs[j] = coefcost(y[nstart:nend,i], method.cost, nrm)
-            end
-        end
-        tree_costs[i] = costs
-    end
-    return tree_costs
 end
