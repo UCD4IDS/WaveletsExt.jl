@@ -174,26 +174,95 @@ end
     @test iacwpd(acwpd(x, wt), tree) ≈ x
 end
 
-@testset "SIWPD" begin
-    # siwpd 
-    x = randn(4)
-    wt = wavelet(WT.haar)
-    y = siwpd(x, wt, 2, 1)
-    y0 = y[1,4:7]
-    y1 = y[2,4:7]
-    y2 = y[3,4:7]
-    y3 = y[4,4:7]
-    @test y0 == wpt(x, wt)
-    @test !all([isdefined(y1, i) for i in 1:4])
-    @test y2 == wpt(circshift(x,2), wt)
-    @test !all([isdefined(y3, i) for i in 1:4])
-    # make tree
-    tree = [
-        trues(1), 
-        repeat([trues(2)],2)..., 
-        repeat([BitVector([1,0,1,0])],4)...
-    ]
-    @test makesiwpdtree(4, 2, 1) == tree
+@testset verbose=true "SIWT" begin
+    signal = [2,3,-4,5.0];
+    wt = wavelet(WT.haar);
+    @testset "Data structures" begin
+        cost = BestBasis.coefcost(signal, ShannonEntropyCost());
+        @test isa(ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,0,signal), ShiftInvariantWaveletTransformNode);
+        @test_throws MethodError ShiftInvariantWaveletTransformNode{2,Int64,Float64}(0,0,0,0,signal);  # signal dimension and N do not match
+        @test_throws ArgumentError ShiftInvariantWaveletTransformNode{1,Int64,Float64}(2,4,0,0,signal);  # Invalid IndexAtDepth
+        @test_throws ArgumentError ShiftInvariantWaveletTransformNode{1,Int64,Float64}(2,0,4,0,signal);  # Invalid TransformShift
+        @test ShiftInvariantWaveletTransformNode(signal,0,0,0).Depth == ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal).Depth;
+        @test ShiftInvariantWaveletTransformNode(signal,0,0,0).IndexAtDepth == ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal).IndexAtDepth;
+        @test ShiftInvariantWaveletTransformNode(signal,0,0,0).TransformShift == ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal).TransformShift;
+        @test ShiftInvariantWaveletTransformNode(signal,0,0,0).Cost == ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal).Cost;
+        @test ShiftInvariantWaveletTransformNode(signal,0,0,0).Value == ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal).Value;
+        @test ShiftInvariantWaveletTransformNode(signal,1,0,0) != ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal);
+
+        maxTransformLevels = 2;
+        maxTransformShift = 3;
+        siwtObject = ShiftInvariantWaveletTransformObject(signal, wt);
+        @test isa(siwtObject, ShiftInvariantWaveletTransformObject);
+        @test isa(siwtObject.Nodes[(0,0,0)], ShiftInvariantWaveletTransformNode);
+        @test siwtObject.SignalSize == 4;
+        @test siwtObject.MaxTransformLevel == 0;
+        @test siwtObject.MaxShiftedTransformLevels == 0;
+        @test siwtObject.Wavelet == wt;
+        @test siwtObject.MinCost == cost;
+        @test siwtObject.BestTree == [(0,0,0)];
+        @test_throws ArgumentError ShiftInvariantWaveletTransformObject(signal, wt, maxTransformLevels+1);
+        @test_throws ArgumentError ShiftInvariantWaveletTransformObject(signal, wt, -1);
+        @test_throws ArgumentError ShiftInvariantWaveletTransformObject(signal, wt, 0, maxTransformShift+1);
+        @test_throws ArgumentError ShiftInvariantWaveletTransformObject(signal, wt, 0, -1);
+    end
+
+    @testset "Transform" begin
+        expectedNodes = Dict{NTuple{3,Int64}, ShiftInvariantWaveletTransformNode{1,Int64,Float64}}();
+        expectedNodes[(0,0,0)] = ShiftInvariantWaveletTransformNode(signal,0,0,0);
+        signalTransformedL1S0 = dwt(signal, wt, 1);
+        expectedNodes[(1,0,0)] = ShiftInvariantWaveletTransformNode(signalTransformedL1S0[1:2],1,0,0);
+        expectedNodes[(1,1,0)] = ShiftInvariantWaveletTransformNode(signalTransformedL1S0[3:4],1,1,0);
+        signalTransformedL1S1 = dwt(circshift(signal,1), wt, 1);
+        expectedNodes[(1,0,1)] = ShiftInvariantWaveletTransformNode(signalTransformedL1S1[1:2],1,0,1);
+        expectedNodes[(1,1,1)] = ShiftInvariantWaveletTransformNode(signalTransformedL1S1[3:4],1,1,1);
+        @test isa(siwpd(signal,wt,1,1), ShiftInvariantWaveletTransformObject)
+    end
+
+    @testset "Best Basis" begin
+        # Best basis on original object without decomposition
+        siwtObject = ShiftInvariantWaveletTransformObject(signal, wt, 0, 0);
+        rootOnlyTree = [(0,0,0)];
+        bestbasistree!(siwtObject);
+        @test siwtObject.BestTree == rootOnlyTree;
+        @test siwtObject.MinCost == siwtObject.Nodes[(0,0,0)].Cost;
+        @test isvalidtree(siwtObject);
+
+        # Cost check before best basis operation
+        expectedNodeCost = Dict{NTuple{3,Int64}, Float64}(
+            (0,0,0) => 1.208,
+            (1,0,0) => 0.382,
+            (1,0,1) => 0.402,
+            (1,1,0) => 0.259,
+            (1,1,1) => 0.566
+        )
+        siwtObj = siwpd(signal, wt, 1);
+        for index in keys(expectedNodeCost)
+            @test expectedNodeCost[index] ≈ siwtObj.Nodes[index].Cost atol=1e-3;
+        end
+
+        # Cost check after best basis operation
+        expectedNodeCost = Dict{NTuple{3,Int64}, Float64}(
+            (0,0,0) => 0.641,
+            (1,0,0) => 0.382,
+            (1,1,0) => 0.259
+        )
+        bestbasistree!(siwtObj)
+        @test (Set ∘ keys)(expectedNodeCost) == Set(siwtObj.BestTree) == (Set ∘ keys)(siwtObj.Nodes)
+        for index in keys(expectedNodeCost)
+            @test expectedNodeCost[index] ≈ siwtObj.Nodes[index].Cost atol=1e-3
+        end
+        @test expectedNodeCost[(0,0,0)] ≈ siwtObj.MinCost atol=1e-3
+        @test isvalidtree(siwtObj)
+    end
+
+    @testset "Signal Reconstruction" begin
+        siwtObj = siwpd(signal, wt)
+        bestbasistree!(siwtObj)
+        @test isa(isiwpd(siwtObj), Vector)
+        reconstructedSignal = isiwpd(siwtObj)
+        @test reconstructedSignal ≈ signal
+    end
 end
 
 @testset "Transform All" begin

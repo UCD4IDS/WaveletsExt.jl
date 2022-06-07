@@ -142,14 +142,15 @@ plot(plot(img, title="Original"), p0, p1, p2, layout=(2,2))
 The [Shift-Invariant Wavelet Decomposition (SIWPD)](https://israelcohen.com/wp-content/uploads/2018/05/ICASSP95.pdf) is developed by Cohen et. al.. While it is also a type of redundant transform, it does not follow the same methodology as the SWT and the ACWT. Cohen's main goal for developing this algorithm was to obtain a global minimum entropy from a signal and all its shifted versions. See [its best basis implementation](@ref si_bestbasis) for more information.
 
 One can compute the SIWPD of a single signal as follows.
-```@example wt
-# decomposition
-xw = siwpd(x, wt);
-nothing # hide
+```@repl
+x = [2,3,-4,5.0];
+wt = wavelet(WT.haar);
+xwObj = siwpd(x, wt, 1, 1);
+xwObj.Nodes[(0,0,0)]    # Example of looking into a node
+xwObj.BestTree          # Looking into what's within the tree structure
 ```
+For more information on the API, visit the [SIWT API page](@ref siwt_api).
 
-!!! note 
-    As of right now, there is not too many functions written based on the SIWPD, as it does not follow the conventional style of wavelet transforms. There is a lot of ongoing work to develop more functions catered for the SIWPD such as it's inverse transforms and group-implementations.
 
 
 

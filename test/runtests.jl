@@ -12,10 +12,10 @@ using
     WaveletsExt,
     SparseArrays
 
-@testset "Utils" begin include("utils.jl") end
-@testset "Transforms" begin include("transforms.jl") end
-@testset "Wavelet Multiplication" begin include("wavemult.jl") end
-@testset "Best Basis" begin include("bestbasis.jl") end
-@testset "Denoising" begin include("denoising.jl") end
-@testset "LDB" begin include("ldb.jl") end
-@testset "Visualizations" begin include("visualizations.jl") end
+@testset verbose=true "Utils" begin include("utils.jl") end
+@testset verbose=true "Transforms" begin include("transforms.jl") end
+@testset verbose=true "Wavelet Multiplication" begin include("wavemult.jl") end
+@testset verbose=true "Best Basis" begin include("bestbasis.jl") end
+@testset verbose=true "Denoising" begin include("denoising.jl") end
+@testset verbose=true "LDB" begin include("ldb.jl") end
+@testset verbose=true "Visualizations" begin include("visualizations.jl") end
