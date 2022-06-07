@@ -466,11 +466,9 @@ function wiggle!(plt::Plots.Plot,
         # generate the desired plots as of O3/19/2018. Somehow, the relative value of 0,
         # i.e., fillrange=0, works well, which is used temporarily.
         if Orient == :down
-            plot!(plt, inputy, inputx, fillrange=0, fillalpha=0.75, 
-                  fillcolor=FaceColor, linecolor=EdgeColor, orientation=:v)
+            plot!(plt, inputy, inputx, fillrange=0, fillalpha=0.75, fillcolor=FaceColor, linecolor=EdgeColor, orientation=:v)
         else
-            plot!(plt, inputx, inputy, fillrange=0, fillalpha=0.75,
-                  fillcolor=FaceColor, linecolor=EdgeColor)
+            plot!(plt, inputx, inputy, fillrange=0, fillalpha=0.75, fillcolor=FaceColor, linecolor=EdgeColor)
         end
     end
     return plt
