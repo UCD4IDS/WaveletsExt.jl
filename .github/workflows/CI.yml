@@ -8,8 +8,6 @@ on:
     - test/**
     - Project.toml
   pull_request:
-    branches:
-    - master
     paths:
     - src/**
     - test/**
