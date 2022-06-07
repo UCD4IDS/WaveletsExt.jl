@@ -1,4 +1,4 @@
-# Shift Invariant Wavelet Packet Decomposition
+# [Shift Invariant Wavelet Packet Decomposition](@id siwt_api)
 
 ```@index
 Modules = [SIWT]
