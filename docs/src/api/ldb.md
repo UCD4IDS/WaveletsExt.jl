@@ -5,6 +5,7 @@ Modules = [LDB]
 ```
 
 ## Energy Maps
+### Public API
 ```@docs
 LDB.EnergyMap
 LDB.TimeFrequency
@@ -14,6 +15,7 @@ LDB.energy_map
 ```
 
 ## Discriminant Measures
+### Public API
 ```@docs
 LDB.DiscriminantMeasure
 LDB.ProbabilityDensityDM
@@ -24,10 +26,15 @@ LDB.HellingerDistance
 LDB.LpDistance
 LDB.EarthMoverDistance
 LDB.discriminant_measure
+```
+
+### Private API
+```@docs
 LDB.pairwise_discriminant_measure
 ```
 
 ## Computation of Discriminant Powers
+### Public API
 ```@docs
 LDB.DiscriminantPower
 LDB.BasisDiscriminantMeasure
@@ -37,6 +44,7 @@ LDB.discriminant_power
 ```
 
 ## Feature Extraction and Transformation
+### Public API
 ```@docs
 LDB.LocalDiscriminantBasis
 LDB.fit!

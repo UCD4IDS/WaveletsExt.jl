@@ -5,6 +5,7 @@ Modules = [BestBasis]
 ```
 
 ## Cost functions and computations
+### Public API
 ```@docs
 BestBasis.CostFunction
 BestBasis.LSDBCost
@@ -15,17 +16,23 @@ BestBasis.NormCost
 BestBasis.DifferentialEntropyCost
 BestBasis.ShannonEntropyCost
 BestBasis.LogEnergyEntropyCost
-BestBasis.coefcost
 BestBasis.tree_costs
 ```
 
+### Private API
+```@docs
+BestBasis.coefcost
+```
+
 # Best Basis Tree Selection
+### Private API
 ```@docs
 BestBasis.bestbasis_treeselection
 BestBasis.delete_subtree!
 ```
 
 ## Best basis computation
+### Public API
 ```@docs
 BestBasis.BestBasisType
 BestBasis.LSDB

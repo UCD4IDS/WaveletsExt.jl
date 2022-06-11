@@ -21,7 +21,7 @@ include("siwt/siwt_utls.jl")
 include("siwt/siwt_one_level.jl")
 include("siwt/siwt_bestbasis.jl")
 
-"""
+@doc raw"""
     siwpd(x, wt[, L, d])
 
 Computes the Shift-Invariant Wavelet Packet Decomposition originally developed by Cohen, Raz
@@ -32,10 +32,27 @@ Computes the Shift-Invariant Wavelet Packet Decomposition originally developed b
 - `x::AbstractVector{T} where T<:AbstractFloat`: 1D-signal.
 - `wt::OrthoFilter`: Wavelet filter.
 - `L::S where S<:Integer`: (Default: `maxtransformlevels(x)`) Number of transform levels.
-- `d::S where S<:Integer`: (Default: `L`) Depth of shifted transform for each node.
+- `d::S where S<:Integer`: (Default: `L`) Depth of shifted transform for each node. Value of
+  `d` must be strictly less than or equal to `L`.
 
 # Returns
 - `ShiftInvariantWaveletTransformObject` containing node and tree details.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# SIWPD
+siwpd(x, wt)        
+siwpd(x, wt, 4)     # level 4 decomposition, where each decomposition has 4 levels of shifted decomposition.
+siwpd(x, wt, 4, 2)  # level 4 decomposition, where each decomposition has 2 levels of shifted decomposition.
+```
+
+**See also:** [`isiwpd`](@ref), [`siwpd_subtree!`](@ref)
 """
 function siwpd(x::AbstractVector{T}, 
                 wt::OrthoFilter, 
@@ -70,6 +87,8 @@ Runs the recursive computation of Shift-Invariant Wavelet Transform (SIWT) at ea
 # Keyword Arguments
 - `signalNorm::T₂ where T₂<:AbstractFloat`: (Default: `norm(siwtObj.Nodes[(0,0,0)].Value)`) 
   Signal Euclidean-norm.
+
+**See also:** [`isiwpd_subtree!`](@ref)
 """
 function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                         index::NTuple{3,T₁},
@@ -116,7 +135,7 @@ function siwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
     return nothing
 end
 
-"""
+@doc raw"""
     isiwpd(siwtObj)
 
 Computes the Inverse Shift-Invariant Wavelet Packet Decomposition originally developed by
@@ -128,6 +147,23 @@ Cohen, Raz & Malah.
 
 # Returns
 - `Vector{T₂}`: Reconstructed signal.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# SIWPD
+siwtObj = siwpd(x, wt)
+
+# ISIWPD
+isiwpd(siwtObj)
+```
+
+**See also:** [`siwpd`](@ref), [`isiwpd_subtree!`](@ref)
 """
 function isiwpd(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂}) where
                {N, T₁<:Integer, T₂<:AbstractFloat}
@@ -150,6 +186,8 @@ node `index`.
 - `index::NTuple{3,T₁} where T₁<:Integer`: Index of current node to be decomposed.
 - `h::Vector{T₃} where T₃<:AbstractFloat`: High pass filter.
 - `g::Vector{T₃} where T₃<:AbstractFloat`: Low pass filter.
+
+**See also:** [`siwpd_subtree!`](@ref)
 """
 function isiwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                          index::NTuple{3,T₁},
@@ -162,7 +200,7 @@ function isiwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
 
     # --- Base Case ---
     # If node has no children, return
-    hasNoChildren = !(hasNonShiftedChildren && hasShiftedChildren)
+    hasNoChildren = !(hasNonShiftedChildren || hasShiftedChildren)
     if hasNoChildren
         return nothing
     end
@@ -183,8 +221,8 @@ function isiwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T�
 
     isiwpd_subtree!(siwtObj, child1Index, h, g)
     isiwpd_subtree!(siwtObj, child2Index, h, g)
-
-    isiwpd_step!(siwtObj, index, child1Index, child2Index, h, g)
+    
+    isidwt_step!(siwtObj, index, child1Index, child2Index, h, g)
 
     delete_node!(siwtObj, child1Index)
     delete_node!(siwtObj, child2Index)

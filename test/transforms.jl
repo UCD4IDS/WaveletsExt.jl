@@ -189,6 +189,8 @@ end
         @test ShiftInvariantWaveletTransformNode(signal,0,0,0).Cost == ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal).Cost;
         @test ShiftInvariantWaveletTransformNode(signal,0,0,0).Value == ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal).Value;
         @test ShiftInvariantWaveletTransformNode(signal,1,0,0) != ShiftInvariantWaveletTransformNode{1,Int64,Float64}(0,0,0,cost,signal);
+        @test_throws ArgumentError ShiftInvariantWaveletTransformNode(randn(4,4),0,0,0);
+        @test_throws ArgumentError ShiftInvariantWaveletTransformNode(randn(4,4,4),0,0,0);
 
         maxTransformLevels = 2;
         maxTransformShift = 3;

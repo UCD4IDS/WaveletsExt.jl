@@ -7,6 +7,23 @@ the best basis tree.
 # Arguments
 - `siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂} where {N, T₁<:Integer,
   T₂<:AbstractFloat}`: SIWT object.
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# SIWPD
+siwtObj = siwpd(x, wt)
+
+# Best basis tree
+bestbasistree!(siwtObj)
+```
+
+**See also:** [`bestbasis_treeselection!`](@ref), [`isvalidtree`](@ref)
 """
 function bestbasistree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂}) where
                        {N, T₁<:Integer, T₂<:AbstractFloat}
@@ -27,6 +44,8 @@ Recursive call to select the best basis tree based on the Shannon entropy cost o
 - `siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂} where {N, T₁<:Integer,
   T₂<:AbstractFloat}`: SIWT object.
 - `index::NTuple{3,T₁} where T₁<:Integer`: Node index for subtree selection.
+
+**See also:** [`bestbasistree!`](@ref),
 """
 function bestbasis_treeselection!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                                   index::NTuple{3,T₁}) where

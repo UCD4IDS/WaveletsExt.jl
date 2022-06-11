@@ -5,6 +5,7 @@ Modules = [ACWT]
 ```
 
 ## Transforms on 1 Signal
+### Public API
 ```@docs
 ACWT.acdwt
 ACWT.acdwt!
@@ -21,6 +22,7 @@ ACWT.iacwpd!
 ```
 
 ## Transforms on Multiple Signals
+### Public API
 ```@docs
 ACWT.acdwtall
 ACWT.iacdwtall
@@ -31,6 +33,7 @@ ACWT.iacwpdall
 ```
 
 ## Utilities
+### Private API
 ```@docs
 ACWT.autocorr
 ACWT.pfilter
@@ -40,6 +43,7 @@ ACWT.make_acreverseqmfpair
 ```
 
 ## Single Step Transforms
+### Private API
 ```@docs
 ACWT.acdwt_step
 ACWT.acdwt_step!
