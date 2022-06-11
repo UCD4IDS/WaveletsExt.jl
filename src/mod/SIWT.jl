@@ -200,7 +200,7 @@ function isiwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T‚ÇÅ,T‚
 
     # --- Base Case ---
     # If node has no children, return
-    hasNoChildren = !(hasNonShiftedChildren && hasShiftedChildren)
+    hasNoChildren = !(hasNonShiftedChildren || hasShiftedChildren)
     if hasNoChildren
         return nothing
     end
@@ -221,8 +221,8 @@ function isiwpd_subtree!(siwtObj::ShiftInvariantWaveletTransformObject{N,T‚ÇÅ,T‚
 
     isiwpd_subtree!(siwtObj, child1Index, h, g)
     isiwpd_subtree!(siwtObj, child2Index, h, g)
-
-    isiwpd_step!(siwtObj, index, child1Index, child2Index, h, g)
+    
+    isidwt_step!(siwtObj, index, child1Index, child2Index, h, g)
 
     delete_node!(siwtObj, child1Index)
     delete_node!(siwtObj, child2Index)
