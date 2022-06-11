@@ -18,6 +18,8 @@ Computes one step of the SIWT decomposition on the node `index`.
 # Returns
 - `child1Index::NTuple{3,T₁}`: Child 1 index.
 - `child2Index::NTuple{3,T₁}`: Child 2 index.
+
+**See also:** [`isidwt_step!`](@ref)
 """
 function sidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                      index::NTuple{3,T₁},
@@ -108,6 +110,8 @@ Computes one step of the inverse SIWT decomposition on the node `index`.
 - `child2Index::NTuple{T,T₁} where T₁<:Integer`: Index of child 2.
 - `h::Vector{T₃} where T₃<:AbstractFloat`: High pass filter.
 - `g::Vector{T₃} where T₃<:AbstractFloat`: Low pass filter.
+
+**See also:** [`sidwt_step!`](@ref)
 """
 function isidwt_step!(siwtObj::ShiftInvariantWaveletTransformObject{N,T₁,T₂},
                       nodeIndex::NTuple{3,T₁},

@@ -17,6 +17,8 @@ Data structure to hold the index, coefficients, and cost value of an SIWT node.
       top and right to left by 1 index each. Not available for 1D signals.
 - `Cost::T₂`: The [`ShannonEntropyCost`](@ref) of current node.
 - `Value::Array{T₂,N}`: Coefficients of current node.
+
+**See also:** [`ShiftInvariantWaveletTransformObject`](@ref)
 """
 mutable struct ShiftInvariantWaveletTransformNode{N, T₁<:Integer, T₂<:AbstractFloat}
     Depth::T₁
@@ -159,6 +161,23 @@ Checks if tree within SIWT object is a valid tree.
     set of children. A node can have either non-shifted or shifted children, but not both.
     Using this function on a decomposed `siwtObj` prior to its best basis search will return
     `false`. 
+
+# Examples
+```julia
+using Wavelets, WaveletsExt
+
+# Setup
+x = generatesignals(:heavysine)
+wt = wavelet(WT.haar)
+
+# SIWPD
+siwtObj = siwpd(x, wt)
+isvalidtree(siwtObj)        # Returns false
+
+# Best basis tree
+bestbasistree!(siwtObj)
+isvalidtree(siwtObj)        # Returns true
+```
 """
 function Wavelets.Util.isvalidtree(siwtObj::ShiftInvariantWaveletTransformObject)
     @assert (Set ∘ keys)(siwtObj.Nodes) == Set(siwtObj.BestTree)
