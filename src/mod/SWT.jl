@@ -62,7 +62,7 @@ function sdwt(x::AbstractArray{T},
               L::Integer = maxtransformlevels(x)) where T<:Number
     # Sanity check
     @assert 1 ≤ ndims(x) ≤ 2
-    @assert L ≤ maxtransformlevels(x) || throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+    @assert L ≤ maxtransformlevels(x) || throw(ArgumentError("Too many transform levels (length(x) < 2^L)"))
     @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
     # Setup
     sz = size(x)
@@ -112,7 +112,7 @@ function sdwt!(xw::AbstractArray{T,2},
                L::Integer = maxtransformlevels(x)) where T<:Number
     # Sanity check
     @assert L ≤ maxtransformlevels(x) ||
-        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+        throw(ArgumentError("Too many transform levels (length(x) < 2^L)"))
     @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
 
     # Setup
@@ -793,7 +793,7 @@ function swpd(x::AbstractArray{T},
     # Sanity check
     @assert 1 ≤ ndims(x) ≤ 2
     @assert L ≤ maxtransformlevels(x) ||
-        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+        throw(ArgumentError("Too many transform levels (length(x) < 2^L)"))
     @assert L ≥ 1 || throw(ArgumentError("L must be ≥ 1"))
     # Setup
     sz = size(x)                            # Signal size
@@ -843,7 +843,7 @@ function swpd!(xw::AbstractArray{T,2},
                L::Integer = maxtransformlevels(x)) where T<:Number
     # Sanity check
     @assert L <= maxtransformlevels(x) ||
-        throw(ArgumentError("Too many transform levels (length(x) < 2^L"))
+        throw(ArgumentError("Too many transform levels (length(x) < 2^L)"))
     @assert L >= 1 || throw(ArgumentError("L must be >= 1"))
 
     # Setup
