@@ -10,10 +10,6 @@ on:
       - 'test/**'
       - 'Project.toml'
   pull_request:
-    paths:
-      - 'src/**'
-      - 'test/**'
-      - 'Project.toml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
