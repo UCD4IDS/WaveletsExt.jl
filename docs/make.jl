@@ -37,3 +37,4 @@ makedocs(
 deploydocs(
     repo = "github.com/UCD4IDS/WaveletsExt.jl.git"
 )
+
