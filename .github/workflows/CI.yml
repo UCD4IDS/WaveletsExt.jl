@@ -27,17 +27,17 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.10' # New LTS (Minimum supported version)
-          - '1'    # Latest Stable (e.g., 1.11, 1.12)
+          - '1.10' # LTS
+          - '1'    # Latest Stable
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-13      # Intel macOS
+          - macos-14      # <--- CHANGED: Updated from 13 to 14 (Runs x64 via Rosetta)
         arch:
           - x64
         include:
-          # Test Apple Silicon on the latest Julia
-          - os: macos-14  # ARM macOS
+          # Test Native Apple Silicon (ARM)
+          - os: macos-14
             arch: aarch64
             version: '1'
 
@@ -72,3 +72,4 @@ jobs:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
