@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - main
-    # paths section removed to ensure CI runs on all commits (including workflow edits)
   pull_request:
 
 concurrency:
@@ -25,21 +24,23 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-13      # Explicit Intel Mac
-          - macos-latest  # Explicit Apple Silicon Mac
+          - macos-15-intel # <--- Confirmed: The only valid Intel x64 runner left
+          - macos-latest   # <--- Confirmed: Apple Silicon (ARM)
         arch:
           - x64
           - aarch64
         exclude:
-          # Linux and Windows runners are x64 only on GitHub Actions (usually)
+          # Linux/Windows are x64 only
           - os: ubuntu-latest
             arch: aarch64
           - os: windows-latest
             arch: aarch64
-          # macOS-13 is the last Intel runner
-          - os: macos-13
+          
+          # macos-15-intel is Intel x64 only
+          - os: macos-15-intel
             arch: aarch64
-          # macOS-latest is Apple Silicon; avoiding x64 avoids Rosetta emulation confusion
+            
+          # macos-latest is Apple Silicon only
           - os: macos-latest
             arch: x64
 
@@ -51,16 +52,13 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
 
-      # Use the dedicated Julia cache action (cleaner than manual caching)
       - uses: julia-actions/cache@v2
-
-      # Note: No TetrapodsRegistry needed here for WaveletsExt
 
       - uses: julia-actions/julia-buildpkg@v1
 
       - uses: julia-actions/julia-runtest@v1
         env:
-          GKSwstype: "100" # Fix for headless plotting
+          GKSwstype: "100"
 
       - uses: julia-actions/julia-processcoverage@v1
 
