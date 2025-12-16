@@ -5,10 +5,7 @@ on:
     branches:
       - master
       - main
-    paths:
-      - 'src/**'
-      - 'test/**'
-      - 'Project.toml'
+    # paths section removed to ensure CI runs on all commits (including workflow edits)
   pull_request:
 
 concurrency:
@@ -28,44 +25,47 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-latest
+          - macos-13      # Explicit Intel Mac
+          - macos-latest  # Explicit Apple Silicon Mac
         arch:
           - x64
-        include:
-          # Test Native Apple Silicon (ARM)
-          - os: macos-latest
+          - aarch64
+        exclude:
+          # Linux and Windows runners are x64 only on GitHub Actions (usually)
+          - os: ubuntu-latest
             arch: aarch64
-            version: '1'
+          - os: windows-latest
+            arch: aarch64
+          # macOS-13 is the last Intel runner
+          - os: macos-13
+            arch: aarch64
+          # macOS-latest is Apple Silicon; avoiding x64 avoids Rosetta emulation confusion
+          - os: macos-latest
+            arch: x64
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-          
-      - uses: actions/cache@v4
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
-            
+
+      # Use the dedicated Julia cache action (cleaner than manual caching)
+      - uses: julia-actions/cache@v2
+
+      # Note: No TetrapodsRegistry needed here for WaveletsExt
+
       - uses: julia-actions/julia-buildpkg@v1
-      
+
       - uses: julia-actions/julia-runtest@v1
         env:
-          GKSwstype: "100"
-          
+          GKSwstype: "100" # Fix for headless plotting
+
       - uses: julia-actions/julia-processcoverage@v1
-      
+
       - uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
-
