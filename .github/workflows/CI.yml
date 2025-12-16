@@ -28,12 +28,12 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-14      # <--- CHANGED: Updated from 13 to 14 (Runs x64 via Rosetta)
+          - macos-latest
         arch:
           - x64
         include:
           # Test Native Apple Silicon (ARM)
-          - os: macos-14
+          - os: macos-latest
             arch: aarch64
             version: '1'
 
